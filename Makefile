@@ -1,10 +1,15 @@
 #! /usr/bin/make -f
 
-default: 7.3 # all
+VER = 7.3
+
+default: # all
+	$(MAKE) $(VER)
 
 7.3: 7.3.1611
+	docker tag "localhost:5000/centos-repo:$@" "localhost:5000/centos-repo:7"
 7.3.1611: 
 	docker build -f centos-repo.$@.dockerfile --tag "localhost:5000/centos-repo:$@" .
+	docker tag "localhost:5000/centos-repo:$@" "localhost:5000/centos-repo:7.3"
 7.2: 7.2.1511
 7.1: 7.1.1503
 7.0: 7.0.1406
@@ -15,6 +20,8 @@ default: 7.3 # all
 all:
 	$(MAKE) sync
 	$(MAKE) build
+	$(MAKE) check
+	$(MAKE) tagged
 
 sync:
 	mkdir tmp
@@ -33,6 +40,8 @@ build:
 	docker cp tmp/updates centos:/srv/repo/7/updates
 	docker commit -c 'CMD $(CMD)' centos localhost:5000/centos-repo:7
 	docker rm --force centos
+tagged:
+	docker tag localhost:5000/centos-repo:7 localhost:5000/centos-repo:$(VER)
 
 check:
 	- docker-compose -p testcentos down
