@@ -1,0 +1,27 @@
+version: "2"
+
+services:
+  yumrepo:
+     image: "localhost:5000/centos-repo:7"
+     expose: 
+      - "80"
+     hostname: "centos_repo"
+     networks:
+       repos:
+          ipv4_address: "172.22.0.2"
+  target:
+     image: "centos:centos7"
+     command: "sleep 1000"
+     hostname: "target"
+     extra_hosts:
+       - "mirrorlist.centos.org:172.22.0.2"
+     networks:
+       repos:
+          ipv4_address: "172.22.0.3"
+
+networks:
+  repos:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.22.0.0/16"
