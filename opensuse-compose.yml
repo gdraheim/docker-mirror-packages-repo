@@ -1,0 +1,27 @@
+version: "2"
+
+services:
+  repo:
+     image: "localhost:5000/opensuse-repo:42.2"
+     expose: 
+      - "80"
+     hostname: "opensuse_repo"
+     networks:
+       repo42:
+          ipv4_address: "172.42.0.2"
+  host:
+     image: "opensuse:42.2"
+     command: "sleep 1000"
+     hostname: "opensuse_host"
+     extra_hosts:
+       - "download.opensuse.org:172.42.0.2"
+     networks:
+       repo42:
+          ipv4_address: "172.42.0.3"
+
+networks:
+  repo42:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.42.0.0/16"

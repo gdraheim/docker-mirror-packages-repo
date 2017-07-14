@@ -1,7 +1,7 @@
 version: "2"
 
 services:
-  yumrepo:
+  repo:
      image: "localhost:5000/centos-repo:7"
      expose: 
       - "80"
@@ -9,7 +9,7 @@ services:
      networks:
        repos:
           ipv4_address: "172.22.0.2"
-  target:
+  host:
      image: "centos:centos7"
      command: "sleep 1000"
      hostname: "target"
