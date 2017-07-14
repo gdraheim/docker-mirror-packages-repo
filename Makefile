@@ -1,7 +1,7 @@
 #! /usr/bin/make -f
 
 CENTOS_VER = 7.3
-CENTOS = centos7
+CENTOS = 7.3.1611
 
 default: all
 
@@ -33,15 +33,15 @@ all:
 	$(MAKE) testcentos
 	$(MAKE) centos-repo
 
-CENTOS_MIRROR=rsync://rsync.hrz.tu-chemnitz/ftp/pub/linux
+CENTOS_MIRROR=rsync://rsync.hrz.tu-chemnitz.de/ftp/pub/linux/centos
 
 sync:
 	if test -d $(DATA); then mkdir $(DATA)/centos-$(CENTOS); ln -s $(DATA)/centos-$(CENTOS) centos-$(CENTOS) \
 	; else mkdir centos-$(CENTOS); fi; test -d centos-$(CENTOS)/.
 	$(MAKE) sync-os sync-extras sync-updates
-sync-os: ;      rsync -r $(CENTOS_MIRROR)/$(CENTOS)/os      centos-$(CENTOS)/ --exclude "*.iso"
-sync-extras: ;  rsync -r $(CENTOS_MIRROR)/$(CENTOS)/extras  centos-$(CENTOS)/
-sync-updates: ; rsync -r $(CENTOS_MIRROR)/$(CENTOS)/updates centos-$(CENTOS)/
+sync-os: ;      rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/os      centos-$(CENTOS)/ --exclude "*.iso"
+sync-extras: ;  rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/extras  centos-$(CENTOS)/
+sync-updates: ; rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/updates centos-$(CENTOS)/
 
 centos_CMD = ["python","/srv/scripts/mirrorlist.py","--data","/srv/repo"]
 centos:
@@ -52,10 +52,10 @@ centos:
 	docker cp centos-$(CENTOS)/os $@:/srv/repo/7/
 	docker cp centos-$(CENTOS)/extras $@:/srv/repo/7/
 	docker cp centos-$(CENTOS)/updates $@:/srv/repo/7/
-	docker commit -c 'CMD $($@_CMD)' $@ localhost:5000/$@-repo:7
+	docker commit -c 'CMD $($@_CMD)' $@ localhost:5000/$@-repo:$(CENTOS)
 	docker rm --force $@
 centos-repo:
-	docker tag localhost:5000/$@:7 localhost:5000/$@:$(CENTOS_VER)
+	docker tag localhost:5000/$@:$(CENTOS) localhost:5000/$@:$(CENTOS_VER)
 
 testcentos:
 	- docker-compose -p $@ -f centos-compose.yml down
