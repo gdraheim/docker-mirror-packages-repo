@@ -1,7 +1,10 @@
 #! /usr/bin/make -f
 
-CENTOS_VER = 7.3
-CENTOS = 7.3.1611
+CENTOS_VER = 7.5
+CENTOS = 7.5.1804
+# CENTOS = 7.4.1708
+# CENTOS_VER = 7.3
+# CENTOS = 7.3.1611
 
 default: all
 
@@ -29,24 +32,42 @@ default: all
 
 all:
 	$(MAKE) sync
-	$(MAKE) centos
-	$(MAKE) testcentos
-	$(MAKE) centos-repo
+	$(MAKE) centosrepo
+	$(MAKE) centoscheck
+	$(MAKE) centosworks
+	$(MAKE) centosversion
 
 CENTOS_MIRROR=rsync://rsync.hrz.tu-chemnitz.de/ftp/pub/linux/centos
 
 sync:
+	$(MAKE) sync-dir
+	$(MAKE) sync-all
+sync-dir:
 	if test -d $(DATA); then mkdir $(DATA)/centos-$(CENTOS); ln -s $(DATA)/centos-$(CENTOS) centos-$(CENTOS) \
 	; else mkdir centos-$(CENTOS); fi; test -d centos-$(CENTOS)/.
-	$(MAKE) sync-os sync-extras sync-updates
+sync-all: sync-os sync-extras sync-updates
 sync-os: ;      rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/os      centos-$(CENTOS)/ --exclude "*.iso"
 sync-extras: ;  rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/extras  centos-$(CENTOS)/
 sync-updates: ; rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/updates centos-$(CENTOS)/
+centos-unpack:
+	- docker rm --force $@
+	docker run --name=$@ --detach localhost:5000/centos-repo:$(CENTOS) sleep 9999
+	docker cp $@:/srv/repo/7/os centos-$(CENTOS)/
+	docker cp $@:/srv/repo/7/extras centos-$(CENTOS)/
+	docker cp $@:/srv/repo/7/updates centos-$(CENTOS)/
+	docker rm --force $@
+	du -sh centos-$(CENTOS)/.
+centos-clean:
+	rm -rf centos-$(CENTOS)/os
+	rm -rf centos-$(CENTOS)/extras
+	rm -rf centos-$(CENTOS)/updates
 
+centosrepo: centos
 centos_CMD = ["python","/srv/scripts/mirrorlist.py","--data","/srv/repo"]
 centos:
+	$(MAKE) centos-restore centos-cleaner
 	- docker rm --force $@
-	docker run --name=$@ --detach $@:$(CENTOS) sleep 9999
+	docker run --name=$@ --detach centos:$(CENTOS) sleep 9999
 	docker exec $@ mkdir -p /srv/repo/7
 	docker cp scripts $@:/srv/scripts
 	docker cp centos-$(CENTOS)/os $@:/srv/repo/7/
@@ -54,47 +75,85 @@ centos:
 	docker cp centos-$(CENTOS)/updates $@:/srv/repo/7/
 	docker commit -c 'CMD $($@_CMD)' $@ localhost:5000/$@-repo:$(CENTOS)
 	docker rm --force $@
+	$(MAKE) centos-restore
+centosversion: centos-repo
 centos-repo:
 	docker tag localhost:5000/$@:$(CENTOS) localhost:5000/$@:$(CENTOS_VER)
+centos-cleaner:
+	test ! -d centos-$(CENTOS)/updates/x86_64/drpms \
+	 || mv -v centos-$(CENTOS)/updates/x86_64/drpms \
+	          centos-$(CENTOS)/updates.x86_64.drpms 
+	test ! -d centos-$(CENTOS)/extras/x86_64/drpms \
+	 || mv -v centos-$(CENTOS)/extras/x86_64/drpms \
+	          centos-$(CENTOS)/extras.x86_64.drpms 
+centos-restore:
+	test ! -d centos-$(CENTOS)/updates.x86_64.drpms \
+	 || mv -v centos-$(CENTOS)/updates.x86_64.drpms \
+	          centos-$(CENTOS)/updates/x86_64/drpms 
+	test ! -d centos-$(CENTOS)/extras.x86_64.drpms \
+	 || mv -v centos-$(CENTOS)/extras.x86_64.drpms \
+	          centos-$(CENTOS)/extras/x86_64/drpms 
 
-testcentos:
-	- docker-compose -p $@ -f centos-compose.yml down
-	docker-compose -p $@ -f centos-compose.yml up -d
-	docker exec testcentos_host_1 yum install -y firefox
-	docker-compose -p $@ -f centos-compose.yml $@ down
+centosworks:
+	sed -e "s|centos:centos7|centos:$(CENTOS)|" -e "s|centos-repo:7|centos-repo:$(CENTOS)|" \
+	  centos-compose.yml > centos-compose.tmp
+	- docker-compose -p $@ -f centos-compose.tmp down
+	docker-compose -p $@ -f centos-compose.tmp up -d
+	docker exec centosworks_host_1 yum install -y firefox
+	docker-compose -p $@ -f centos-compose.tmp down
+
+centoscheck:
+	- docker rm --force $@
+	docker run --name=$@ --detach centos:$(CENTOS) sleep 9999
+	docker exec $@ rpm -qa | { while read f; do : \
+	; found=`find centos-$(CENTOS)/. -name $$f.rpm` \
+	; if [ -z "$$found" ]; then echo : ; else echo "OK $$f         $$found"; fi \
+	; done ; }
+	docker exec $@ rpm -qa | { while read f; do : \
+	; found=`find centos-$(CENTOS)/. -name $$f.rpm` \
+	; if [ -z "$$found" ]; then echo "?? $$f $$found"; else : ; fi \
+	; done ; }
+	docker rm --force $@
 
 ############## OPENSUSE VARIANT ############
 # this is faster and it is more robust #
 # however it doubles the required disk #
 
 DATA=/data/docker-centos-repo-mirror
-LEAP=42.2
+LEAP=42.3
 SUSE=rsync://suse.uni-leipzig.de/opensuse-full/opensuse
 rsync:
+	$(MAKE) rsync-
+	$(MAKE) rsync1 rsync2 rsync3 rsync4
+rsync-:
 	if test -d $(DATA); then mkdir $(DATA)/leap-$(LEAP); ln -s $(DATA)/leap-$(LEAP) leap-$(LEAP) \
 	; else mkdir leap-$(LEAP); fi; test -d leap-$(LEAP)/.
-	$(MAKE) rsync1 rsync2 rsync3 rsync4
 rsync1:
 	mkdir -p leap-$(LEAP)/distribution/leap/$(LEAP)/repo 
 	rsync -rv     $(SUSE)/distribution/leap/$(LEAP)/repo/oss \
 	         leap-$(LEAP)/distribution/leap/$(LEAP)/repo/ \
-	   --filter="exclude boot" --filter="exclude EFI"
+	   --filter="exclude boot" --filter="exclude EFI" \
+	   --size-only --filter="exclude *.src.rpm"
 rsync2:
 	mkdir -p leap-$(LEAP)/distribution/leap/$(LEAP)/repo 
 	rsync -rv     $(SUSE)/distribution/leap/$(LEAP)/repo/non-oss \
 	         leap-$(LEAP)/distribution/leap/$(LEAP)/repo/ \
-	   --filter="exclude boot" --filter="exclude noarch" --filter="exclude x86_64" --filter="exclude EFI"
+	   --filter="exclude boot" --filter="exclude noarch" \
+	   --filter="exclude x86_64" --filter="exclude EFI" \
+	   --size-only --filter="exclude *.src.rpm"
 rsync3:
 	mkdir -p leap-$(LEAP)/update/leap/$(LEAP)/ 
 	rsync -rv     $(SUSE)/update/leap/$(LEAP)/oss \
 	         leap-$(LEAP)/update/leap/$(LEAP) \
-	   --filter="exclude boot"
+	   --filter="exclude boot" --filter="exclude *.drpm" \
+	   --size-only --filter="exclude *.src.rpm"
 rsync4:
 	mkdir -p leap-$(LEAP)/update/leap/$(LEAP) 
 	rsync -rv     $(SUSE)/update/leap/$(LEAP)/non-oss \
 	         leap-$(LEAP)/update/leap/$(LEAP)/ \
 	   --filter="exclude boot" --filter="exclude noarch" --filter="exclude x86_64" \
-	   --filter="exclude EFI" --filter="exclude src" --filter="exclude nosrc"
+	   --filter="exclude EFI" --filter="exclude src" --filter="exclude nosrc" \
+	   --size-only --filter="exclude *.src.rpm"
 
 # /etc/zypp/repos.d/oss-update.repo:baseurl=http://download.opensuse.org/update/42.2/
 # /etc/zypp/repos.d/update-non-oss.repo:baseurl=http://download.opensuse.org/update/leap/42.2/non-oss/
@@ -109,9 +168,9 @@ opensuse:
 	docker cp scripts $@:/srv/scripts
 	docker cp leap-$(LEAP)/distribution $@:/srv/repo/
 	docker cp leap-$(LEAP)/update       $@:/srv/repo/
-	docker exec $@ rm -r /srv/repo/update/$(LEAP)
+	: docker exec $@ rm -r /srv/repo/update/$(LEAP)
 	docker exec $@ ln -s /srv/repo/update/leap/$(LEAP)/oss /srv/repo/update/$(LEAP)
-	docker exec $@ zypper ar file:///srv/repo/distribution/leap/42.2/repo/oss oss-repo
+	docker exec $@ zypper ar file:///srv/repo/distribution/leap/$(LEAP)/repo/oss oss-repo
 	docker exec $@ zypper --no-remote install -y python
 	docker commit -c 'CMD $($@_CMD)' $@ localhost:5000/$@-repo:$(LEAP)
 	docker rm --force $@
