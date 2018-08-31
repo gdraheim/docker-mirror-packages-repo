@@ -62,9 +62,9 @@ centos-clean:
 	rm -rf centos-$(CENTOS)/extras
 	rm -rf centos-$(CENTOS)/updates
 
-centosrepo: centos
-centos_CMD = ["python","/srv/scripts/mirrorlist.py","--data","/srv/repo"]
-centos:
+centosrepo_CMD = ["python","/srv/scripts/mirrorlist.py","--data","/srv/repo"]
+centosrepo_PORT = 80
+centosrepo:
 	$(MAKE) centos-restore centos-cleaner
 	- docker rm --force $@
 	docker run --name=$@ --detach centos:$(CENTOS) sleep 9999
@@ -73,7 +73,7 @@ centos:
 	docker cp centos-$(CENTOS)/os $@:/srv/repo/7/
 	docker cp centos-$(CENTOS)/extras $@:/srv/repo/7/
 	docker cp centos-$(CENTOS)/updates $@:/srv/repo/7/
-	docker commit -c 'CMD $($@_CMD)' $@ localhost:5000/$@-repo:$(CENTOS)
+	docker commit -c 'CMD $($@_CMD)' -c 'EXPOSE $($@_PORT)' $@ localhost:5000/centos-repo:$(CENTOS)
 	docker rm --force $@
 	$(MAKE) centos-restore
 centosversion: centos-repo
@@ -120,8 +120,10 @@ centoscheck:
 # however it doubles the required disk #
 
 DATA=/data/docker-centos-repo-mirror
-LEAP=42.3
+OPENSUSE=opensuse/leap
+LEAP=15.0
 SUSE=rsync://suse.uni-leipzig.de/opensuse-full/opensuse
+
 rsync:
 	$(MAKE) rsync-
 	$(MAKE) rsync1 rsync2 rsync3 rsync4
@@ -160,10 +162,11 @@ rsync4:
 # /etc/zypp/repos.d/oss.repo:baseurl=http://download.opensuse.org/distribution/leap/42.2/repo/oss/
 # /etc/zypp/repos.d/non-oss.repo:baseurl=http://download.opensuse.org/distribution/leap/42.2/repo/non-oss/
 
-opensuse_CMD = ["python","/srv/scripts/filelist.py","--data","/srv/repo"]
-opensuse:
+opensuserepo_CMD = ["python","/srv/scripts/filelist.py","--data","/srv/repo"]
+opensuserepo_PORT = 80
+opensuserepo:
 	- docker rm --force $@
-	docker run --name=$@ --detach $@:$(LEAP) sleep 9999
+	docker run --name=$@ --detach $(OPENSUSE):$(LEAP) sleep 9999
 	docker exec $@ mkdir -p /srv/repo/
 	docker cp scripts $@:/srv/scripts
 	docker cp leap-$(LEAP)/distribution $@:/srv/repo/
@@ -172,15 +175,16 @@ opensuse:
 	docker exec $@ ln -s /srv/repo/update/leap/$(LEAP)/oss /srv/repo/update/$(LEAP)
 	docker exec $@ zypper ar file:///srv/repo/distribution/leap/$(LEAP)/repo/oss oss-repo
 	docker exec $@ zypper --no-remote install -y python
-	docker commit -c 'CMD $($@_CMD)' $@ localhost:5000/$@-repo:$(LEAP)
+	docker commit -c 'CMD $($@_CMD)' -c 'EXPOSE $($@_PORT)' $@ localhost:5000/opensuse-repo:$(LEAP)
 	docker rm --force $@
 
-testsuse:
-	- docker-compose -p $@ down
-	docker-compose -p $@ -f opensuse-compose.yml up -d
-	docker exec $@_host_1 zypper install -r oss -y firefox
-	docker-compose -p $@ -f opensuse-compose.yml down
+opensusetest:
+	cat opensuse-compose.yml | sed \
+	   -e 's|opensuse-repo:.*"|opensuse/repo:$(LEAP)"|' \
+	   -e 's|opensuse:.*"|$(OPENSUSE):$(LEAP)"|' \
+	   > opensuse-compose.yml.tmp
+	- docker-compose -p $@ -f opensuse-compose.yml.tmp down
+	docker-compose -p $@ -f opensuse-compose.yml.tmp up -d
+	docker exec $@_host_1 zypper install -y firefox
+	docker-compose -p $@ -f opensuse-compose.yml.tmp down
 
-testsus:
-	- docker-compose -p $@e down
-	docker-compose -p $@e -f opensuse-compose.yml up -d

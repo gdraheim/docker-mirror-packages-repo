@@ -8,20 +8,20 @@ services:
      hostname: "opensuse_repo"
      networks:
        repo42:
-          ipv4_address: "172.42.0.2"
+          ipv4_address: "10.42.0.2"
   host:
      image: "opensuse:42.2"
      command: "sleep 1000"
      hostname: "opensuse_host"
      extra_hosts:
-       - "download.opensuse.org:172.42.0.2"
+       - "download.opensuse.org:10.42.0.2"
      networks:
        repo42:
-          ipv4_address: "172.42.0.3"
+          ipv4_address: "10.42.0.3"
 
 networks:
   repo42:
     driver: bridge
     ipam:
       config:
-        - subnet: "172.42.0.0/16"
+        - subnet: "10.42.0.0/16"
