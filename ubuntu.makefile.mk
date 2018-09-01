@@ -6,7 +6,6 @@ UBUNTUDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-p
 UBUNTU_OS=ubuntu
 UBUNTU=16.04
 RSYNC_UBUNTU=rsync://ftp5.gwdg.de/pub/linux/debian/ubuntu
-# RSYNC_UBUNTU=rsync://ftp5.gwdg.de/ubuntu
 
 UBUNTU18.10 = cosmic
 UBUNTU18.04 = bionic
