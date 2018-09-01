@@ -1,8 +1,12 @@
-# docker centeos-repo mirror
+# docker pkg repo mirror
 
-This docker image can be startet as a container
+These docker image scan be started as a container
 and it can serve as a replacment for the standard
-http://mirrorlist.centos.org
+package repo of the operationg system.
+
+## CENTOS
+
+Mimics the default http://mirrorlist.centos.org
 
 When there is a mirror-query then it will answer
 with an URL pointing back to the docker container.
@@ -16,21 +20,39 @@ In that way it can serve as an endpoint for another
 container requiring yum packages from the central
 operation system install repositories.
 
-## building the image
+### building the centos-repo image
 
-There are two ways (1) do sync to local disk and then
-build an image as a copy or (2) do start a container
-and use wget-mirror to build the copy.
+I did have bad experiences with a direct download to
+package container, so now there is Makefile that does
+(1) do rsync to local disk and then (2) build an image 
+as a copy of the disk data
 
-     # Variant 1
      make sync
-     make build
-     make check
+     make centosrepo
+     make centostest
 
-     # Variant 2
-     make 7.3
-     make check
+## OPENSUSE
 
+Mimics the default http://download.opensuse.org
+
+All the default zypper targets use that URL. The
+package indexes are served at the same path 
+locations.
+
+In that way it can serve as an endpoint for another
+container requiring zypper packages from the central
+operation system install repositories.
+
+### building the opensuse-repo image
+
+I did have bad experiences with a direct download to
+package container, so now there is Makefile that does
+(1) do rsync to local disk and then (2) build an image 
+as a copy of the disk data
+
+     make rsync
+     make opensuserepo
+     make opensusetest
 
 # Tipps and Tricks
 
