@@ -1,6 +1,8 @@
 #! /usr/bin/make -f
 
-CENTOSDATADIRS= $(REPODATADIR) /srv/docker-pkg-repo-mirror /data/docker-pkg-repo-mirror /data/docker-centos-repo-mirror
+IMAGESREPO ?= localhost:5000/mirror-packages
+
+CENTOSDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror
 
 CENTOS = 7.5.1804
 # CENTOS = 7.4.1708
@@ -78,16 +80,17 @@ centosrepo:
 	docker cp centos.$(CENTOS)/os $@:/srv/repo/7/
 	docker cp centos.$(CENTOS)/extras $@:/srv/repo/7/
 	docker cp centos.$(CENTOS)/updates $@:/srv/repo/7/
-	docker commit -c 'CMD $($@_CMD)' -c 'EXPOSE $($@_PORT)' $@ localhost:5000/centos-repo:$(CENTOS)
+	docker commit -c 'CMD $($@_CMD)' -c 'EXPOSE $($@_PORT)' $@ $(IMAGESREPO)/centos-repo:$(CENTOS)
 	docker rm --force $@
 	$(MAKE) centos-restore
 
 centostags: centos-repo
 centos-repo:
 	ver2=`echo $(CENTOS) | sed -e "s|^\\([01234567890][01234567890]*[.][01234567890]*\\).*|\\1|" \
-	; docker tag localhost:5000/$@:$(CENTOS) localhost:5000/$@:$$ver2
+	; docker tag $(IMAGESREPO)/$@:$(CENTOS) $(IMAGESREPO)/$@:$$ver2
 	ver1=`echo $(CENTOS) | sed -e "s|^\\([01234567890][01234567890]*\\).*|\\1|" \
-	; docker tag localhost:5000/$@:$(CENTOS) localhost:5000/$@:$$ver1
+	;  docker tag $(IMAGESREPO)/$@:$(CENTOS) $(IMAGESREPO)/$@$$ver1:$(CENTOS) \
+	&& docker tag $(IMAGESREPO)/$@:$(CENTOS) $(IMAGESREPO)/$@$$ver1:latest
 
 centos-cleaner:
 	test ! -d centos.$(CENTOS)/updates/x86_64/drpms \

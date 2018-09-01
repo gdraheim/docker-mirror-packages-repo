@@ -1,9 +1,11 @@
 #! /usr/bin/make -f
 
-OPENSUSEDATADIRS= $(REPODATADIR) /srv/docker-pkg-repo-mirror /data/docker-pkg-repo-mirror /data/docker-centos-repo-mirror
+IMAGESREPO ?= localhost:5000/mirror-packages
+
+OPENSUSEDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror
 OPENSUSE=opensuse/leap
 LEAP=15.0
-SUSE=rsync://suse.uni-leipzig.de/opensuse-full/opensuse
+RSYNC_SUSE=rsync://suse.uni-leipzig.de/opensuse-full/opensuse
 
 opensuse:
 	$(MAKE) opensusesync
@@ -27,26 +29,26 @@ opensusedir:
 	ls -ld opensuse.$(LEAP)
 opensusesync1:
 	mkdir -p opensuse.$(LEAP)/distribution/leap/$(LEAP)/repo 
-	rsync -rv         $(SUSE)/distribution/leap/$(LEAP)/repo/oss \
+	rsync -rv   $(RSYNC_SUSE)/distribution/leap/$(LEAP)/repo/oss \
 	         opensuse.$(LEAP)/distribution/leap/$(LEAP)/repo/ \
 	   --filter="exclude boot" --filter="exclude EFI" \
 	   --size-only --filter="exclude *.src.rpm"
 opensusesync2:
 	mkdir -p opensuse.$(LEAP)/distribution/leap/$(LEAP)/repo 
-	rsync -rv         $(SUSE)/distribution/leap/$(LEAP)/repo/non-oss \
+	rsync -rv   $(RSYNC_SUSE)/distribution/leap/$(LEAP)/repo/non-oss \
 	         opensuse.$(LEAP)/distribution/leap/$(LEAP)/repo/ \
 	   --filter="exclude boot" --filter="exclude noarch" \
 	   --filter="exclude x86_64" --filter="exclude EFI" \
 	   --size-only --filter="exclude *.src.rpm"
 opensusesync3:
 	mkdir -p opensuse.$(LEAP)/update/leap/$(LEAP)/ 
-	rsync -rv         $(SUSE)/update/leap/$(LEAP)/oss \
+	rsync -rv   $(RSYNC_SUSE)/update/leap/$(LEAP)/oss \
 	         opensuse.$(LEAP)/update/leap/$(LEAP) \
 	   --filter="exclude boot" --filter="exclude *.drpm" \
 	   --size-only --filter="exclude *.src.rpm"
 opensusesync4:
 	mkdir -p opensuse.$(LEAP)/update/leap/$(LEAP) 
-	rsync -rv         $(SUSE)/update/leap/$(LEAP)/non-oss \
+	rsync -rv   $(RSYNC_SUSE)/update/leap/$(LEAP)/non-oss \
 	         opensuse.$(LEAP)/update/leap/$(LEAP)/ \
 	   --filter="exclude boot" --filter="exclude noarch" --filter="exclude x86_64" \
 	   --filter="exclude EFI" --filter="exclude src" --filter="exclude nosrc" \
@@ -70,7 +72,7 @@ opensuserepo:
 	docker exec $@ ln -s /srv/repo/update/leap/$(LEAP)/oss /srv/repo/update/$(LEAP)
 	docker exec $@ zypper ar file:///srv/repo/distribution/leap/$(LEAP)/repo/oss oss-repo
 	docker exec $@ zypper --no-remote install -y python
-	docker commit -c 'CMD $($@_CMD)' -c 'EXPOSE $($@_PORT)' $@ localhost:5000/opensuse-repo:$(LEAP)
+	docker commit -c 'CMD $($@_CMD)' -c 'EXPOSE $($@_PORT)' $@ $(IMAGESREPO)/opensuse-repo:$(LEAP)
 	docker rm --force $@
 
 opensusetest:

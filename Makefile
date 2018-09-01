@@ -2,6 +2,7 @@
 
 include centos.makefile.mk
 include opensuse.makefile.mk
+include ubuntu.makefile.mk
 
 centos.7.5 centos.7.5.1804:
 	$(MAKE) centosdir CENTOS=7.5.1804
