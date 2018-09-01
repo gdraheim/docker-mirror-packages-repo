@@ -1,0 +1,27 @@
+version: "2"
+
+services:
+  repo:
+     image: "localhost:5000/pkg/ubuntu-repo:16.04"
+     expose: 
+      - "80"
+     hostname: "ubunut_repo"
+     networks:
+       repo42:
+          ipv4_address: "10.216.0.2"
+  host:
+     image: "ubuntu:16.04"
+     command: "sleep 1000"
+     hostname: "ubuntu_host"
+     extra_hosts:
+       - "archive.ubuntu.com:10.216.0.2"
+     networks:
+       repo42:
+          ipv4_address: "10.216.0.3"
+
+networks:
+  repo42:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "10.216.0.0/16"
