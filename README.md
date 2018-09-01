@@ -54,7 +54,7 @@ as a copy of the disk data
      make opensuserepo
      make opensusetest
 
-# Tipps and Tricks
+## Tipps and Tricks
 
 Probably you will not be able to build the images.
 

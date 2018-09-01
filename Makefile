@@ -33,8 +33,8 @@ default: all
 all:
 	$(MAKE) sync
 	$(MAKE) centosrepo
+	$(MAKE) centostest
 	$(MAKE) centoscheck
-	$(MAKE) centosworks
 	$(MAKE) centosversion
 
 CENTOS_MIRROR=rsync://rsync.hrz.tu-chemnitz.de/ftp/pub/linux/centos
@@ -94,7 +94,7 @@ centos-restore:
 	 || mv -v centos-$(CENTOS)/extras.x86_64.drpms \
 	          centos-$(CENTOS)/extras/x86_64/drpms 
 
-centosworks:
+centostest:
 	sed -e "s|centos:centos7|centos:$(CENTOS)|" -e "s|centos-repo:7|centos-repo:$(CENTOS)|" \
 	  centos-compose.yml > centos-compose.tmp
 	- docker-compose -p $@ -f centos-compose.tmp down
