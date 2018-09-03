@@ -20,7 +20,10 @@ Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
 class MyHandler(Handler):
   def do_GET(self):
     # nothing special to be done for just files
-    print "CHECK", self.path
+    if os.path.exists("./"+self.path):
+        print "OK", self.path
+    else:
+        print "NO", self.path
     return Handler.do_GET(self)
 
 httpd = SocketServer.TCPServer(("", opt.port), MyHandler)
