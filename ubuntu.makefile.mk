@@ -20,6 +20,7 @@ ubuntu:
 	$(MAKE) ubuntusync
 	$(MAKE) ubunturepo
 	$(MAKE) ubuntutest
+	$(MAKE) ubuntutags
 
 ubuntusync:
 	$(MAKE) ubuntudir
@@ -68,22 +69,26 @@ ubuntu-sync.base:
 	rsync -v $(RSYNC_UBUNTU)/dists/$(dist) \
 	        ubuntu.$(UBUNTU)/dists/$(dist) \
 	             --ignore-times --files-from=$(UBUNTU_TMP)/Release.$(dist).base.tmp
-ubuntu-sync-main.1:       ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU)) main=main
-ubuntu-sync-restricted.1: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU)) main=restricted skip=$(SKIP)
-ubuntu-sync-universe.1:   ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU)) main=universe skip=$(SKIP)
-ubuntu-sync-multiverse.1: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU)) main=multiverse skip=true
-ubuntu-sync-main.2:       ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-updates main=main
-ubuntu-sync-restricted.2: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-updates main=restricted skip=$(SKIP)
-ubuntu-sync-universe.2:   ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-updates main=universe skip=$(SKIP)
-ubuntu-sync-multiverse.2: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-updates main=multiverse skip=true
-ubuntu-sync-main.3:       ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-backports main=main
-ubuntu-sync-restricted.3: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-backports main=restricted  skip=$(SKIP)
-ubuntu-sync-universe.3:   ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-backports main=universe skip=$(SKIP)
-ubuntu-sync-multiverse.3: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-backports main=multiverse skip=true
-ubuntu-sync-main.4:       ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-security main=main
-ubuntu-sync-restricted.4: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-security main=restricted  skip=$(SKIP)
-ubuntu-sync-universe.4:   ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-security main=universe skip=$(SKIP)
-ubuntu-sync-multiverse.4: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-security main=multiverse skip=true
+ubuntu-sync-main.1:       ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU)) main=main when=$(filter updates restricted universe multiverse,$(REPOS))
+ubuntu-sync-restricted.1: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU)) main=restricted when=$(filter restricted universe multiverse,$(REPOS))
+ubuntu-sync-universe.1:   ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU)) main=universe when=$(filter universe multiverse,$(REPOS))
+ubuntu-sync-multiverse.1: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU)) main=multiverse when=$(filter multiverse,$(REPOS))
+ubuntu-sync-main.2:       ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-updates main=main when=$(filter updates restricted universe multiverse,$(REPOS))
+ubuntu-sync-restricted.2: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-updates main=restricted when=$(filter restricted universe multiverse,$(REPOS))
+ubuntu-sync-universe.2:   ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-updates main=universe when=$(filter universe multiverse,$(REPOS))
+ubuntu-sync-multiverse.2: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-updates main=multiverse when=$(filter multiverse,$(REPOS))
+ubuntu-sync-main.3:       ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-backports main=main when=$(filter updates restricted universe multiverse,$(REPOS))
+ubuntu-sync-restricted.3: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-backports main=restricted when=$(filter restricted universe multiverse,$(REPOS))
+ubuntu-sync-universe.3:   ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-backports main=universe when=$(filter universe multiverse,$(REPOS))
+ubuntu-sync-multiverse.3: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-backports main=multiverse when=$(filter multiverse,$(REPOS))
+ubuntu-sync-main.4:       ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-security main=main  when=$(filter updates restricted universe multiverse,$(REPOS))
+ubuntu-sync-restricted.4: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-security main=restricted when=$(filter restricted universe multiverse,$(REPOS))
+ubuntu-sync-universe.4:   ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-security main=universe when=$(filter universe multiverse,$(REPOS))
+ubuntu-sync-multiverse.4: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-security main=multiverse when=$(filter multiverse,$(REPOS))
+
+downloads=universe
+check:
+	echo : $(filter update universe, $(downloads))
 
 ubuntu-sync.main:
 	test  -d ubuntu.$(UBUNTU)/dists/$(dist)/$(main) || \
@@ -99,7 +104,7 @@ ubuntu-sync.main:
 	     ubuntu.$(UBUNTU)/dists/$(dist)/$(main)/binary-i386/Packages.gz \
 	| sed -e '/^Filename:/!d' -e 's|Filename: *pool/||' \
 	                          > $(UBUNTU_TMP)/Packages.$(dist).$(main).tmp
-	test -n "$(skip)" || \
+	test -z "$(when)" || \
 	rsync -rv $(RSYNC_UBUNTU)/pool \
 	         ubuntu.$(UBUNTU)/pool \
 	   --size-only --files-from=$(UBUNTU_TMP)/Packages.$(dist).$(main).tmp
@@ -118,6 +123,16 @@ ubunturepo:
 	docker exec $@ apt-get install -y python
 	docker commit -c 'CMD $($@_CMD)' -c 'EXPOSE $($@_PORT)' $@ $(IMAGESREPO)/ubuntu-repo:$(UBUNTU)
 	docker rm --force $@
+	test -z "$(REPOS)" || $(MAKE) ubuntutags UBUNTU=$(UBUNTU) REPOS=$(REPOS)
+ubuntutags:
+	test -z "$(filter updates restricted universe multiverse,$(REPOS))" || \
+	docker tag $(IMAGESREPO)/ubuntu-repo:$(UBUNTU) $(IMAGESREPO)/ubuntu-repo/updates:$(UBUNTU)
+	: test -z "$(filter restricted universe restricted,$(REPOS))" || \
+	: docker tag $(IMAGESREPO)/ubuntu-repo:$(UBUNTU) $(IMAGESREPO)/ubuntu-repo/restricted:$(UBUNTU)
+	test -z "$(filter universe universe,$(REPOS))" || \
+	docker tag $(IMAGESREPO)/ubuntu-repo:$(UBUNTU) $(IMAGESREPO)/ubuntu-repo/universe:$(UBUNTU)
+	test -z "$(filter multiverse,$(REPOS))" || \
+	docker tag $(IMAGESREPO)/ubuntu-repo:$(UBUNTU) $(IMAGESREPO)/ubuntu-repo/multiverse:$(UBUNTU)
 
 ubuntutest:
 	cat ubuntu-compose.yml | sed \
