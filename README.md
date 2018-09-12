@@ -6,16 +6,16 @@ packages repo of the operating system.
 
 Tested repos are
 
- * localhost:5000/mirror-packages/centos-repo:7.3.1611 _(17.3GB)_
- * localhost:5000/mirror-packages/centos-repo:7.4.1708 _(13.2GB)_
- * localhost:5000/mirror-packages/centos-repo:7.5.1804 _(14.7GB)_
- * localhost:5000/mirror-packages/opensuse-repo:15.0   _(48.9GB)_
- * localhost:5000/mirror-packages/opensuse-repo:42.3   _(38.6GB)_
- * localhost:5000/mirror-packages/ubuntu-repo:16.04    _(74.7GB)_
- * localhost:5000/mirror-packages/ubuntu-repo:18.04    _(19.5GB)_
- * localhost:5000/mirror-packages/ubuntu-repo/universe:16.04 _(186GB)_
- * localhost:5000/mirror-packages/ubuntu-repo/updates:16.04 _(74.7GB)_
- * localhost:5000/mirror-packages/ubuntu-repo/updates:18.04 _(19.5GB)_
+ * localhost:5000/mirror-packages/**centos-repo:7.3.1611** _(17.3GB)_
+ * localhost:5000/mirror-packages/**centos-repo:7.4.1708** _(13.2GB)_
+ * localhost:5000/mirror-packages/**centos-repo:7.5.1804** _(14.7GB)_
+ * localhost:5000/mirror-packages/**opensuse-repo:15.0**   _(48.9GB)_
+ * localhost:5000/mirror-packages/**opensuse-repo:42.3**   _(38.6GB)_
+ * localhost:5000/mirror-packages/**ubuntu-repo:16.04**    _(74.7GB)_
+ * localhost:5000/mirror-packages/**ubuntu-repo:18.04**    _(19.5GB)_
+ * localhost:5000/mirror-packages/**ubuntu-repo/universe:16.04** _(186GB)_
+ * localhost:5000/mirror-packages/**ubuntu-repo/updates:16.04** _(74.7GB)_
+ * localhost:5000/mirror-packages/**ubuntu-repo/updates:18.04** _(19.5GB)_
 
 Since the internet package repos contain updates for the last
 distribution release, so they do grow in size over time. As such 
