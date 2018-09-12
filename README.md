@@ -1,8 +1,25 @@
 # docker mirror packages repo
 
 These docker images can be started as a container
-and it can serve as a replacment for the standard
+and it can serve as a replacement for the standard
 packages repo of the operating system.
+
+Tested repos are
+
+ * localhost:5000/mirror-packages/centos-repo:7.3.1611 (17.3GB)
+ * localhost:5000/mirror-packages/centos-repo:7.4.1708 (13.2GB)
+ * localhost:5000/mirror-packages/centos-repo:7.5.1804 (14.7GB)
+ * localhost:5000/mirror-packages/opensuse-repo:15.0   (48.9GB)
+ * localhost:5000/mirror-packages/opensuse-repo:42.3   (38.6GB)
+ * localhost:5000/mirror-packages/ubuntu-repo:16.04    (74.7GB)
+ * localhost:5000/mirror-packages/ubuntu-repo:18.04    (19.5GB)
+ * localhost:5000/mirror-packages/ubuntu-repo/universe:16.04 (186GB)
+ * localhost:5000/mirror-packages/ubuntu-repo/updates:16.04 (74.7GB)
+ * localhost:5000/mirror-packages/ubuntu-repo/updates:18.04 (19.5GB)
+
+Since the internet package repos contain updates for the last
+distribution release, so they do grow in size over time. As such 
+the image sizes (as shown above) may differ after each sync.
 
 ## CENTOS
 
