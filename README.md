@@ -17,9 +17,9 @@ Tested repos are
  * localhost:5000/mirror-packages/**ubuntu-repo/updates:16.04** _(74.7GB)_
  * localhost:5000/mirror-packages/**ubuntu-repo/updates:18.04** _(19.5GB)_
 
-Since the internet package repos contain updates for the last
-distribution release, so they do grow in size over time. As such 
-the image sizes (as shown above) may differ after each sync.
+Remember that the internet package repos contain updates for the last
+distribution release, so they do grow in size over time. As such the
+image sizes (as shown above) may differ after each sync.
 
 ## CENTOS
 
