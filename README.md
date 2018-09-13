@@ -37,22 +37,11 @@ In that way it can serve as an endpoint for another
 container requiring yum packages from the central
 operation system install repositories.
 
-### building the centos-repo image
+### centos-repo mirror image
 
-I did have bad experiences with a direct download to
-package container, so now there is Makefile that does
-(1) do rsync to local disk and then (2) build an image 
-as a copy of the disk data
+To rebuild check the [centos-repo mirror info](./centos-repo-mirror.info.md)
 
-     make centossync
-     make centosrepo
-     make centostest
-
-## different versions for the opensuse-repo
-
-The toplevel Makfile contains some targets to download
-older (or more recent) versions. That would combine
-the steps above.
+Currently tested are
 
      make centos-7.5   # really centos-7.5.1804
      make centos-7.4   # really centos-7.4.1708
@@ -70,22 +59,11 @@ In that way it can serve as an endpoint for another
 container requiring zypper packages from the central
 operation system install repositories.
 
-### building the opensuse-repo image
+### opensuse-repo mirror image
 
-I did have bad experiences with a direct download to
-package container, so now there is Makefile that does
-(1) do rsync to local disk and then (2) build an image 
-as a copy of the disk data
+To rebuild check the [opensuse-repo mirror info](./opensuse-repo-mirror.info.md)
 
-     make opensusesync
-     make opensuserepo
-     make opensusetest
-
-## different versions for the opensuse-repo
-
-The toplevel Makfile contains some targets to download
-older (or more recent) versions. That would combine
-the steps above.
+Currently tested are
 
      make opensuse-15.0
      make opensuse-42.3
@@ -108,22 +86,11 @@ packages index. In that way it can serve as an endpoint
 for another container requiring apt-get packages from 
 the central operation system install repositories.
 
-### building the ubuntu-repo image
+### ubuntu-repo mirror image
 
-I did have bad experiences with a direct download to
-package container, so now there is Makefile that does
-(1) do rsync to local disk and then (2) build an image 
-as a copy of the disk data
+To rebuild check the [ubuntu-repo mirror info](./ubuntu-repo-mirror.info.md)
 
-     make ubuntusync
-     make ubunturepo
-     make ubuntutest
-
-## different versions for the ubuntu-repo
-
-The toplevel Makfile contains some targets to download
-older (or more recent) versions. That would combine
-the steps above.
+Currently tested are
 
      make ubuntu-18.10
      make ubuntu-16.04
