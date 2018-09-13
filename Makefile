@@ -1,8 +1,8 @@
 #! /usr/bin/make -f
 
-include centos.makefile.mk
-include opensuse.makefile.mk
-include ubuntu.makefile.mk
+include centos-makefile.mk
+include opensuse-makefile.mk
+include ubuntu-makefile.mk
 
 centos.7.5 centos.7.5.1804: ; $(MAKE) centosdir CENTOS=7.5.1804
 centos.7.4 centos.7.4.1708: ; $(MAKE) centosdir CENTOS=7.4.1708
