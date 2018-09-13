@@ -124,19 +124,28 @@ Currently tested are
      make ubuntu-18.10
      make ubuntu-16.04
 
-## Tipps and Tricks
+## IMPLEMENTATION
 
-Probably you will not be able to build the images.
+Every package repo has a different way to store data in its
+file tree. In general it is not a good idea to just rsync
+all of it. Sure you can but...
 
-That's because docker has a so called "baseimage"
-that is the source of all "image" snapshots. No
-image can be bigger than the baseimage. And the
-baseimage has a default size of 10GB.
+...for example Ubuntu uses one host for all distro versions.
+All `*.deb` packages for all versions are stored in a single
+`$host:/pool/` subdirectory. The deb packages for a single
+version are listed in a `$host:/dists/$version/Packages.gz` 
+file. The distro version is not given by number (16.04) but 
+by code name (xenial).
 
-Edit /etc/sysconfig/docker and increase that like
+The makefiles in this project know about that - so the rsync
+will first download the `Packages.gz` files, in order to
+unpack/filter them into a list of `/pool/x/y/*.deb` paths
+in a temporary file. Then `rsync --files-from=pool-files.tmp` 
+will do the rest.
 
-    DOCKER_OPTS="--storage-opt dm.basesize=30G"
+When the rsync is complete, only a little web service script
+is added on top of building the image. So when the image is
+started as a container, it does accept requests on 80/http
+serving the rsync'ed files back.
 
-Theoretically one can just do "service docker restart"
-but in reality some versions needed the old baseimage
-to be removed from disk so that it is allocated again.
+For tips and tricks please see [PROBLEMS FAQ](./PROBLEMS.md).
