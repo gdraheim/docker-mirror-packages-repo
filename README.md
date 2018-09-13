@@ -45,21 +45,35 @@ where the result image was dropped right away after testing it.
 
 Mimics the default URL of http://mirrorlist.centos.org
 
-When there is a mirror-query then it will answer
-with an URL pointing back to the docker container.
+The default package repositories in CentOS look like this:
 
-    ORIG: http://mirrorlist.centos.org/?release=7&repo=os&arch=x86_64
-    HERE: http://172.22.0.2/?release=7&repo=os&arch=x86_64
+    # /etc/yum.repos.d/CentOS-Base.repo
+    [base]
+    name=CentOS-$releasever - Base
+    mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os
+    #baseurl=http://mirror.centos.org/centos/$releasever/os/$basearch/
+
+So instead of pointing directly to the storage host "mirror.centos.org" 
+there is a reference to a web service on "mirrorlist.centos.org" that 
+will return a list of very different storage host options.
+
+The provided "centos-repo" image is able to answer mirrorlist requests
+on its port 80/http. It will simply return a single URL pointing back
+to itself. A storage path is attached to serve as the download baseurl.
+
+Example: with --add-host "mirrorlist.centos.org:172.22.0.2"
+
+    REQUEST: http://mirrorlist.centos.org/?release=7&repo=os&arch=x86_64
+    REALLLY: http://172.22.0.2/?release=7&repo=os&arch=x86_64
     Answered Mirrorlist:
        http://172.22.0.2/7/os/x86_64
 
-In that way it can serve as an endpoint for another
-container requiring yum packages from the central
-operation system install repositories.
+The provided "centos-repo" image will furthermore answer download requests
+for yum packages on 80/http - simply the url path is mapped to a local path
+in the container and a sendfile will return the content. These are mostly 
+`*.rpm` packages as well as some package index files.
 
-### centos-repo mirror image
-
-To rebuild check the [centos-repo mirror info](./centos-repo-mirror.info.md)
+For more information check the [centos-repo mirror info](./centos-repo-mirror.info.md)
 
 Currently tested are
 
@@ -67,21 +81,21 @@ Currently tested are
      make centos-7.4   # really centos-7.4.1708
      make centos-7.3   # really centos-7.3.1611
 
-## OPENSUSE
+## OPENSUSE REPO
 
 Mimics the default URL of http://download.opensuse.org
 
-All the default zypper targets use that URL. The
-package indexes are served at the same path 
-locations.
+Unlike for centos there is no mirrorlist involved here. All the default 
+zypper targets use that single URL. The package indexes are served at 
+the same path locations.
 
-In that way it can serve as an endpoint for another
-container requiring zypper packages from the central
-operation system install repositories.
+The provided "opensuse-repo" will answer download requests 
+for zypper packages on on 80/http - simply the url path is 
+mapped to a local path in the container and a sendfile will 
+return the content. These are mostly `*.rpm` packages as well
+as some package index files.
 
-### opensuse-repo mirror image
-
-To rebuild check the [opensuse-repo mirror info](./opensuse-repo-mirror.info.md)
+For mor information check the [opensuse-repo mirror info](./opensuse-repo-mirror.info.md)
 
 Currently tested are
 
@@ -89,26 +103,21 @@ Currently tested are
      make opensuse-42.3
      make opensuse-42.2
 
-## UBUNTU
+## UBUNTU REPO
 
 Mimics the default URL of http://archive.ubuntu.com
 
 Most of the default apt-get targets use that URL. The
-only exception is http://security.ubuntu.com but 
-those updates are skipped here. Ubuntu stores the
-package indexes by code name of the distro (so that
-16.04 is in dists/xenial) while the deb packages of 
-all distros are stored in /pool.
+only exception is http://security.ubuntu.com for getting
+update packages.
 
-The mirror copies both the correct dists/ area and
-the portions from /pool that are referenced in the
-packages index. In that way it can serve as an endpoint 
-for another container requiring apt-get packages from 
-the central operation system install repositories.
+The provided "ubuntu-repo" will answer download requests 
+for ubuntu packages on on 80/http - simply the url path 
+is mapped to a local path in the container and a sendfile 
+will return the content. These are mostly `*.deb` packages 
+as well as some package index files.
 
-### ubuntu-repo mirror image
-
-To rebuild check the [ubuntu-repo mirror info](./ubuntu-repo-mirror.info.md)
+For more information check the [ubuntu-repo mirror info](./ubuntu-repo-mirror.info.md)
 
 Currently tested are
 
