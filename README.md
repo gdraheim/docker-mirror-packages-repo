@@ -21,9 +21,29 @@ Remember that the internet package repos contain updates for the last
 distribution release, so they do grow in size over time. As such the
 image sizes (as shown above) may differ after each sync.
 
-## CENTOS
+## BACKGROUND
 
-Mimics the default http://mirrorlist.centos.org
+Consider that you have a Dockerfile with
+
+    FROM centos:7.5.1804
+    RUN yum install -y httpd httpd-tools
+
+This will reach out to the internet downloading 20+ rpm packages.
+
+It would be better to have a local mirror of the default yum 
+repositories for centos. When using a docker environment you 
+can reassign the systems' package repo URL to a local container 
+that can answer the yum download requests.
+
+That mode is not only faster but you can also commit the yum repo
+mirror in your binary repository. New updates on the external 
+internet yum repository will not suddenly change rebuild results. 
+This has been extensively used in testing docker-related tools 
+where the result image was dropped right away after testing it.
+
+## CENTOS REPO
+
+Mimics the default URL of http://mirrorlist.centos.org
 
 When there is a mirror-query then it will answer
 with an URL pointing back to the docker container.
@@ -49,7 +69,7 @@ Currently tested are
 
 ## OPENSUSE
 
-Mimics the default http://download.opensuse.org
+Mimics the default URL of http://download.opensuse.org
 
 All the default zypper targets use that URL. The
 package indexes are served at the same path 
@@ -71,7 +91,7 @@ Currently tested are
 
 ## UBUNTU
 
-Mimics the default http://archive.ubuntu.com
+Mimics the default URL of http://archive.ubuntu.com
 
 Most of the default apt-get targets use that URL. The
 only exception is http://security.ubuntu.com but 
