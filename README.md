@@ -41,7 +41,7 @@ internet yum repository will not suddenly change rebuild results.
 This has been extensively used in testing docker-related tools 
 where the result image was dropped right away after testing it.
 
-## CENTOS REPO
+## CENTOS
 
 Mimics the default URL of http://mirrorlist.centos.org
 
@@ -81,7 +81,7 @@ Currently tested are
      make centos-7.4   # really centos-7.4.1708
      make centos-7.3   # really centos-7.3.1611
 
-## OPENSUSE REPO
+## OPENSUSE
 
 Mimics the default URL of http://download.opensuse.org
 
@@ -103,7 +103,7 @@ Currently tested are
      make opensuse-42.3
      make opensuse-42.2
 
-## UBUNTU REPO
+## UBUNTU
 
 Mimics the default URL of http://archive.ubuntu.com
 
