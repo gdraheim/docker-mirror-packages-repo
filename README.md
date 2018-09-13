@@ -89,7 +89,7 @@ Unlike for centos there is no mirrorlist involved here. All the default
 zypper targets use that single URL. The package indexes are served at 
 the same path locations.
 
-The provided "opensuse-repo" will answer download requests 
+The provided "opensuse-repo" image will answer download requests 
 for zypper packages on on 80/http - simply the url path is 
 mapped to a local path in the container and a sendfile will 
 return the content. These are mostly `*.rpm` packages as well
@@ -111,7 +111,7 @@ Most of the default apt-get targets use that URL. The
 only exception is http://security.ubuntu.com for getting
 update packages.
 
-The provided "ubuntu-repo" will answer download requests 
+The provided "ubuntu-repo" image will answer download requests 
 for ubuntu packages on on 80/http - simply the url path 
 is mapped to a local path in the container and a sendfile 
 will return the content. These are mostly `*.deb` packages 
