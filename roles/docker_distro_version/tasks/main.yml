@@ -49,3 +49,19 @@
   set_fact:
     distro_version: "{{ centos_release }}"
   when: 'os_release.ID == "centos"'
+- name: gather_facts centos
+  set_fact:
+    distro_os_family: "RedHat"
+    distro_pkg_mgr: "/usr/bin/yum"
+  when: "distro_vendor == 'centos'"
+- name: gather_facts opensuse
+  set_fact:
+    distro_os_family: "Suse"
+    distro_pkg_mgr: "/usr/bin/zypper"
+  when: "distro_vendor == 'opensuse'"
+- name: gather_facts ubuntu
+  set_fact:
+    distro_os_family: "Debian"
+    distro_pkg_mgr: "/usr/bin/apt-get"
+  when: "distro_vendor == 'ubuntu'"
+  
