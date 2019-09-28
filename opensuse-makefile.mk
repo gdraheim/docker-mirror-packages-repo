@@ -14,7 +14,7 @@ opensuse:
 
 opensusesync:
 	$(MAKE) opensusedir
-	$(MAKE) opensesync1 opensusesync2 opensusesync3 opensusesync4
+	$(MAKE) opensusesync1 opensusesync2 opensusesync3 opensusesync4
 opensusedir:
 	@ test ! -d opensuse.$(LEAP) || rmdir -v opensuse.$(LEAP) || rm -v opensuse.$(LEAP)
 	@ for data in $(OPENSUSEDATADIRS); do : \

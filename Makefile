@@ -11,13 +11,17 @@ centos-7.5 centos-7.5.1804: ; $(MAKE) centos CENTOS=7.5.1804
 centos-7.4 centos-7.4.1708: ; $(MAKE) centos CENTOS=7.4.1708
 centos-7.3 centos-7.3.1611: ; $(MAKE) centos CENTOS=7.3.1611
 
+opensuse.15.1: ; $(MAKE) opensusedir LEAP=15.1
 opensuse.15.0: ; $(MAKE) opensusedir LEAP=15.0
 opensuse.42.3: ; $(MAKE) opensusedir LEAP=42.3
 opensuse.42.2: ; $(MAKE) opensusedir LEAP=42.2
-opensusesync.15.0: ; $(MAKE) opensuserepo LEAP=15.0
-opensusesync.42.3: ; $(MAKE) opensuserepo LEAP=42.3
+opensusesync.15.1: ; $(MAKE) opensusesync LEAP=15.1
+opensusesync.15.0: ; $(MAKE) opensusesync LEAP=15.0
+opensusesync.42.3: ; $(MAKE) opensusesync LEAP=42.3
+opensuserepo.15.1: ; $(MAKE) opensuserepo LEAP=15.1 OPENSUSE=opensuse/leap
 opensuserepo.15.0: ; $(MAKE) opensuserepo LEAP=15.0 OPENSUSE=opensuse/leap
 opensuserepo.42.3: ; $(MAKE) opensuserepo LEAP=42.3 OPENSUSE=opensuse
+opensuse-15.1: ; $(MAKE) opensuse LEAP=15.1 OPENSUSE=opensuse/leap
 opensuse-15.0: ; $(MAKE) opensuse LEAP=15.0 OPENSUSE=opensuse/leap
 opensuse-42.3: ; $(MAKE) opensuse LEAP=42.3 OPENSUSE=opensuse
 opensuse-42.2: ; $(MAKE) opensuse LEAP=42.2 OPENSUSE=opensuse
