@@ -4,9 +4,11 @@ include centos-makefile.mk
 include opensuse-makefile.mk
 include ubuntu-makefile.mk
 
+centos.7.6 centos.7.6.1810: ; $(MAKE) centosdir CENTOS=7.6.1810
 centos.7.5 centos.7.5.1804: ; $(MAKE) centosdir CENTOS=7.5.1804
 centos.7.4 centos.7.4.1708: ; $(MAKE) centosdir CENTOS=7.4.1708
 centos.7.3 centos.7.3.1611: ; $(MAKE) centosdir CENTOS=7.3.1611
+centos-7.6 centos-7.6.1810: ; $(MAKE) centos CENTOS=7.6.1810
 centos-7.5 centos-7.5.1804: ; $(MAKE) centos CENTOS=7.5.1804
 centos-7.4 centos-7.4.1708: ; $(MAKE) centos CENTOS=7.4.1708
 centos-7.3 centos-7.3.1611: ; $(MAKE) centos CENTOS=7.3.1611
