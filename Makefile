@@ -4,6 +4,7 @@ include centos-makefile.mk
 include opensuse-makefile.mk
 include ubuntu-makefile.mk
 
+centos.7.7 centos.7.7.1908: ; $(MAKE) centosdir CENTOS=7.7.1908
 centos.7.6 centos.7.6.1810: ; $(MAKE) centosdir CENTOS=7.6.1810
 centos.7.5 centos.7.5.1804: ; $(MAKE) centosdir CENTOS=7.5.1804
 centos.7.4 centos.7.4.1708: ; $(MAKE) centosdir CENTOS=7.4.1708
@@ -36,4 +37,3 @@ ubunturepo.16.04: ; $(MAKE) ubunturepo UBUNTU=16.04 REPOS=updates
 ubunturepo.18.04: ; $(MAKE) ubunturepo UBUNTU=18.04 REPOS=updates
 ubuntu-16.04: ; $(MAKE) ubuntu UBUNTU=16.04
 ubuntu-18.04: ;	$(MAKE) ubuntu UBUNTU=18.04
-

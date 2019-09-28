@@ -23,6 +23,7 @@ I did have bad experiences with a direct download to package container, so now t
 
 The toplevel Makfile contains some targets to download older (or more recent) versions. That would combine the steps above.
 
+    make centos-7.7   # really centos.7.7.1908
     make centos-7.6   # really centos.7.6.1810
     make centos-7.5   # really centos-7.5.1804
     make centos-7.4   # really centos-7.4.1708
