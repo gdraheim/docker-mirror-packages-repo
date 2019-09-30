@@ -34,7 +34,7 @@
      distro_packages_mirror_container_found: false
   when: 'distro_packages_mirror_container_found|bool and not distro_packages_mirror_container_running|bool'
 - name: distro packages mirror container
-  command: docker run -d \
+  command: docker run -d --rm=true \
     --name '{{distro_packages_mirror_container}}' \
            '{{distro_packages_mirror_image}}'
   when: 'not distro_packages_mirror_container_found'
