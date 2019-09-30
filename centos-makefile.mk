@@ -86,9 +86,9 @@ centosrepo:
 
 centostags: centos-repo
 centos-repo:
-	ver2=`echo $(CENTOS) | sed -e "s|^\\([01234567890][01234567890]*[.][01234567890]*\\).*|\\1|" \
+	ver2=`echo $(CENTOS) | sed -e "s|^\\([01234567890][01234567890]*[.][01234567890]*\\).*|\\1|"` \
 	; docker tag $(IMAGESREPO)/$@:$(CENTOS) $(IMAGESREPO)/$@:$$ver2
-	ver1=`echo $(CENTOS) | sed -e "s|^\\([01234567890][01234567890]*\\).*|\\1|" \
+	ver1=`echo $(CENTOS) | sed -e "s|^\\([01234567890][01234567890]*\\).*|\\1|"` \
 	;  docker tag $(IMAGESREPO)/$@:$(CENTOS) $(IMAGESREPO)/$@$$ver1:$(CENTOS) \
 	&& docker tag $(IMAGESREPO)/$@:$(CENTOS) $(IMAGESREPO)/$@$$ver1:latest
 
