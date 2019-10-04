@@ -782,7 +782,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
        command: docker run -d --rm=true {{{{ distro_packages_mirror_add_hosts }}}} \\
                      --name "test-box1" "{{{{ base_image }}}}" {{{{ base_command }}}}
      - name: fixup setup container
-       command: docker exec test-box1 bash -c "zypper repos"
+       command: docker exec test-box1 bash -c "zypper repos ; zypper mr --no-gpgcheck repo-update"
        when: 'distro_os_family == "Suse"'
      - name: fixup setup container
        command: docker exec test-box1 bash -c "zypper refresh repo-oss repo-update; zypper install -y python python-xml"
