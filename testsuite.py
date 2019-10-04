@@ -173,7 +173,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         mirror = ip_container("test-repo")
         add_host = "--add-host mirrorlist.centos.org:{mirror}".format(**locals())
         sh____("docker run -d --name test-box1 {box1_image} sleep 600".format(**locals()))
-        sh____("docker exec test-box1 yum install -y python-docker-py")
+        # sh____("docker exec test-box1 yum install -y python-docker-py") # all /extras are now in epel
+        sh____("docker exec test-box1 yum install -y python2-numpy")
         sx____("docker rm -f test-box1")
         sx____("docker rm -f test-repo")
     def test_1142_opensuse(self):
