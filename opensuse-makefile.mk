@@ -2,7 +2,7 @@
 
 IMAGESREPO ?= localhost:5000/mirror-packages
 
-OPENSUSEDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror
+OPENSUSEDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror /dock/docker-mirror-packages
 OPENSUSE=opensuse/leap
 # LEAP=42.2
 # LEAP=42.3
@@ -29,7 +29,7 @@ opensusedir:
 	; if test -d $$data; then : \
 	; test -d  $$data/opensuse.$(LEAP) \
 	|| mkdir -v $$data/opensuse.$(LEAP) \
-	; ln -sv    $$data/opensuse.$(LEAP) opensuse.$(LEAP) \
+	; ln -svf   $$data/opensuse.$(LEAP) . \
 	; fi; done ; true
 	@ if test -d opensuse.$(LEAP)/. ; then : \
 	; else mkdir -v opensuse.$(LEAP) ; fi
