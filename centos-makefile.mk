@@ -4,7 +4,12 @@ IMAGESREPO ?= localhost:5000/mirror-packages
 
 CENTOSDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror
 
-CENTOS = 7.5.1804
+CENTOS = 8.0.1905
+X8CENTOS = 8.0.1905
+X7CENTOS = 7.7.1908
+# CENTOS = 7.7.1908
+# CENTOS = 7.6.1810
+# CENTOS = 7.5.1804
 # CENTOS = 7.4.1708
 # CENTOS = 7.3.1611
 # CENTOS = 7.2.1511
@@ -29,17 +34,28 @@ CENTOS = 7.5.1804
 
 centos:
 	$(MAKE) centossync
+	$(MAKE) centospull
 	$(MAKE) centosrepo
 	$(MAKE) centostest
 	$(MAKE) centoscheck
 	$(MAKE) centostags
 
+centospull:
+	case "$(CENTOS)" in $(X7CENTOS)*) : ;; *) exit 0 ;; esac ; \
+	docker pull centos:7 ; docker tag centos:7 centos:$(CENTOS)
+	case "$(CENTOS)" in $(X8CENTOS)*) : ;; *) exit 0 ;; esac ; \
+	docker pull centos:8 ; docker tag centos:8 centos:$(CENTOS)
+
 CENTOS_MIRROR=rsync://rsync.hrz.tu-chemnitz.de/ftp/pub/linux/centos
+http://ftp.tu-chemnitz.de/pub/linux/centos/
 
 
 centossync:
 	$(MAKE) centosdir
+	case "$(CENTOS)" in 7*) : ;; *) exit 0 ;; esac ; \
 	$(MAKE) sync-os sync-extras sync-updates
+	case "$(CENTOS)" in 8*) : ;; *) exit 0 ;; esac ; \
+	$(MAKE) sync-BaseOS sync-AppStream sync-extras
 centosdir:
 	@ test ! -d centos.$(CENTOS) || rmdir -v centos.$(CENTOS) || rm -v centos.$(CENTOS)
 	@ for data in $(CENTOSDATADIRS); do : \
@@ -53,9 +69,12 @@ centosdir:
 	; else mkdir -v centos.$(CENTOS) ; fi
 	ls -ld centos.$(CENTOS)
 
-sync-os: ;      rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/os      centos.$(CENTOS)/ --exclude "*.iso"
-sync-extras: ;  rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/extras  centos.$(CENTOS)/
-sync-updates: ; rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/updates centos.$(CENTOS)/
+CENTOS_XXX=--exclude ppc64le --exclude aarch64 --exclude EFI --exclude images --exclude isolinux --exclude "*.iso"
+sync-AppStream: ; rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/AppStream  centos.$(CENTOS)/ $(CENTOS_XXX)
+sync-BaseOS: ;    rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/BaseOS     centos.$(CENTOS)/ $(CENTOS_XXX)
+sync-os: ;        rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/os         centos.$(CENTOS)/ $(CENTOS_XXX)
+sync-extras: ;    rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/extras     centos.$(CENTOS)/ $(CENTOS_XXX)
+sync-updates: ;   rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/updates    centos.$(CENTOS)/ $(CENTOS_XXX)
 centos-unpack:
 	- docker rm --force $@
 	docker run --name=$@ --detach localhost:5000/centos-repo:$(CENTOS) sleep 9999
@@ -69,9 +88,14 @@ centos-clean:
 	rm -rf centos.$(CENTOS)/extras
 	rm -rf centos.$(CENTOS)/updates
 
-centosrepo_CMD = ["python","/srv/scripts/mirrorlist.py","--data","/srv/repo"]
-centosrepo_PORT = 80
+centosrepo7_CMD = ["python","/srv/scripts/mirrorlist.py","--data","/srv/repo"]
+centosrepo7_PORT = 80
+centosrepo8_CMD = ["python","/srv/scripts/mirrorlist.py","--data","/srv/repo"]
+centosrepo8_PORT = 80
 centosrepo:
+	case "$(CENTOS)" in 7*) : ;; *) exit 0 ;; esac ; $(MAKE) centosrepo7
+	case "$(CENTOS)" in 8*) : ;; *) exit 0 ;; esac ; $(MAKE) centosrepo8
+centosrepo7:
 	$(MAKE) centos-restore centos-cleaner
 	- docker rm --force $@
 	docker run --name=$@ --detach centos:$(CENTOS) sleep 9999
@@ -80,6 +104,19 @@ centosrepo:
 	docker cp centos.$(CENTOS)/os $@:/srv/repo/7/
 	docker cp centos.$(CENTOS)/extras $@:/srv/repo/7/
 	docker cp centos.$(CENTOS)/updates $@:/srv/repo/7/
+	docker commit -c 'CMD $($@_CMD)' -c 'EXPOSE $($@_PORT)' $@ $(IMAGESREPO)/centos-repo:$(CENTOS)
+	docker rm --force $@
+	$(MAKE) centos-restore
+centosrepo8:
+	$(MAKE) centos-restore centos-cleaner
+	- docker rm --force $@
+	docker run --name=$@ --detach centos:$(CENTOS) sleep 9999
+	docker exec $@ mkdir -p /srv/repo/8
+	docker cp scripts $@:/srv/scripts
+	docker cp centos.$(CENTOS)/BaseOS $@:/srv/repo/8/
+	docker cp centos.$(CENTOS)/AppStream $@:/srv/repo/8/
+	docker cp centos.$(CENTOS)/extras $@:/srv/repo/8/
+	: docker cp centos.$(CENTOS)/updates $@:/srv/repo/8/
 	docker commit -c 'CMD $($@_CMD)' -c 'EXPOSE $($@_PORT)' $@ $(IMAGESREPO)/centos-repo:$(CENTOS)
 	docker rm --force $@
 	$(MAKE) centos-restore
