@@ -27,6 +27,10 @@ class MyHandler(Handler):
        release = values.get("release", "0")
        arch = values.get("arch","x86_64")
        repo = values.get("repo", "os")
+       infra = values.get("infra", "") # centos:8 
+       if infra:
+           if infra in ["container"]: infra = "os"
+           arch += "/" + infra
        text = "http://mirrorlist.centos.org/%s/%s/%s/\n" % (release, repo, arch)
        print "SERVE", self.path
        print "   AS", text.strip()
