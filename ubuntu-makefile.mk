@@ -2,7 +2,7 @@
 
 IMAGESREPO ?= localhost:5000/mirror-packages
 
-UBUNTUDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror
+UBUNTUDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror /dock/docker-mirror-packages
 UBUNTU_OS=ubuntu
 UBUNTU=16.04
 RSYNC_UBUNTU=rsync://ftp5.gwdg.de/pub/linux/debian/ubuntu
@@ -64,7 +64,7 @@ ubuntudir:
 	; if test -d $$data; then : \
 	; test -d  $$data/ubuntu.$(UBUNTU) \
 	|| mkdir -v $$data/ubuntu.$(UBUNTU) \
-	; ln -sv    $$data/ubuntu.$(UBUNTU) ubuntu.$(UBUNTU) \
+	; ln -svf   $$data/ubuntu.$(UBUNTU) . \
 	; fi; done ; true
 	@ if test -d ubuntu.$(UBUNTU)/. ; then : \
 	; else mkdir -v ubuntu.$(UBUNTU) ; fi
