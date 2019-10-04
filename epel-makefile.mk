@@ -2,7 +2,7 @@
 
 IMAGESREPO ?= localhost:5000/mirror-packages
 
-EPELDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror
+EPELDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror /dock/docker-mirror-packages
 EPEL = 7
 BASEARCH = x86_64
 
@@ -23,7 +23,7 @@ epeldir:
 	; if test -d $$data; then : \
 	; test -d  $$data/epel.$(EPEL) \
 	|| mkdir -v $$data/epel.$(EPEL) \
-	; ln -sv    $$data/epel.$(EPEL) epel.$(EPEL) \
+	; ln -svf   $$data/epel.$(EPEL) . \
 	; fi; done ; true
 	@ if test -d epel.$(EPEL)/. ; then : \
 	; else mkdir -v epel.$(EPEL) ; fi
