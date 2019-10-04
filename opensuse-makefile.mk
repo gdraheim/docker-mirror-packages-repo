@@ -93,3 +93,11 @@ opensusetest:
 	docker-compose -p $@ -f opensuse-compose.yml.tmp up -d
 	docker exec $@_host_1 zypper install -y firefox
 	docker-compose -p $@ -f opensuse-compose.yml.tmp down
+
+opensusebash:
+	- docker rm -f opensuse-bash-$(LEAP)
+	- docker rm -f opensuse-repo-$(LEAP)
+	docker run -d --rm=true --name opensuse-repo-$(LEAP)  $(IMAGESREPO)/opensuse-repo:$(LEAP)
+	IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' opensuse-repo-$(LEAP)` ;\
+	docker run -d --rm=true --name opensuse-bash-$(LEAP)  --add-host download.opensuse.org:$$IP opensuse/leap:$(LEAP) sleep 9999
+	docker exec -it opensuse-bash-$(LEAP) bash

@@ -164,3 +164,12 @@ centoscheck:
 	; if [ -z "$$found" ]; then echo "?? $$f $$found"; else : ; fi \
 	; done ; }
 	docker rm --force $@
+
+centosbash7: ; $(MAKE) centosbash CENTOS=$(X7CENTOS)
+centosbash:
+	- docker rm -f centos-bash-$(CENTOS)
+	- docker rm -f centos-repo-$(CENTOS)
+	docker run -d --rm=true --name centos-repo-$(CENTOS)  $(IMAGESREPO)/centos-repo:$(CENTOS)
+	IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' centos-repo-$(CENTOS)` ;\
+	docker run -d --rm=true --name centos-bash-$(CENTOS)  --add-host mirrorlist.centos.org:$$IP centos:$(CENTOS) sleep 999
+	docker exec -it centos-bash-$(CENTOS) bash
