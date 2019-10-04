@@ -117,6 +117,9 @@ centosrepo8:
 	docker cp centos.$(CENTOS)/AppStream $@:/srv/repo/8/
 	docker cp centos.$(CENTOS)/extras $@:/srv/repo/8/
 	: docker cp centos.$(CENTOS)/updates $@:/srv/repo/8/
+	case $(CENTOS) in 8*) : ;; *) exit 0 ;; esac ;\
+	docker exec $@ yum install -y python2 &&\
+	docker exec $@ ln -sv /usr/bin/python2 /usr/bin/python
 	docker commit -c 'CMD $($@_CMD)' -c 'EXPOSE $($@_PORT)' $@ $(IMAGESREPO)/centos-repo:$(CENTOS)
 	docker rm --force $@
 	$(MAKE) centos-restore
