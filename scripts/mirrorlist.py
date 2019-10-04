@@ -1,17 +1,23 @@
+#! /usr/bin/python
+
 import SimpleHTTPServer
 import SocketServer
 import optparse
 import os
 
 PORT = 80
+URL="http://mirrorlist.centos.org"
 
 ext = optparse.OptionParser("%prog [options]")
 ext.add_option("-d", "--data", default=".",
     help="change to data directory before")
 ext.add_option("-p", "--port", default=PORT,
     help="serve on that port for http")
+ext.add_option("-u", "--url", default=URL,
+    help="url prefix (%default)")
 
 opt, args = ext.parse_args()
+URL = opt.url
 
 if opt.data and opt.data != ".":
     os.chdir(opt.data)
@@ -27,11 +33,13 @@ class MyHandler(Handler):
        release = values.get("release", "0")
        arch = values.get("arch","x86_64")
        repo = values.get("repo", "os")
-       infra = values.get("infra", "") # centos:8 
-       if infra and release in ["8", "9"]:
-           if infra in ["container"]: infra = "os"
-           arch += "/" + infra
-       text = "http://mirrorlist.centos.org/%s/%s/%s/\n" % (release, repo, arch)
+       infra = values.get("infra", "")
+       if infra in ["container"]:
+           infra = "os"
+       if release in ["8"]:
+           text = "%s/%s/%s/%s/%s/\n" % (url, release, repo, arch, infra)
+       else:
+           text = "%s/%s/%s/%s/\n" % (url, release, repo, arch)
        print "SERVE", self.path
        print "   AS", text.strip()
        self.send_response(200)
