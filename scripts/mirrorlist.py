@@ -28,7 +28,7 @@ class MyHandler(Handler):
        arch = values.get("arch","x86_64")
        repo = values.get("repo", "os")
        infra = values.get("infra", "") # centos:8 
-       if infra:
+       if infra and release in ["8", "9"]:
            if infra in ["container"]: infra = "os"
            arch += "/" + infra
        text = "http://mirrorlist.centos.org/%s/%s/%s/\n" % (release, repo, arch)
