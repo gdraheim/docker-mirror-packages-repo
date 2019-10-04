@@ -16,6 +16,19 @@ UBUNTU16.04 = xenial
 UBUNTU14.04 = trusty
 UBUNTU12.04 = precise
 
+REPOS ?= main updates
+ALL_REPOS = main updates restricted universe multiverse
+ALL_AREAS = 1/ 2/-updates 3/-backports 4/-security
+
+# the Ubuntu package repository has the deb packages of all version and all repos 
+# and almost all areas in the same ./pool subdirectory. It is only the package lists 
+# that are hosted in different subdirectories. However the 4/-security area is on
+# a different download host (not archive.ubuntu.com but security.ubuntu.com) which
+# is enabled by default. Don't ask.
+# .... since docker-py requires "universe" we better default to mirror the repos for
+# "main updates universe" which can be achived by running 'make xxx REPOS=universe'
+# but that changes making the docker repo image size from about 18Gi to 180Gi
+
 ubuntu:
 	$(MAKE) ubuntusync
 	$(MAKE) ubunturepo
@@ -144,7 +157,11 @@ ubuntutest:
 	docker exec $@_host_1 apt-get install -y firefox
 	docker-compose -p $@ -f ubuntu-compose.yml.tmp down
 
-ubu:
-	- docker rm --force $@
-	docker run --name=$@ --detach $(UBUNTU_OS):$(UBUNTU) sleep 9999
-	@ echo " " docker exec -it $@ bash
+ubuntubash:
+	- docker rm -f ubuntu-bash-$(UBUNTU)
+	- docker rm -f ubuntu-repo-$(UBUNTU)
+	docker run -d --rm=true --name ubuntu-repo-$(UBUNTU)  $(IMAGESREPO)/ubuntu-repo:$(UBUNTU)
+	IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ubuntu-repo-$(UBUNTU)` ;\
+	docker run -d --rm=true --name ubuntu-bash-$(UBUNTU)  --add-host archive.ubuntu.com:$$IP \
+                                                             --add-host security.ubuntu.com:$$IP ubuntu:$(UBUNTU) sleep 9999
+	docker exec -it ubuntu-bash-$(UBUNTU) bash
