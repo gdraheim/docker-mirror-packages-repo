@@ -16,6 +16,7 @@ EPEL_MIRROR = rsync://fedora.tu-chemnitz.de/ftp/pub/linux/fedora-epel
 epel:
 	$(MAKE) epeldir
 	$(MAKE) epelsync
+	$(MAKE) epelrepo
 epeldir:
 	@ test ! -d epel.$(EPEL) || rmdir -v epel.$(EPEL) || rm -v epel.$(EPEL)
 	@ for data in $(EPELDATADIRS); do : \
@@ -34,3 +35,40 @@ epelsync:
 	$(MAKE) epeldir
 	test -d epel.$(EPEL)/$(EPEL) || mkdir epel.$(EPEL)/$(EPEL)
 	rsync -rv $(EPEL_MIRROR)/$(EPEL)/$(BASEARCH)  epel.$(EPEL)/$(EPEL)/ $(XXX_EPEL)
+
+## [[centos:8]]
+## [/etc/yum.repos.d/CentOS-Base.repo]
+## mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=BaseOS&infra=$infra
+## #baseurl=http://mirror.centos.org/$contentdir/$releasever/BaseOS/$basearch/os/
+## [/etc/yum.repos.d/epel.repo]
+## #baseurl=https://download.fedoraproject.org/pub/epel/$releasever/Everything/$basearch
+## metalink=https://mirrors.fedoraproject.org/metalink?repo=epel-$releasever&arch=$basearch&infra=$infra&content=$contentdir
+
+## [[centos:7]]
+## [/etc/yum.repos.d/CentOS-Base.repo]
+## mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os&infra=$infra
+## #baseurl=http://mirror.centos.org/centos/$releasever/os/$basearch/
+## [/etc/yum.repos.d/epel.repo]
+## #baseurl=https://download.fedoraproject.org/pub/epel/7/$basearch
+## metalink=https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch
+
+epelrepo_PORT = 443
+epelrepo_CMD = ["python","/srv/scripts/mirrors.fedoraproject.org.py","--data","/srv/repo/epel", "--ssl", "https://mirrors.fedoraproject.org"]
+epelrepo:
+	- docker rm --force $@
+	docker run --name=$@ --detach centos:$(EPEL) sleep 9999
+	docker exec $@ mkdir -p /srv/repo/epel
+	docker exec $@ yum install -y openssl
+	case $(EPEL) in 8*) : ;; *) exit 0 ;; esac ;\
+	docker exec $@ yum install -y python2 &&\
+	docker exec $@ ln -sv /usr/bin/python2 /usr/bin/python
+	docker cp scripts $@:/srv/scripts
+	docker cp epel.$(EPEL)/$(EPEL) $@:/srv/repo/epel/
+	docker commit -c 'CMD $($@_CMD)' -c 'EXPOSE $($@_PORT)' $@ $(IMAGESREPO)/epel-repo:$(EPEL)
+	docker tag $(IMAGESREPO)/epel-repo:$(EPEL) $(IMAGESREPO)/epel-repo:$(EPEL).x.`date '+%y%m'`
+	- [ "7" != "$(EPEL)" ] || [ "19" != `date +%y` ] ||\
+	docker tag $(IMAGESREPO)/epel-repo:$(EPEL) $(IMAGESREPO)/epel-repo:8.x.`date '+%y%m'`
+	docker rm --force $@
+
+# centos:8.0.1905 does refer to epel-repo:7, so until the end of 2019 we tag it also as epel-repo:8
+
