@@ -2,7 +2,7 @@
 
 IMAGESREPO ?= localhost:5000/mirror-packages
 
-CENTOSDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror
+CENTOSDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror /dock/docker-mirror-packages
 
 CENTOS = 8.0.1905
 X8CENTOS = 8.0.1905
@@ -63,7 +63,7 @@ centosdir:
 	; if test -d $$data; then : \
 	; test -d  $$data/centos.$(CENTOS) \
 	|| mkdir -v $$data/centos.$(CENTOS) \
-	; ln -sv    $$data/centos.$(CENTOS) centos.$(CENTOS) \
+	; ln -svf   $$data/centos.$(CENTOS) . \
 	; fi; done ; true
 	@ if test -d centos.$(CENTOS)/. ; then : \
 	; else mkdir -v centos.$(CENTOS) ; fi
