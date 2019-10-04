@@ -28,8 +28,9 @@ class MyHandler(Handler):
     if self.path.startswith("/?"):
        values = {}
        for param in self.path[2:].split("&"):
-          name, value = param.split("=")
-          values[name] = value
+          if "=" in param:
+              name, value = param.split("=")
+              values[name] = value
        release = values.get("release", "0")
        arch = values.get("arch","x86_64")
        repo = values.get("repo", "os")
@@ -37,9 +38,9 @@ class MyHandler(Handler):
        if infra in ["container"]:
            infra = "os"
        if release in ["8"]:
-           text = "%s/%s/%s/%s/%s/\n" % (url, release, repo, arch, infra)
+           text = "%s/%s/%s/%s/%s/\n" % (URL, release, repo, arch, infra)
        else:
-           text = "%s/%s/%s/%s/\n" % (url, release, repo, arch)
+           text = "%s/%s/%s/%s/\n" % (URL, release, repo, arch)
        print "SERVE", self.path
        print "   AS", text.strip()
        self.send_response(200)

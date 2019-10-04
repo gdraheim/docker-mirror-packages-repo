@@ -32,8 +32,9 @@ class MyHandler(Handler):
     if self.path.startswith("/metalink?"):
        values = {}
        for param in self.path[self.path.find("?")+1:].split("&"):
-          name, value = param.split("=")
-          values[name] = value
+          if "=" in param:
+              name, value = param.split("=")
+              values[name] = value
        release = values.get("release", "0")
        arch = values.get("arch","x86_64")
        repo = values.get("repo", "os")
@@ -41,9 +42,9 @@ class MyHandler(Handler):
        if infra in ["container"]:
            infra = "os"
        if repo in ["epel-7"]:
-           text = "%s/%s/%s/\n" % (url, "7", arch)
+           text = "%s/%s/%s/\n" % (URL, "7", arch)
        else:
-           text = "%s/%s/%s/\n" % (url, repo, arch)
+           text = "%s/%s/%s/\n" % (URL, repo, arch)
        print "SERVE", self.path
        print "   AS", text.strip()
        self.send_response(200)
