@@ -63,3 +63,5 @@ universesync.16.04: ; $(MAKE) ubuntusync UBUNTU=16.04 REPOS=universe
 universesync.18.04: ; $(MAKE) ubuntusync UBUNTU=18.04 REPOS=universe
 universerepo.16.04: ; $(MAKE) ubunturepo UBUNTU=16.04 REPOS=universe
 universerepo.18.04: ; $(MAKE) ubunturepo UBUNTU=18.04 REPOS=universe
+
+test_%: ; ./testsuite.py $@ -v
