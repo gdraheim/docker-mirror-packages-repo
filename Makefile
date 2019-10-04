@@ -57,4 +57,9 @@ ubuntusync.18.04: ; $(MAKE) ubuntusync UBUNTU=18.04 REPOS=updates
 ubunturepo.16.04: ; $(MAKE) ubunturepo UBUNTU=16.04 REPOS=updates
 ubunturepo.18.04: ; $(MAKE) ubunturepo UBUNTU=18.04 REPOS=updates
 ubuntu-16.04: ; $(MAKE) ubuntu UBUNTU=16.04
-ubuntu-18.04: ;	$(MAKE) ubuntu UBUNTU=18.04
+ubuntu-18.04: ; $(MAKE) ubuntu UBUNTU=18.04
+
+universesync.16.04: ; $(MAKE) ubuntusync UBUNTU=16.04 REPOS=universe
+universesync.18.04: ; $(MAKE) ubuntusync UBUNTU=18.04 REPOS=universe
+universerepo.16.04: ; $(MAKE) ubunturepo UBUNTU=16.04 REPOS=universe
+universerepo.18.04: ; $(MAKE) ubunturepo UBUNTU=18.04 REPOS=universe
