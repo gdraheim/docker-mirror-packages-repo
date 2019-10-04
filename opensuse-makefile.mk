@@ -4,8 +4,15 @@ IMAGESREPO ?= localhost:5000/mirror-packages
 
 OPENSUSEDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror
 OPENSUSE=opensuse/leap
-LEAP=15.0
-RSYNC_SUSE=rsync://suse.uni-leipzig.de/opensuse-full/opensuse
+# LEAP=42.2
+# LEAP=42.3
+# LEAP=15.0
+XXLEAP=15.1
+LEAP=15.1
+
+RSYNC_SUSE1=rsync://suse.uni-leipzig.de/opensuse-full/opensuse
+RSYNC_SUSE2=rsync://ftp.tu-chemnitz.de/pub/linux/opensuse
+RSYNC_SUSE=rsync://mirror.cs.upb.de/opensuse
 
 opensuse:
 	$(MAKE) opensusesync
@@ -71,7 +78,9 @@ opensuserepo:
 	: docker exec $@ rm -r /srv/repo/update/$(LEAP)
 	docker exec $@ ln -s /srv/repo/update/leap/$(LEAP)/oss /srv/repo/update/$(LEAP)
 	docker exec $@ zypper ar file:///srv/repo/distribution/leap/$(LEAP)/repo/oss oss-repo
-	docker exec $@ zypper --no-remote install -y python
+	docker exec $@ zypper --no-remote install -y python createrepo
+	case $(LEAP) in $(XXLEAP)*) : ;; *) exit 0;; esac ;\
+	docker exec $@ bash -c "cd /srv/repo/update/leap/$(LEAP)/oss && createrepo ."
 	docker commit -c 'CMD $($@_CMD)' -c 'EXPOSE $($@_PORT)' $@ $(IMAGESREPO)/opensuse-repo:$(LEAP)
 	docker rm --force $@
 
