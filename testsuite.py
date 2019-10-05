@@ -360,6 +360,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         drop_file(test_file)
         sx____("docker rm -f test-box1")
         sx____("docker rm -f {test_repo}".format(**locals()))
+##
     def test_4074_centos(self):
         prefix = PREFIX
         repo_image = "centos-repo:7.4.1708"
@@ -420,6 +421,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         drop_file(test_file)
         sx____("docker rm -f test-box1")
         sx____("docker rm -f {test_repo}".format(**locals()))
+##
     def test_4075_centos(self):
         prefix = PREFIX
         repo_image = "centos-repo:7.5.1804"
@@ -480,6 +482,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         drop_file(test_file)
         sx____("docker rm -f test-box1")
         sx____("docker rm -f {test_repo}".format(**locals()))
+##
     def test_4076_centos(self):
         prefix = PREFIX
         repo_image = "centos-repo:7.6.1810"
@@ -540,6 +543,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         drop_file(test_file)
         sx____("docker rm -f test-box1")
         sx____("docker rm -f {test_repo}".format(**locals()))
+##
     def test_4077_centos(self):
         """
             docker pull centos:7
@@ -604,6 +608,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         drop_file(test_file)
         sx____("docker rm -f test-box1")
         sx____("docker rm -f {test_repo}".format(**locals()))
+##
     def test_4080_centos(self):
         """
             docker pull centos:8
@@ -668,8 +673,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         drop_file(test_file)
         sx____("docker rm -f test-box1")
         sx____("docker rm -f {test_repo}".format(**locals()))
-
-#######################
+##
     def test_4143_opensuse(self):
         prefix = PREFIX
         repo_image = "opensuse-repo:42.3"
@@ -874,6 +878,159 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         drop_file(test_file)
         sx____("docker rm -f test-box1")
         sx____("docker rm -f {test_repo}".format(**locals()))
+
+
+##
+    def test_5075_centos(self):
+        prefix = PREFIX
+        repo_image = "centos-repo:7.5.1804"
+        box1_image = "centos:7.5.1804"
+        os_family = "RedHat"
+        main_mirror = "mirrorlist.centos.org"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        box1_vendor = box1_image.split(":")[0]
+        box1_version = box1_image.split(":")[1]
+        test_repo = repo_image.replace(":","-")
+        test_file = "tmp.{test_repo}-playbook.yml".format(**locals())
+        #
+        test_playbook_text = """
+- hosts: localhost
+  vars:
+     base_image: "{box1_image}"
+     base_command: "sleep 900"
+  roles:
+     - role: docker_distro_version
+       image: "{{{{ base_image }}}}"
+     - role: docker_distro_packages_mirror
+  tasks:
+     - debug: var=distro_packages_mirror_name
+     - assert:
+         that:
+           - 'distro_vendor == "{box1_vendor}"'
+           - 'distro_version == "{box1_version}"'
+           - 'distro_packages_mirror_name == "mirror-packages/{repo_image}"'
+           - '"--add-host" in distro_packages_mirror_add_hosts'
+           - '"{main_mirror}:" in distro_packages_mirror_add_hosts'
+           - 'distro_os_family == "{os_family}"'
+     - name: remove setup container
+       command: docker rm -f 'test-box1'
+       ignore_errors: yes
+     - name: start setup container
+       command: docker run -d --rm=true {{{{ distro_packages_mirror_add_hosts }}}} \\
+                     --name "test-box1" "{{{{ base_image }}}}" {{{{ base_command }}}}
+     - name: attach setup container
+       add_host:
+         hostname: 'test-box1'
+         ansible_connection: 'docker'
+         ansible_user: "root"
+         groups: [ 'target' ]
+     - name: gather facts on it
+       delegate_to: 'test-box1'
+       setup:
+         gather_subset: "all"
+- hosts: target
+  tasks:
+     - name: install base package
+       package:
+         name: "python-docker-py"
+     - name: install epel.repo
+       package:
+         name: "epel-release"
+     - name: http for epel.repo
+       replace:
+         path: "/etc/yum.repos.d/epel.repo"
+         regexp: "https://"
+         replace: "http://"
+     - name: install extra package
+       package:
+         name: "python-numpy"
+""".format(**locals())
+        sx____("docker rm -f test-box1")
+        sx____("docker rm -f {test_repo}".format(**locals()))
+        make_file(test_file, test_playbook_text)
+        sh____("ansible-playbook {test_file} -v".format(**locals()))
+        drop_file(test_file)
+        sx____("docker rm -f test-box1")
+        sx____("docker rm -f {test_repo}".format(**locals()))
+##
+    def test_5080_centos(self):
+        """
+            docker pull centos:8
+            docker tag centos:8 centos:8.0.1905
+        """
+        prefix = PREFIX
+        repo_image = "centos-repo:8.0.1905"
+        box1_image = "centos:8.0.1905"
+        os_family = "RedHat"
+        main_mirror = "mirrorlist.centos.org"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        box1_vendor = box1_image.split(":")[0]
+        box1_version = box1_image.split(":")[1]
+        test_repo = repo_image.replace(":","-")
+        test_file = "tmp.{test_repo}-playbook.yml".format(**locals())
+        #
+        test_playbook_text = """
+- hosts: localhost
+  vars:
+     base_image: "{box1_image}"
+     base_command: "sleep 900"
+  roles:
+     - role: docker_distro_version
+       image: "{{{{ base_image }}}}"
+     - role: docker_distro_packages_mirror
+  tasks:
+     - debug: var=distro_packages_mirror_name
+     - assert:
+         that:
+           - 'distro_vendor == "{box1_vendor}"'
+           - 'distro_version == "{box1_version}"'
+           - 'distro_packages_mirror_name == "mirror-packages/{repo_image}"'
+           - '"--add-host" in distro_packages_mirror_add_hosts'
+           - '"{main_mirror}:" in distro_packages_mirror_add_hosts'
+           - 'distro_os_family == "{os_family}"'
+     - name: remove setup container
+       command: docker rm -f 'test-box1'
+       ignore_errors: yes
+     - name: start setup container
+       command: docker run -d --rm=true {{{{ distro_packages_mirror_add_hosts }}}} \\
+                     --name "test-box1" "{{{{ base_image }}}}" {{{{ base_command }}}}
+     - name: attach setup container
+       add_host:
+         hostname: 'test-box1'
+         ansible_connection: 'docker'
+         ansible_user: "root"
+         groups: [ 'target' ]
+     - name: gather facts on it
+       delegate_to: 'test-box1'
+       setup:
+         gather_subset: "all"
+- hosts: target
+  tasks:
+     - name: install base package
+       package:
+         name: "python2-numpy"       
+     - name: install epel.repo
+       package:
+         name: "epel-release"
+     - name: http for epel.repo
+       replace:
+         path: "/etc/yum.repos.d/epel.repo"
+         regexp: "https://"
+         replace: "http://"
+     - name: install extra package
+       package:
+         name: "python2-docker"       
+""".format(**locals())
+        sx____("docker rm -f test-box1")
+        sx____("docker rm -f {test_repo}".format(**locals()))
+        make_file(test_file, test_playbook_text)
+        sh____("ansible-playbook {test_file} -v".format(**locals()))
+        drop_file(test_file)
+        sx____("docker rm -f test-box1")
+        sx____("docker rm -f {test_repo}".format(**locals()))
+##
 
     def test_9999_hello(self):
         print("... finished the testsuite ...")
