@@ -22,6 +22,7 @@ else:
     string_types = str
     xrange = range
 
+KEEP=False
 PREFIX="localhost:5000/mirror-packages"
 DOCKER_SOCKET="/var/run/docker.sock"
 
@@ -898,11 +899,11 @@ class DockerMirrorPackagesTest(unittest.TestCase):
 - hosts: localhost
   vars:
      base_image: "{box1_image}"
-     base_command: "sleep 900"
+     base_command: "sleep 9000"
   roles:
      - role: docker_distro_version
        image: "{{{{ base_image }}}}"
-     - role: docker_distro_packages_mirror
+     - role: docker_distro_packages_mirrors
   tasks:
      - debug: var=distro_packages_mirror_name
      - assert:
@@ -910,14 +911,14 @@ class DockerMirrorPackagesTest(unittest.TestCase):
            - 'distro_vendor == "{box1_vendor}"'
            - 'distro_version == "{box1_version}"'
            - 'distro_packages_mirror_name == "mirror-packages/{repo_image}"'
-           - '"--add-host" in distro_packages_mirror_add_hosts'
-           - '"{main_mirror}:" in distro_packages_mirror_add_hosts'
+           - '"--add-host" in distro_packages_mirrors_add_hosts'
+           - '"{main_mirror}:" in distro_packages_mirrors_add_hosts'
            - 'distro_os_family == "{os_family}"'
      - name: remove setup container
        command: docker rm -f 'test-box1'
        ignore_errors: yes
      - name: start setup container
-       command: docker run -d --rm=true {{{{ distro_packages_mirror_add_hosts }}}} \\
+       command: docker run -d --rm=true {{{{ distro_packages_mirrors_add_hosts }}}} \\
                      --name "test-box1" "{{{{ base_image }}}}" {{{{ base_command }}}}
      - name: attach setup container
        add_host:
@@ -944,7 +945,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
          replace: "http://"
      - name: install extra package
        package:
-         name: "python-numpy"
+         name: "python2-numpy"
 """.format(**locals())
         sx____("docker rm -f test-box1")
         sx____("docker rm -f {test_repo}".format(**locals()))
@@ -975,11 +976,11 @@ class DockerMirrorPackagesTest(unittest.TestCase):
 - hosts: localhost
   vars:
      base_image: "{box1_image}"
-     base_command: "sleep 900"
+     base_command: "sleep 9000"
   roles:
      - role: docker_distro_version
        image: "{{{{ base_image }}}}"
-     - role: docker_distro_packages_mirror
+     - role: docker_distro_packages_mirrors
   tasks:
      - debug: var=distro_packages_mirror_name
      - assert:
@@ -1021,7 +1022,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
          replace: "http://"
      - name: install extra package
        package:
-         name: "python2-docker"       
+         name: "python2-beautifulsoup4"
 """.format(**locals())
         sx____("docker rm -f test-box1")
         sx____("docker rm -f {test_repo}".format(**locals()))
@@ -1042,8 +1043,17 @@ if __name__ == "__main__":
        epilog=__doc__.strip().split("\n")[0])
     _o.add_option("-v","--verbose", action="count", default=0,
        help="increase logging level [%default]")
+    _o.add_option("-p","--prefix", metavar="HOST", default=PREFIX,
+       help="storage site for images [%default]")
+    _o.add_option("-H","--host", metavar="DOCKER_HOST", default=DOCKER_SOCKET,
+       help="choose another docker daemon [%default]")
+    _o.add_option("-k","--keep", action="store_true", default=KEEP,
+       help="do not clean up containers [%default]")
     opt, args = _o.parse_args()
     logging.basicConfig(level = logging.WARNING - opt.verbose * 5)
+    KEEP = opt.keep
+    PREFIX = opt.prefix
+    DOCKER_SOCKET = opt.host
     # unittest.main()
     suite = unittest.TestSuite()
     if not args: args = [ "test_*" ]
