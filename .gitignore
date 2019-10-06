@@ -25,6 +25,7 @@ ubuntu.6*
 ubuntu.7*
 ubuntu.8*
 ubuntu.9*
+epel.*
 tmp
 *.tmp
 tmp.*
