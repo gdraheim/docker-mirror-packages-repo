@@ -52,8 +52,15 @@ epelsync:
 ## #baseurl=https://download.fedoraproject.org/pub/epel/7/$basearch
 ## metalink=https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch
 
-epelrepo_PORT = 443
-epelrepo_CMD = ["python","/srv/scripts/mirrors.fedoraproject.org.py","--data","/srv/repo/epel", "--ssl", "https://mirrors.fedoraproject.org"]
+# both of /usr/lib/python2.7/site-packages/yum/yumRepo.py and libdnf/repo/Repo.cpp rely
+# on curl/libcurl to download metalink data - which rejects a self-signed certificate.
+# Therefore you need to run "sed -i -e s/https:/http:/ /etc/yum.repos.d/epel.repo" 
+# after any "yum install epel-release". The original mirrors.fedora is fine with that.
+
+epelrepo_port = 443
+epelrepo_cmd = ["python","/srv/scripts/mirrors.fedoraproject.org.py","--data","/srv/repo/epel", "--ssl", "https://mirrors.fedoraproject.org"]
+epelrepo_PORT = 80
+epelrepo_CMD = ["python","/srv/scripts/mirrors.fedoraproject.org.py","--data","/srv/repo/epel"]
 epelrepo:
 	- docker rm --force $@
 	docker run --name=$@ --detach centos:$(EPEL) sleep 9999
