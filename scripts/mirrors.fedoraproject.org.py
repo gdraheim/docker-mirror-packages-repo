@@ -4,8 +4,12 @@ import SimpleHTTPServer
 import SocketServer
 import optparse
 import os
+import os.path
+import re
+import time
+import hashlib
 
-URL="https://mirrors.fedoraproject.org"
+URL="http://mirrors.fedoraproject.org"
 SSL=""
 PORT=80
 
@@ -23,6 +27,35 @@ opt, args = ext.parse_args()
 URL = opt.url
 SSL = opt.ssl
 
+def boot_time():
+    return int(open('/proc/stat').read().split('btime ')[1].split()[0])
+def os_path_md5(path):
+    m = hashlib.md5()
+    m.update(open(path).read())
+    return m.hexdigest()
+def os_path_sha256(path):
+    m = hashlib.sha256()
+    m.update(open(path).read())
+    return m.hexdigest()
+def os_path_sha512(path):
+    m = hashlib.sha512()
+    m.update(open(path).read())
+    return m.hexdigest()
+def fix_mtime_repomd_xml(path):
+    timestamp = 0
+    for line in open(path):
+        m = re.match(".*<timestamp>(\\d+)</timestamp>.*", line)
+        if m:
+            ts = int(m.group(1))
+            if ts > timestamp:
+                timestamp = ts
+    if timestamp:
+        now = time.time()
+        old = os.path.getmtime(path)
+        if int(old) != int(timestamp):
+            print "FIXED", path, timestamp, "(old", old, ")"
+            os.utime(path, (now, timestamp))
+
 if opt.data and opt.data != ".":
     os.chdir(opt.data)
 
@@ -30,6 +63,7 @@ Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
 class MyHandler(Handler):
   def do_GET(self):
     if self.path.startswith("/metalink?"):
+       metalink=True # epel/fedora format as long as we know
        values = {}
        for param in self.path[self.path.find("?")+1:].split("&"):
           if "=" in param:
@@ -41,17 +75,62 @@ class MyHandler(Handler):
        infra = values.get("infra", "")
        if infra in ["container"]:
            infra = "os"
-       if repo in ["epel-7"]:
-           text = "%s/%s/%s/\n" % (URL, "7", arch)
+       if repo in ["epel-7", "epel-8"]:
+           use = "%s/%s/" % ("7", arch)
        else:
-           text = "%s/%s/%s/\n" % (URL, repo, arch)
+           use = "%s/%s/" % (repo, arch)
+       url = "%s/%s" % (URL, use)
        print "SERVE", self.path
-       print "   AS", text.strip()
-       self.send_response(200)
-       self.send_header("Content-Type", "text/plain")
-       self.send_header("Content-Length", len(text))
-       self.end_headers()
-       self.wfile.write(text)
+       print "   AS", url
+       if metalink:
+           repomd_xml = use.rstrip("/") + "/repodata/repomd.xml"
+           repomd_url = url.rstrip("/") + "/repodata/repomd.xml"
+           fix_mtime_repomd_xml(repomd_xml)
+           if not os.path.exists(repomd_xml):
+               text = "did not find " + repomd_xml
+               self.send_response(404)
+               self.send_header("Content-Type", "text/plain")
+               self.send_header("Content-Length", len(text))
+               self.send_header("X-Filepath", repomd_xml)
+               self.end_headers()
+               self.wfile.write(text)
+               return
+           generator="http://github/gdraheim/docker-mirror-packages-repo"
+           ns="http://www.metalinker.org/"
+           mm="http://fedorahosted.org/mirrormanager"
+           ts=int(os.path.getmtime(repomd_xml))
+           sz=os.path.getsize(repomd_xml)
+           md5=os_path_md5(repomd_xml)
+           sha256=os_path_sha256(repomd_xml)
+           sha512=os_path_sha512(repomd_xml)
+           xml = """<?xml version="1.0" encoding="utf-8"?>
+             <metalink version="3.0" xmlns="{ns}" xmlns:mm="{mm}" generator="{generator}">
+              <files>
+               <file name="repomd.xml">
+                <mm:timestamp>{ts}</mm:timestamp>
+                <size>{sz}</size>
+                <verification>
+                  <hash type="md5">{md5}</hash>
+                  <hash type="sha256">{sha256}</hash>
+                  <hash type="sha512">{sha512}</hash>
+                </verification>
+                <resources maxconnections="1">
+                 <url protocol="http" type="http" preference="100">{repomd_url}</url>
+                </resources>
+               </file>
+              </files>
+             </metalink>""".format(**locals())
+           self.send_response(200)
+           self.send_header("Content-Type", "application/metalink+xml")
+           self.send_header("Content-Length", len(xml))
+           self.end_headers()
+           self.wfile.write(xml)
+       else:
+           self.send_response(200)
+           self.send_header("Content-Type", "text/plain")
+           self.send_header("Content-Length", len(url)+2)
+           self.end_headers()
+           self.wfile.write(text+"\r\n")
        return
     print "CHECK", self.path
     return Handler.do_GET(self)
