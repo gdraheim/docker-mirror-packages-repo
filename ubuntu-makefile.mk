@@ -4,7 +4,7 @@ IMAGESREPO ?= localhost:5000/mirror-packages
 
 UBUNTUDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror /dock/docker-mirror-packages
 UBUNTU_OS=ubuntu
-UBUNTU=16.04
+UBUNTU=18.04
 RSYNC_UBUNTU=rsync://ftp5.gwdg.de/pub/linux/debian/ubuntu
 
 UBUNTU_TMP = ubuntu.tmp
@@ -31,6 +31,7 @@ ALL_AREAS = 1/ 2/-updates 3/-backports 4/-security
 
 ubuntu:
 	$(MAKE) ubuntusync
+	$(MAKE) ubuntupool # backard compat
 	$(MAKE) ubunturepo
 	$(MAKE) ubuntutest
 	$(MAKE) ubuntutags
@@ -117,10 +118,26 @@ ubuntu-sync.main:
 	     ubuntu.$(UBUNTU)/dists/$(dist)/$(main)/binary-i386/Packages.gz \
 	| sed -e '/^Filename:/!d' -e 's|Filename: *pool/||' \
 	                          > $(UBUNTU_TMP)/Packages.$(dist).$(main).tmp
+	test -d  ubuntu.$(UBUNTU)/pools/$(dist)/$(main)/pool || \
+	mkdir -p ubuntu.$(UBUNTU)/pools/$(dist)/$(main)/pool
 	test -z "$(when)" || \
 	rsync -rv $(RSYNC_UBUNTU)/pool \
-	         ubuntu.$(UBUNTU)/pool \
+	         ubuntu.$(UBUNTU)/pools/$(dist)/$(main)/pool \
 	   --size-only --files-from=$(UBUNTU_TMP)/Packages.$(dist).$(main).tmp
+ubuntupool:
+	test ! -d ubuntu.$(UBUNTU)/pool || rm -rf ubuntu.$(UBUNTU)/pool
+	mkdir ubuntu.$(UBUNTU)/pool
+	find ubuntu.$(UBUNTU)/pools/$(dist) -name pool -type d \
+	| { while read pool; do (cd $$pool && find . -type f) \
+	    | { while read f; do b=`dirname "$$f"` \
+	      ; test -d ubuntu.$(UBUNTU)/pool/$$f || \
+	       mkdir -p ubuntu.$(UBUNTU)/pool/$$b \
+	      ; ln $$pool/$$f ubuntu.$(UBUNTU)/pool/$$b/ \
+	      ; done ; } \
+	  ; done ; } \
+	; echo `find ubuntu.$(UBUNTU)/pool -type f | wc -l` pool files
+ubuntupoolcount:
+	echo `find ubuntu.$(UBUNTU)/pool -type f | wc -l` pool files
 
 ubunturepo_CMD = ["python","/srv/scripts/filelist.py","--data","/srv/repo"]
 ubunturepo_PORT = 80
