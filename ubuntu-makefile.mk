@@ -4,11 +4,16 @@ IMAGESREPO ?= localhost:5000/mirror-packages
 
 UBUNTUDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror /dock/docker-mirror-packages
 UBUNTU_OS=ubuntu
-UBUNTU=18.04
+UBUNTU=20.04
 RSYNC_UBUNTU=rsync://ftp5.gwdg.de/pub/linux/debian/ubuntu
 
 UBUNTU_TMP = ubuntu.tmp
 
+LTS = 14.04 16.04 18.04 20.04
+UBUNTU20.10 = groovy
+UBUNTU20.04 = focal
+UBUNTU19.10 = eoan
+UBUNTU19.04 = disco
 UBUNTU18.10 = cosmic
 UBUNTU18.04 = bionic
 UBUNTU17.10 = artful
