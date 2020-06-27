@@ -7,8 +7,10 @@ OPENSUSE=opensuse/leap
 # LEAP=42.2
 # LEAP=42.3
 # LEAP=15.0
-XXLEAP=15.1
-LEAP=15.1
+# LEAP=15.1
+# LEAP=15.2
+XXLEAP=15.2
+LEAP=15.2
 
 RSYNC_SUSE1=rsync://suse.uni-leipzig.de/opensuse-full/opensuse
 RSYNC_SUSE2=rsync://ftp.tu-chemnitz.de/pub/linux/opensuse
