@@ -5,7 +5,10 @@ IMAGESREPO ?= localhost:5000/mirror-packages
 CENTOSDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror /dock/docker-mirror-packages
 
 CENTOS = 8.0.1905
-X8CENTOS = 8.0.1905
+X8CENTOS = 8.2.2004
+# CENTOS = 8.2.2004
+# CENTOS = 8.1.1911
+# CENTOS = 8.0.1905
 X7CENTOS = 7.7.1908
 # CENTOS = 7.7.1908
 # CENTOS = 7.6.1810
@@ -55,7 +58,7 @@ centossync:
 	case "$(CENTOS)" in 7*) : ;; *) exit 0 ;; esac ; \
 	$(MAKE) sync-os sync-extras sync-updates
 	case "$(CENTOS)" in 8*) : ;; *) exit 0 ;; esac ; \
-	$(MAKE) sync-BaseOS sync-AppStream sync-extras
+	$(MAKE) sync-BaseOS sync-AppStream sync-extras sync-PowerTools sync-centosplus
 centosdir:
 	@ test ! -d centos.$(CENTOS) || rmdir -v centos.$(CENTOS) || rm -v centos.$(CENTOS)
 	@ for data in $(CENTOSDATADIRS); do : \
@@ -70,11 +73,13 @@ centosdir:
 	ls -ld centos.$(CENTOS)
 
 CENTOS_XXX=--exclude ppc64le --exclude aarch64 --exclude EFI --exclude images --exclude isolinux --exclude "*.iso"
-sync-AppStream: ; rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/AppStream  centos.$(CENTOS)/ $(CENTOS_XXX)
-sync-BaseOS: ;    rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/BaseOS     centos.$(CENTOS)/ $(CENTOS_XXX)
-sync-os: ;        rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/os         centos.$(CENTOS)/ $(CENTOS_XXX)
-sync-extras: ;    rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/extras     centos.$(CENTOS)/ $(CENTOS_XXX)
-sync-updates: ;   rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/updates    centos.$(CENTOS)/ $(CENTOS_XXX)
+sync-AppStream: ;  rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/AppStream   centos.$(CENTOS)/ $(CENTOS_XXX)
+sync-BaseOS: ;     rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/BaseOS      centos.$(CENTOS)/ $(CENTOS_XXX)
+sync-os: ;         rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/os          centos.$(CENTOS)/ $(CENTOS_XXX)
+sync-extras: ;     rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/extras      centos.$(CENTOS)/ $(CENTOS_XXX)
+sync-PowerTools: ; rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/PowerTools  centos.$(CENTOS)/ $(CENTOS_XXX)
+sync-centosplus: ; rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/centosplus  centos.$(CENTOS)/ $(CENTOS_XXX)
+sync-updates: ;    rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/updates     centos.$(CENTOS)/ $(CENTOS_XXX)
 centos-unpack:
 	- docker rm --force $@
 	docker run --name=$@ --detach localhost:5000/centos-repo:$(CENTOS) sleep 9999
@@ -116,6 +121,8 @@ centosrepo8:
 	docker cp centos.$(CENTOS)/BaseOS $@:/srv/repo/8/
 	docker cp centos.$(CENTOS)/AppStream $@:/srv/repo/8/
 	docker cp centos.$(CENTOS)/extras $@:/srv/repo/8/
+	docker cp centos.$(CENTOS)/PowerTools $@:/srv/repo/8/
+	docker cp centos.$(CENTOS)/centosplus $@:/srv/repo/8/
 	: docker cp centos.$(CENTOS)/updates $@:/srv/repo/8/
 	case $(CENTOS) in 8*) : ;; *) exit 0 ;; esac ;\
 	docker exec $@ yum install -y python2 &&\
