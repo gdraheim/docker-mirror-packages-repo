@@ -34,6 +34,19 @@ DOCKER_SOCKET="/var/run/docker.sock"
 MR143 = True # modify repos of opensuse/leap:14.3
 MR151 = True # modify repos of opensuse/leap:15.1
 
+_docker_mirror = "./docker_mirror.py"
+
+def decodes(text):
+    if text is None: return None
+    if isinstance(text, bytes):
+        encoded = sys.getdefaultencoding()
+        if encoded in ["ascii"]:
+            encoded = "utf-8"
+        try: 
+            return text.decode(encoded)
+        except:
+            return text.decode("latin-1")
+    return text
 def sh____(cmd, shell=True):
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
@@ -53,7 +66,7 @@ def output(cmd, shell=True):
         logg.debug(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
-    return out
+    return decodes(out)
 def runs(cmd, shell=True):
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
@@ -62,8 +75,8 @@ def runs(cmd, shell=True):
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = run.communicate()
     _subprocess = collections.namedtuple("_subprocess", ["out", "err", "rc"])
-    return _subprocess(out, err, run.returncode)
-    # return _subprocess(out.read(), err.read(), run.returncode)
+    return _subprocess(decodes(out), decodes(err), run.returncode)
+    # return _subprocess(decodes(out.read()), decodes(err.read()), run.returncode)
 
 def ip_container(name):
     docker = DOCKER
@@ -77,9 +90,15 @@ def ip_container(name):
         cmd_run = cmd.format(**locals())
         logg.critical(" %s => %s ", cmd, values)
     return values[0]["NetworkSettings"]["IPAddress"]
+def image_exist(name):
+    return image_exists("", name)
 def image_exists(prefix, name):
     docker = DOCKER
-    proc = runs("{docker} inspect {prefix}/{name}".format(**locals()))
+    name = name.strip()
+    if prefix:
+        proc = runs("{docker} inspect {prefix}/{name}".format(**locals()))
+    else:
+        proc = runs("{docker} inspect {name}".format(**locals()))
     if proc.rc:
         logg.debug("%s not found: rc=%i\n\t%s", name, proc.rc, proc.err)
         return ""
@@ -109,8 +128,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host mirrorlist.centos.org:{mirror}".format(**locals())
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host mirrorlist.centos.org:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
@@ -125,8 +144,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host mirrorlist.centos.org:{mirror}".format(**locals())
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host mirrorlist.centos.org:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
@@ -141,8 +160,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host mirrorlist.centos.org:{mirror}".format(**locals())
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host mirrorlist.centos.org:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
@@ -156,8 +175,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host mirrorlist.centos.org:{mirror}".format(**locals())
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host mirrorlist.centos.org:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
@@ -172,8 +191,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host mirrorlist.centos.org:{mirror}".format(**locals())
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host mirrorlist.centos.org:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
@@ -188,8 +207,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host mirrorlist.centos.org:{mirror}".format(**locals())
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host mirrorlist.centos.org:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         # sh____("{docker} exec test-box1 yum install -y python-docker-py") # all /extras are now in epel
         sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
@@ -205,8 +224,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host download.opensuse.org:{mirror}".format(**locals())
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host download.opensuse.org:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 zypper install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
@@ -221,8 +240,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host download.opensuse.org:{mirror}".format(**locals())
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host download.opensuse.org:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         if MR143:
            # "zypper refresh repo-oss repo-update"
@@ -240,8 +259,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host download.opensuse.org:{mirror}".format(**locals())
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host download.opensuse.org:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {box1_image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 zypper install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
@@ -256,8 +275,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host download.opensuse.org:{mirror}".format(**locals())
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host download.opensuse.org:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         if MR151:
             # sh____("{docker} exec test-box1 zypper repos".format(**locals()))
@@ -276,8 +295,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host download.opensuse.org:{mirror}".format(**locals())
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host download.opensuse.org:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         # if MR152:
         #   sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-update".format(**locals()))
@@ -294,8 +313,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host archive.ubuntu.com:{mirror} --add-host security.ubuntu.com:{mirror}".format(**locals())
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host archive.ubuntu.com:{mirror_ip} --add-host security.ubuntu.com:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 apt-get update".format(**locals()))
         # sh____("{docker} exec test-box1 apt-get install -y python-docker".format(**locals()))
@@ -312,8 +331,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host archive.ubuntu.com:{mirror} --add-host security.ubuntu.com:{mirror}".format(**locals())
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host archive.ubuntu.com:{mirror_ip} --add-host security.ubuntu.com:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 apt-get update".format(**locals()))
         # sh____("{docker} exec test-box1 apt-get install -y python-docker".format(**locals()))
@@ -330,8 +349,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host archive.ubuntu.com:{mirror} --add-host security.ubuntu.com:{mirror}".format(**locals())
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host archive.ubuntu.com:{mirror_ip} --add-host security.ubuntu.com:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 apt-get update".format(**locals()))
         # sh____("{docker} exec test-box1 apt-get install -y python-docker".format(**locals()))
@@ -341,253 +360,226 @@ class DockerMirrorPackagesTest(unittest.TestCase):
     def test_2000_centos(self):
         prefix = PREFIX
         docker = DOCKER
+        mirrors = _docker_mirror
         repo_image = "centos-repo:7.3.1611"
         base_image = "centos:7.3.1611"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
-        sh____("./docker_mirror.py facts {base_image}".format(**locals()))
-        sh____("./docker_mirror.py start {base_image} --add-hosts".format(**locals()))
-        sh____("./docker_mirror.py stop {base_image}".format(**locals()))
+        sh____("{mirrors} facts {base_image}".format(**locals()))
+        sh____("{mirrors} start {base_image} --add-hosts".format(**locals()))
+        sh____("{mirrors} stop {base_image}".format(**locals()))
     def test_2073_centos(self):
-        prefix = PREFIX
         docker = DOCKER
-        repo_image = "centos-repo:7.3.1611"
-        box1_image = "centos:7.3.1611"
+        mirror = _docker_mirror
+        image = "centos:7.3.1611"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
-        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
-        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host mirrorlist.centos.org:{mirror}".format(**locals())
-        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_2074_centos(self):
-        prefix = PREFIX
         docker = DOCKER
-        repo_image = "centos-repo:7.4.1708"
-        box1_image = "centos:7.4.1708"
+        mirror = _docker_mirror
+        image = "centos:7.4.1708"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
-        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
-        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host mirrorlist.centos.org:{mirror}".format(**locals())
-        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_2075_centos(self):
-        prefix = PREFIX
         docker = DOCKER
-        repo_image = "centos-repo:7.5.1804"
-        box1_image = "centos:7.5.1804"
+        mirror = _docker_mirror
+        image = "centos:7.5.1804"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
-        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
-        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host mirrorlist.centos.org:{mirror}".format(**locals())
-        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_2076_centos(self):
-        prefix = PREFIX
         docker = DOCKER
-        repo_image = "centos-repo:7.6.1810"
-        box1_image = "centos:7.6.1810"
+        mirror = _docker_mirror
+        image = "centos:7.6.1810"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
-        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
-        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host mirrorlist.centos.org:{mirror}".format(**locals())
-        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_2077_centos(self):
-        prefix = PREFIX
         docker = DOCKER
-        repo_image = "centos-repo:7.7.1908"
-        box1_image = "centos:7.7.1908"
+        mirror = _docker_mirror
+        image = "centos:7.7.1908"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
-        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
-        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host mirrorlist.centos.org:{mirror}".format(**locals())
-        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_2080_centos(self):
-        prefix = PREFIX
         docker = DOCKER
-        repo_image = "centos-repo:8.0.1905"
-        box1_image = "centos:8"
+        mirror = _docker_mirror
+        image = "centos:8"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
-        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
-        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host mirrorlist.centos.org:{mirror}".format(**locals())
-        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         # sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals())) # all /extras are now in epel
         sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_2142_opensuse(self):
-        prefix = PREFIX
         docker = DOCKER
-        repo_image = "opensuse-repo:42.2"
-        box1_image = "opensuse:42.2"
+        mirror = _docker_mirror
+        image = "opensuse:42.2"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
-        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
-        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host download.opensuse.org:{mirror}".format(**locals())
-        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 zypper install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_2143_opensuse(self):
-        prefix = PREFIX
         docker = DOCKER
-        repo_image = "opensuse-repo:42.3"
-        box1_image = "opensuse:42.3"
+        mirror = _docker_mirror
+        image = "opensuse:42.3"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
-        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
-        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host download.opensuse.org:{mirror}".format(**locals())
-        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         if MR143:
            # "zypper refresh repo-oss repo-update"
            sh____("{docker} exec test-box1 zypper mr --no-gpgcheck oss-update".format(**locals()))
         sh____("{docker} exec test-box1 zypper install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_2150_opensuse(self):
-        prefix = PREFIX
         docker = DOCKER
-        repo_image = "opensuse-repo:15.0"
-        box1_image = "opensuse/leap:15.0"
+        mirror = _docker_mirror
+        image = "opensuse/leap:15.0"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
-        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
-        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host download.opensuse.org:{mirror}".format(**locals())
-        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 zypper install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_2151_opensuse(self):
-        prefix = PREFIX
         docker = DOCKER
-        repo_image = "opensuse-repo:15.1"
-        box1_image = "opensuse/leap:15.1"
+        mirror = _docker_mirror
+        image = "opensuse/leap:15.1"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
-        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
-        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host download.opensuse.org:{mirror}".format(**locals())
-        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         if MR151:
             # sh____("{docker} exec test-box1 zypper repos".format(**locals()))
             sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-update".format(**locals()))
             sh____("{docker} exec test-box1 zypper rr repo-non-oss repo-update-non-oss".format(**locals()))
         sh____("{docker} exec test-box1 zypper install -y python python-xml".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_2152_opensuse(self):
-        prefix = PREFIX
         docker = DOCKER
-        repo_image = "opensuse-repo:15.2"
-        box1_image = "opensuse/leap:15.2"
+        mirror = _docker_mirror
+        image = "opensuse/leap:15.2"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
-        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
-        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host download.opensuse.org:{mirror}".format(**locals())
-        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         # if MR152:
         #   sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-update".format(**locals()))
         sh____("{docker} exec test-box1 zypper install -y python python-xml".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_2404_ubuntu(self):
-        prefix = PREFIX
         docker = DOCKER
-        repo_image = "ubuntu-repo:14.04"
-        box1_image = "ubuntu:14.04"
+        mirror = _docker_mirror
+        image = "ubuntu:14.04"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
-        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
-        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host archive.ubuntu.com:{mirror} --add-host security.ubuntu.com:{mirror}".format(**locals())
-        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 apt-get update".format(**locals()))
         # sh____("{docker} exec test-box1 apt-get install -y python-docker".format(**locals()))
         sh____("{docker} exec test-box1 apt-get install -y apache2".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_2604_ubuntu(self):
-        prefix = PREFIX
         docker = DOCKER
-        repo_image = "ubuntu-repo:16.04"
-        box1_image = "ubuntu:16.04"
+        mirror = _docker_mirror
+        image = "ubuntu:16.04"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
-        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
-        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host archive.ubuntu.com:{mirror} --add-host security.ubuntu.com:{mirror}".format(**locals())
-        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 apt-get update".format(**locals()))
         # sh____("{docker} exec test-box1 apt-get install -y python-docker".format(**locals()))
         sh____("{docker} exec test-box1 apt-get install -y apache2".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_2804_ubuntu(self):
-        prefix = PREFIX
         docker = DOCKER
-        repo_image = "ubuntu-repo:18.04"
-        box1_image = "ubuntu:18.04"
+        mirror = _docker_mirror
+        image = "ubuntu:18.04"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
-        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
-        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
-        mirror = ip_container("test-repo")
-        add_host = "--add-host archive.ubuntu.com:{mirror} --add-host security.ubuntu.com:{mirror}".format(**locals())
-        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 apt-get update".format(**locals()))
         # sh____("{docker} exec test-box1 apt-get install -y python-docker".format(**locals()))
         sh____("{docker} exec test-box1 apt-get install -y apache2".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
 
 
     def test_4073_centos(self):
