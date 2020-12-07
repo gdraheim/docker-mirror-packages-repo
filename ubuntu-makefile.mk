@@ -106,7 +106,7 @@ ubuntu-sync-universe.4:   ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-sec
 ubuntu-sync-multiverse.4: ; $(MAKE) ubuntu-sync.main dist=$(UBUNTU$(UBUNTU))-security main=multiverse when=$(filter multiverse,$(REPOS))
 
 downloads=universe
-check:
+ubuntu-check:
 	echo : $(filter update universe, $(downloads))
 
 ubuntu-sync.main:
