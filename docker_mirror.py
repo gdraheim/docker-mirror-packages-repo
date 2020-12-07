@@ -326,13 +326,13 @@ class DockerMirrorPackagesRepo:
     def detect(self):
         image = self.host_system_image()
         return image
-    def repo(self, image):
+    def repo(self, image = None):
         image = image or self.image()
         mirrors = self.get_docker_mirrors(image)
         for mirror in mirrors:
             return mirror.image
         return ""
-    def repos(self, image):
+    def repos(self, image = None):
         image = image or self.image()
         mirrors = self.get_docker_mirrors(image)
         shown = ""
