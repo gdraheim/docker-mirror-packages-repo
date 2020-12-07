@@ -102,3 +102,15 @@ universerepo.18.04: ; $(MAKE) ubunturepo UBUNTU=18.04 REPOS=universe
 universerepo.16.04: ; $(MAKE) ubunturepo UBUNTU=16.04 REPOS=universe
 
 test_%: ; ./testsuite.py $@ -v
+check: ; ./testsuite.py -vv
+
+mypy:
+	zypper install -y mypy
+	zypper install -y python3-click python3-pathspec
+	cd .. && git clone git@github.com:ambv/retype.git
+	cd ../retype && git checkout 17.12.0
+
+type:
+	python3 ../retype/retype.py docker_mirror.py -t tmp.files -p .
+	mypy --strict tmp.files/docker_mirror.py
+	- rm -rf .mypy_cache
