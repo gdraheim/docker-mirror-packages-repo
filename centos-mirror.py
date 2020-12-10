@@ -283,28 +283,28 @@ def decodes(text: Union[bytes, str]) -> str:
             return text.decode("latin-1")
     return text
 
-def sh___(cmd: Union[str, List[str]], shell=True):
+def sh___(cmd: Union[str, List[str]], shell:bool=True) -> int:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
     else:    
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.check_call(cmd, shell=shell)
 
-def sx___(cmd: Union[str, List[str]], shell=True):
+def sx___(cmd: Union[str, List[str]], shell:bool=True) -> int:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
     else:    
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.call(cmd, shell=shell)
-def output(cmd: Union[str, List[str]], shell=True) -> str:
+def output(cmd: Union[str, List[str]], shell:bool=True) -> str:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
     else:    
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
-    return out
-def output2(cmd: Union[str,List[str]], shell=True) -> Tuple[str, int]:
+    return decodes(out)
+def output2(cmd: Union[str,List[str]], shell:bool=True) -> Tuple[str, int]:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
     else:    
@@ -312,7 +312,7 @@ def output2(cmd: Union[str,List[str]], shell=True) -> Tuple[str, int]:
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
     return decodes(out), run.returncode
-def output3(cmd: Union[str,List[str]], shell=True) -> Tuple[str, str, int]:
+def output3(cmd: Union[str,List[str]], shell:bool=True) -> Tuple[str, str, int]:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
     else:    
