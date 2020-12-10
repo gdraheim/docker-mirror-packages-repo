@@ -5,6 +5,7 @@
     would be 'mirror.py 7.7 sync repo -v'. If no argument is given
     then 'make' the last version = 'sync pull repo test check tags'."""
 
+# from __future__ import literal_string_interpolation # PEP498 Python3.6
 from typing import Optional, Dict, List, Tuple, Union
 import os
 import os.path as path
@@ -22,13 +23,13 @@ if sys.version[0] == '3':
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
 
-CENTOSDATADIRS= [ REPODATADIR,
+DATADIRS= [ REPODATADIR,
     "/srv/docker-mirror-packages",
     "/data/docker-mirror-packages",
     "/data/docker-centos-repo-mirror",
     "/dock/docker-mirror-packages"]
 
-OS = { "6.10" : "6.10" }
+OS : Dict[str, str] = {}
 OS["8.3"] = "8.3.2011"
 OS["8.2"] = "8.2.2004"
 OS["8.1"] = "8.1.1911"
@@ -99,7 +100,7 @@ def centos_dir() -> None:
         else:
             shutil.rmtree(dirname) # local dir
     # we want to put the mirror data on an external disk
-    for data in reversed(CENTOSDATADIRS):
+    for data in reversed(DATADIRS):
         logg.debug(".. check %s", data)
         if path.isdir(data):
             dirpath = path.join(data, dirname)
@@ -180,7 +181,7 @@ def centos_repo7() -> None:
     sh___("{docker} exec {cname} mkdir -p /srv/repo/7".format(**locals()))
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
     for subdir in ["os", "extras", "updates", "sclo"]:
-        sh___("{docker} cp centos.{centos}/{subdir} $@:/srv/repo/7/".format(**locals()))
+        sh___("{docker} cp centos.{centos}/{subdir} {cname}:/srv/repo/7/".format(**locals()))
     cmd = centosrepo7_CMD
     port = centosrepo7_PORT
     repo = IMAGESREPO
@@ -333,6 +334,7 @@ def commands() -> str:
     cmds : List[str] = []
     for name in sorted(globals()):
         if name.startswith("centos_"):
+            if "_sync_" in name: continue
             func = globals()[name]
             if callable(func):
                 cmd = name.replace("centos_", "")
@@ -360,13 +362,13 @@ if __name__ == "__main__":
        help="increase logging level [%default]")
     _o.add_option("-D","--docker", metavar="EXE", default=DOCKER,
        help="use other docker exe or podman [%default]")
-    _o.add_option("-V","--version", metavar="NUM", default=CENTOS,
+    _o.add_option("-V","--verp", metavar="NUM", default=CENTOS,
        help="use other centos version [%default]")
     opt, args = _o.parse_args()
     logging.basicConfig(level = logging.WARNING - opt.verbose * 10)
     #
     DOCKER = opt.docker
-    CENTOS_set(opt.version)
+    CENTOS_set(opt.ver)
     #
     if not args: args = [ "make" ]
     for arg in args:
