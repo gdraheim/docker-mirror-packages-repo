@@ -4,12 +4,14 @@
     number then it changes the version to be handled. A usual command
     would be 'mirror.py 7.7 sync repo -v'. If no argument is given
     then 'make' the last version = 'sync pull repo test check tags'."""
-from typing import Dict
+
+from typing import Optional, Dict, List, Tuple, Union
 import os
 import os.path as path
 import sys
 import re
 import subprocess
+import shutil
 import logging
 logg = logging.getLogger("MIRROR")
 
@@ -55,7 +57,7 @@ CENTOS_MIRROR = "rsync://rsync.hrz.tu-chemnitz.de/ftp/pub/linux/centos"
 
 #############################################################################
 
-def centos_make():
+def centos_make() -> None:
     centos_sync()
     centos_pull()
     centos_repo()
@@ -63,7 +65,7 @@ def centos_make():
     centos_check()
     centos_tags()
 
-def centos_pull():
+def centos_pull() -> None:
     docker = DOCKER
     centos = CENTOS
     if centos == X7CENTOS:
@@ -73,7 +75,7 @@ def centos_pull():
         sh___("{docker} pull centos:8".format(**locals()))
         sh___("{docker} tag  centos:8 centos:{centos}".format(**locals()))
 
-def centos_sync():
+def centos_sync() -> None:
     centos = CENTOS
     centos_dir()
     if centos.startswith("7"):
@@ -88,7 +90,7 @@ def centos_sync():
         centos_sync_PowerTools()
         centos_sync_centosplus()
 
-def centos_dir():
+def centos_dir() -> None:
     centos = CENTOS
     dirname = "centos.{centos}".format(**locals())
     if path.isdir(dirname):
@@ -121,23 +123,23 @@ CENTOS_XXX=" ".join([
    "--exclude '*.iso'",
    ])
 
-def sync_subdir(subdir):
+def sync_subdir(subdir: str) -> None:
     rsync = RSYNC
     mirror = CENTOS_MIRROR 
     centos = CENTOS 
     excludes = CENTOS_XXX
-    sh____("{rsync} -rv {mirror}/{centos}/{subdir}   centos.{centos}/ {excludes}".format(**locals()))
+    sh___("{rsync} -rv {mirror}/{centos}/{subdir}   centos.{centos}/ {excludes}".format(**locals()))
 
-def centos_sync_AppStream():   sync_subdir("AppStream")
-def centos_sync_BaseOS():      sync_subdir("BaseOS")
-def centos_sync_os():          sync_subdir("os")
-def centos_sync_extras():      sync_subdir("extras")
-def centos_sync_PowerTools():  sync_subdir("PowerTools")
-def centos_sync_centosplus():  sync_subdir("centosplus")
-def centos_sync_updates():     sync_subdir("updates")
-def centos_sync_sclo():        sync_subdir("sclo")
+def centos_sync_AppStream() -> None:   sync_subdir("AppStream")
+def centos_sync_BaseOS() -> None:      sync_subdir("BaseOS")
+def centos_sync_os() -> None:          sync_subdir("os")
+def centos_sync_extras() -> None:      sync_subdir("extras")
+def centos_sync_PowerTools() -> None:  sync_subdir("PowerTools")
+def centos_sync_centosplus() -> None:  sync_subdir("centosplus")
+def centos_sync_updates() -> None:     sync_subdir("updates")
+def centos_sync_sclo() -> None:        sync_subdir("sclo")
 
-def centos_unpack():
+def centos_unpack() -> None:
     docker = DOCKER
     centos = CENTOS
     cname = "centos-unpack-"+centos # container name
@@ -151,7 +153,7 @@ def centos_unpack():
     sh___("{docker} rm --force {cname}".format(**locals()))
     sh___("du -sh centos.{centos}/.".format(**locals()))
 
-def centos_clean():
+def centos_clean() -> None:
     centos = CENTOS
     for subdir in ["os", "extras", "updates", "sclo"]:
         sh___("rm -rf centos.{centos}/{subdir}".format(**locals()))
@@ -161,13 +163,13 @@ centosrepo7_PORT = 80
 centosrepo8_CMD = ["python","/srv/scripts/mirrorlist.py","--data","/srv/repo"]
 centosrepo8_PORT = 80
 
-def centos_repo():
+def centos_repo() -> None:
    if CENTOS.startswith("7"):
        centos_repo7()
    if CENTOS.startswith("8"):
        centos_repo8()
 
-def centos_repo7():
+def centos_repo7() -> None:
     docker = DOCKER
     centos = CENTOS
     centos_restore()
@@ -179,14 +181,14 @@ def centos_repo7():
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
     for subdir in ["os", "extras", "updates", "sclo"]:
         sh___("{docker} cp centos.{centos}/{subdir} $@:/srv/repo/7/".format(**locals()))
-    cmd = centos7_CMD
-    port = centos7_PORT
+    cmd = centosrepo7_CMD
+    port = centosrepo7_PORT
     repo = IMAGESREPO
     sh___("{docker} commit -c 'CMD {cmd}' -c 'EXPOSE {port}' {cname} {repo}/centos-repo:{centos}".format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
     centos_restore()
 
-def centos_repo8():
+def centos_repo8() -> None:
     docker = DOCKER
     centos = CENTOS
     centos_restore()
@@ -200,14 +202,14 @@ def centos_repo8():
         sh___("{docker} cp centos.{centos}/{subdir} $@:/srv/repo/8/".format(**locals()))
     sh___("{docker} exec yum install -y python2".format(**locals()))
     sh___("{docker} exec ln -sv /usr/bin/python2 /usr/bin/python".format(**locals()))
-    cmd = centos8_CMD
-    port = centos8_PORT
+    cmd = centosrepo8_CMD
+    port = centosrepo8_PORT
     repo = IMAGESREPO
     sh___("{docker} commit -c 'CMD {cmd}' -c 'EXPOSE {port}' {cname} {repo}/centos-repo:{centos}".format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
     centos_restore()
 
-def centos_tags(): 
+def centos_tags() -> None:
     docker = DOCKER
     centos = CENTOS
     repo = IMAGESREPO
@@ -221,25 +223,25 @@ def centos_tags():
        sh___("{docker} tag {repo}/{name}:{centos} {repo}/{name}{ver1}:{centos}".format(**locals()))
        sh___("{docker} tag {repo}/{name}:{centos} {repo}/{name}{ver1}:latest".format(**locals()))
 
-def centos_cleaner():
+def centos_cleaner() -> None:
    centos = CENTOS
    arch = "x86_64"
    for subdir in ["updates", "extras"]:
        orig = "centos.{centos}/{subdir}/{arch}/drpms"
        save = "centos.{centos}/{subdir}.{arch}.drpms"
        if path.isdir(orig):
-           os.move(orig, save)
+           shutil.move(orig, save)
 
-def centos_restore():
+def centos_restore() -> None:
    centos = CENTOS
    arch = "x86_64"
    for subdir in ["updates", "extras"]:
        orig = "centos.{centos}/{subdir}/{arch}/drpms"
        save = "centos.{centos}/{subdir}.{arch}.drpms"
        if path.isdir(save):
-           os.move(save, orig)
+           shutil.move(save, orig)
 
-def centos_test():
+def centos_test() -> None:
     centos = CENTOS
     logg.error("not implemented")
     # sed -e "s|centos:centos7|centos:$(CENTOS)|" -e "s|centos-repo:7|centos-repo:$(CENTOS)|" \
@@ -249,7 +251,7 @@ def centos_test():
     # docker exec centosworks_host_1 yum install -y firefox
     # docker-compose -p $@ -f centos-compose.tmp down
 
-def centos_check():
+def centos_check() -> None:
     docker = DOCKER
     centos = CENTOS
     cname = "centos-check-"+centos # container name
@@ -258,18 +260,18 @@ def centos_check():
     centosdir = "centos.{centos}".format(**locals())
     out, end = output2("{docker} exec {cname} rpm -qa".format(**locals()))
     for f in out.split("\n"):
-        found = file_find(centosdir, f+".rpm")
+        found = path_find(centosdir, f+".rpm")
         if found:
             print("OK {f}.rpm        {found}".format(**locals()))
     for f in out.split("\n"):
-        found = file_find(centosdir, f+".rpm")
+        found = path_find(centosdir, f+".rpm")
         if not found:
             print("?? {f}.rpm".format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
 
 #############################################################################
 
-def decodes(text):
+def decodes(text: Union[bytes, str]) -> str:
     if text is None: return None
     if isinstance(text, bytes):
         encoded = sys.getdefaultencoding()
@@ -280,19 +282,21 @@ def decodes(text):
         except:
             return text.decode("latin-1")
     return text
-def sh____(cmd, shell=True):
+
+def sh___(cmd: Union[str, List[str]], shell=True):
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
     else:    
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.check_call(cmd, shell=shell)
-def sx____(cmd, shell=True):
+
+def sx___(cmd: Union[str, List[str]], shell=True):
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
     else:    
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.call(cmd, shell=shell)
-def output(cmd, shell=True):
+def output(cmd: Union[str, List[str]], shell=True) -> str:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
     else:    
@@ -300,7 +304,7 @@ def output(cmd, shell=True):
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
     return out
-def output2(cmd, shell=True):
+def output2(cmd: Union[str,List[str]], shell=True) -> Tuple[str, int]:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
     else:    
@@ -308,7 +312,7 @@ def output2(cmd, shell=True):
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
     return decodes(out), run.returncode
-def output3(cmd, shell=True):
+def output3(cmd: Union[str,List[str]], shell=True) -> Tuple[str, str, int]:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
     else:    
@@ -319,8 +323,14 @@ def output3(cmd, shell=True):
 
 #############################################################################
 
-def commands():
-    cmds = []
+def path_find(base: str, name: str) -> Optional[str]:
+    for dirpath, dirnames, filenames in os.walk(base):
+        if name in filenames:
+            return path.join(dirpath, name)
+    return None
+
+def commands() -> str:
+    cmds : List[str] = []
     for name in sorted(globals()):
         if name.startswith("centos_"):
             func = globals()[name]
@@ -329,7 +339,7 @@ def commands():
                 cmds += [ cmd ]
     return "|".join(cmds)
 
-def set_CENTOS(centos):
+def CENTOS_set(centos: str) -> str:
     global CENTOS
     if centos in OS:
         CENTOS=OS[centos]
@@ -340,6 +350,7 @@ def set_CENTOS(centos):
     if centos not in OS.values():
         logg.warning("%s is not a known os version", centos)
     CENTOS = centos
+    return CENTOS
 
 if __name__ == "__main__":
     from optparse import OptionParser
@@ -355,12 +366,12 @@ if __name__ == "__main__":
     logging.basicConfig(level = logging.WARNING - opt.verbose * 10)
     #
     DOCKER = opt.docker
-    CENTOS = set_CENTOS(opt.version)
+    CENTOS_set(opt.version)
     #
     if not args: args = [ "make" ]
     for arg in args:
         if arg[0] in "123456789":
-           set_CENTOS(arg)
+           CENTOS_set(arg)
            continue
         funcname = "centos_"+arg.replace("-", "_")
         allnames = globals()
