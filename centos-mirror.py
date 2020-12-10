@@ -5,6 +5,11 @@
     would be 'mirror.py 7.7 sync repo -v'. If no argument is given
     then 'make' the last version = 'sync pull repo test check tags'."""
 
+__copyright__ = "(C) 2020 Guido Draheim"
+__contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
+__license__ = "CC0 Creative Commons Zero (Public Domain)"
+__version__ = "1.6.2494"
+
 # from __future__ import literal_string_interpolation # PEP498 Python3.6
 from typing import Optional, Dict, List, Tuple, Union
 import os
@@ -23,13 +28,13 @@ if sys.version[0] == '3':
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
 
-DATADIRS= [ REPODATADIR,
-    "/srv/docker-mirror-packages",
-    "/data/docker-mirror-packages",
-    "/data/docker-centos-repo-mirror",
-    "/dock/docker-mirror-packages"]
+DATADIRS = [REPODATADIR,
+            "/srv/docker-mirror-packages",
+            "/data/docker-mirror-packages",
+            "/data/docker-centos-repo-mirror",
+            "/dock/docker-mirror-packages"]
 
-OS : Dict[str, str] = {}
+OS: Dict[str, str] = {}
 OS["8.3"] = "8.3.2011"
 OS["8.2"] = "8.2.2004"
 OS["8.1"] = "8.1.1911"
@@ -98,7 +103,7 @@ def centos_dir() -> None:
         if path.islink(dirname):
             os.unlink(dirname)
         else:
-            shutil.rmtree(dirname) # local dir
+            shutil.rmtree(dirname)  # local dir
     # we want to put the mirror data on an external disk
     for data in reversed(DATADIRS):
         logg.debug(".. check %s", data)
@@ -112,38 +117,38 @@ def centos_dir() -> None:
     if path.isdir(dircheck):
         logg.info("%s -> %s", dirname, dirpath)
     else:
-        os.mkdir(dirname) # local dir
+        os.mkdir(dirname)  # local dir
         logg.warning("%s/. local dir", dirname)
 
-CENTOS_XXX=" ".join([
-   "--exclude ppc64le",
-   "--exclude aarch64",
-   "--exclude EFI",
-   "--exclude images",
-   "--exclude isolinux",
-   "--exclude '*.iso'",
-   ])
+CENTOS_XXX = " ".join([
+    "--exclude ppc64le",
+    "--exclude aarch64",
+    "--exclude EFI",
+    "--exclude images",
+    "--exclude isolinux",
+    "--exclude '*.iso'",
+])
 
 def sync_subdir(subdir: str) -> None:
     rsync = RSYNC
-    mirror = CENTOS_MIRROR 
-    centos = CENTOS 
+    mirror = CENTOS_MIRROR
+    centos = CENTOS
     excludes = CENTOS_XXX
     sh___("{rsync} -rv {mirror}/{centos}/{subdir}   centos.{centos}/ {excludes}".format(**locals()))
 
-def centos_sync_AppStream() -> None:   sync_subdir("AppStream")
-def centos_sync_BaseOS() -> None:      sync_subdir("BaseOS")
-def centos_sync_os() -> None:          sync_subdir("os")
-def centos_sync_extras() -> None:      sync_subdir("extras")
-def centos_sync_PowerTools() -> None:  sync_subdir("PowerTools")
-def centos_sync_centosplus() -> None:  sync_subdir("centosplus")
-def centos_sync_updates() -> None:     sync_subdir("updates")
-def centos_sync_sclo() -> None:        sync_subdir("sclo")
+def centos_sync_AppStream() -> None: sync_subdir("AppStream")
+def centos_sync_BaseOS() -> None: sync_subdir("BaseOS")
+def centos_sync_os() -> None: sync_subdir("os")
+def centos_sync_extras() -> None: sync_subdir("extras")
+def centos_sync_PowerTools() -> None: sync_subdir("PowerTools")
+def centos_sync_centosplus() -> None: sync_subdir("centosplus")
+def centos_sync_updates() -> None: sync_subdir("updates")
+def centos_sync_sclo() -> None: sync_subdir("sclo")
 
 def centos_unpack() -> None:
     docker = DOCKER
     centos = CENTOS
-    cname = "centos-unpack-"+centos # container name
+    cname = "centos-unpack-" + centos  # container name
     image = "localhost:5000/centos-repo"
     sx___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} run --name={cname} --detach {image}:{centos} sleep 9999".format(**locals()))
@@ -159,23 +164,23 @@ def centos_clean() -> None:
     for subdir in ["os", "extras", "updates", "sclo"]:
         sh___("rm -rf centos.{centos}/{subdir}".format(**locals()))
 
-centosrepo7_CMD = ["python","/srv/scripts/mirrorlist.py","--data","/srv/repo"]
+centosrepo7_CMD = ["python", "/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
 centosrepo7_PORT = 80
-centosrepo8_CMD = ["python","/srv/scripts/mirrorlist.py","--data","/srv/repo"]
+centosrepo8_CMD = ["python", "/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
 centosrepo8_PORT = 80
 
 def centos_repo() -> None:
-   if CENTOS.startswith("7"):
-       centos_repo7()
-   if CENTOS.startswith("8"):
-       centos_repo8()
+    if CENTOS.startswith("7"):
+        centos_repo7()
+    if CENTOS.startswith("8"):
+        centos_repo8()
 
 def centos_repo7() -> None:
     docker = DOCKER
     centos = CENTOS
     centos_restore()
     centos_cleaner()
-    cname = "centos-repo-"+centos # container name
+    cname = "centos-repo-" + centos  # container name
     sx___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} run --name={cname} --detach centos:{centos} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/7".format(**locals()))
@@ -194,7 +199,7 @@ def centos_repo8() -> None:
     centos = CENTOS
     centos_restore()
     centos_cleaner()
-    cname = "centos-repo-"+centos # container name
+    cname = "centos-repo-" + centos  # container name
     sx___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} run --name={cname} --detach centos:{centos} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/7".format(**locals()))
@@ -217,30 +222,30 @@ def centos_tags() -> None:
     name = "centos-repo"
     ver2 = re.sub("[.]\d+$", "", centos)
     if ver2 != centos:
-       sh___("{docker} tag {repo}/{name}:{centos} {repo}/{name}:{ver2}".format(**locals()))
+        sh___("{docker} tag {repo}/{name}:{centos} {repo}/{name}:{ver2}".format(**locals()))
     ver1 = re.sub("[.]\d+$", "", ver2)
     if ver1 != ver2:
-       sh___("{docker} tag {repo}/{name}:{centos} {repo}/{name}:{ver1}".format(**locals()))
-       sh___("{docker} tag {repo}/{name}:{centos} {repo}/{name}{ver1}:{centos}".format(**locals()))
-       sh___("{docker} tag {repo}/{name}:{centos} {repo}/{name}{ver1}:latest".format(**locals()))
+        sh___("{docker} tag {repo}/{name}:{centos} {repo}/{name}:{ver1}".format(**locals()))
+        sh___("{docker} tag {repo}/{name}:{centos} {repo}/{name}{ver1}:{centos}".format(**locals()))
+        sh___("{docker} tag {repo}/{name}:{centos} {repo}/{name}{ver1}:latest".format(**locals()))
 
 def centos_cleaner() -> None:
-   centos = CENTOS
-   arch = "x86_64"
-   for subdir in ["updates", "extras"]:
-       orig = "centos.{centos}/{subdir}/{arch}/drpms"
-       save = "centos.{centos}/{subdir}.{arch}.drpms"
-       if path.isdir(orig):
-           shutil.move(orig, save)
+    centos = CENTOS
+    arch = "x86_64"
+    for subdir in ["updates", "extras"]:
+        orig = "centos.{centos}/{subdir}/{arch}/drpms"
+        save = "centos.{centos}/{subdir}.{arch}.drpms"
+        if path.isdir(orig):
+            shutil.move(orig, save)
 
 def centos_restore() -> None:
-   centos = CENTOS
-   arch = "x86_64"
-   for subdir in ["updates", "extras"]:
-       orig = "centos.{centos}/{subdir}/{arch}/drpms"
-       save = "centos.{centos}/{subdir}.{arch}.drpms"
-       if path.isdir(save):
-           shutil.move(save, orig)
+    centos = CENTOS
+    arch = "x86_64"
+    for subdir in ["updates", "extras"]:
+        orig = "centos.{centos}/{subdir}/{arch}/drpms"
+        save = "centos.{centos}/{subdir}.{arch}.drpms"
+        if path.isdir(save):
+            shutil.move(save, orig)
 
 def centos_test() -> None:
     centos = CENTOS
@@ -255,17 +260,17 @@ def centos_test() -> None:
 def centos_check() -> None:
     docker = DOCKER
     centos = CENTOS
-    cname = "centos-check-"+centos # container name
+    cname = "centos-check-" + centos  # container name
     sx___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} run --name={cname} --detach centos:{centos} sleep 9999".format(**locals()))
     centosdir = "centos.{centos}".format(**locals())
     out, end = output2("{docker} exec {cname} rpm -qa".format(**locals()))
     for f in out.split("\n"):
-        found = path_find(centosdir, f+".rpm")
+        found = path_find(centosdir, f + ".rpm")
         if found:
             print("OK {f}.rpm        {found}".format(**locals()))
     for f in out.split("\n"):
-        found = path_find(centosdir, f+".rpm")
+        found = path_find(centosdir, f + ".rpm")
         if not found:
             print("?? {f}.rpm".format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
@@ -278,45 +283,45 @@ def decodes(text: Union[bytes, str]) -> str:
         encoded = sys.getdefaultencoding()
         if encoded in ["ascii"]:
             encoded = "utf-8"
-        try: 
+        try:
             return text.decode(encoded)
         except:
             return text.decode("latin-1")
     return text
 
-def sh___(cmd: Union[str, List[str]], shell:bool=True) -> int:
+def sh___(cmd: Union[str, List[str]], shell: bool = True) -> int:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
-    else:    
+    else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.check_call(cmd, shell=shell)
 
-def sx___(cmd: Union[str, List[str]], shell:bool=True) -> int:
+def sx___(cmd: Union[str, List[str]], shell: bool = True) -> int:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
-    else:    
+    else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.call(cmd, shell=shell)
-def output(cmd: Union[str, List[str]], shell:bool=True) -> str:
+def output(cmd: Union[str, List[str]], shell: bool = True) -> str:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
-    else:    
+    else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
     return decodes(out)
-def output2(cmd: Union[str,List[str]], shell:bool=True) -> Tuple[str, int]:
+def output2(cmd: Union[str, List[str]], shell: bool = True) -> Tuple[str, int]:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
-    else:    
+    else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
     return decodes(out), run.returncode
-def output3(cmd: Union[str,List[str]], shell:bool=True) -> Tuple[str, str, int]:
+def output3(cmd: Union[str, List[str]], shell: bool = True) -> Tuple[str, str, int]:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
-    else:    
+    else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = run.communicate()
@@ -331,23 +336,23 @@ def path_find(base: str, name: str) -> Optional[str]:
     return None
 
 def commands() -> str:
-    cmds : List[str] = []
+    cmds: List[str] = []
     for name in sorted(globals()):
         if name.startswith("centos_"):
             if "_sync_" in name: continue
             func = globals()[name]
             if callable(func):
                 cmd = name.replace("centos_", "")
-                cmds += [ cmd ]
+                cmds += [cmd]
     return "|".join(cmds)
 
 def CENTOS_set(centos: str) -> str:
     global CENTOS
     if centos in OS:
-        CENTOS=OS[centos]
+        CENTOS = OS[centos]
         return CENTOS
     if len(centos) <= 2:
-        CENTOS=max([os for os in OS if os.startswith(centos)])
+        CENTOS = max([os for os in OS if os.startswith(centos)])
         return CENTOS
     if centos not in OS.values():
         logg.warning("%s is not a known os version", centos)
@@ -357,25 +362,25 @@ def CENTOS_set(centos: str) -> str:
 if __name__ == "__main__":
     from optparse import OptionParser
     _o = OptionParser("%%prog [-options] [%s]" % commands(),
-       epilog=re.sub("\\s+", " ", __doc__).strip())
-    _o.add_option("-v","--verbose", action="count", default=0,
-       help="increase logging level [%default]")
-    _o.add_option("-D","--docker", metavar="EXE", default=DOCKER,
-       help="use other docker exe or podman [%default]")
-    _o.add_option("-V","--verp", metavar="NUM", default=CENTOS,
-       help="use other centos version [%default]")
+                      epilog=re.sub("\\s+", " ", __doc__).strip())
+    _o.add_option("-v", "--verbose", action="count", default=0,
+                  help="increase logging level [%default]")
+    _o.add_option("-D", "--docker", metavar="EXE", default=DOCKER,
+                  help="use other docker exe or podman [%default]")
+    _o.add_option("-V", "--verp", metavar="NUM", default=CENTOS,
+                  help="use other centos version [%default]")
     opt, args = _o.parse_args()
-    logging.basicConfig(level = logging.WARNING - opt.verbose * 10)
+    logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
     #
     DOCKER = opt.docker
     CENTOS_set(opt.ver)
     #
-    if not args: args = [ "make" ]
+    if not args: args = ["make"]
     for arg in args:
         if arg[0] in "123456789":
-           CENTOS_set(arg)
-           continue
-        funcname = "centos_"+arg.replace("-", "_")
+            CENTOS_set(arg)
+            continue
+        funcname = "centos_" + arg.replace("-", "_")
         allnames = globals()
         if funcname in globals():
             func = globals()[funcname]
