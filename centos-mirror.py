@@ -4,6 +4,7 @@
     number then it changes the version to be handled. A usual command
     would be 'mirror.py 7.7 sync repo -v'. If no argument is given
     then 'make' the last version = 'sync pull repo test check tags'."""
+from typing import Dict
 import os
 import os.path as path
 import sys
@@ -25,23 +26,25 @@ CENTOSDATADIRS= [ REPODATADIR,
     "/data/docker-centos-repo-mirror",
     "/dock/docker-mirror-packages"]
 
+OS = { "6.10" : "6.10" }
+OS["8.3"] = "8.3.2011"
+OS["8.2"] = "8.2.2004"
+OS["8.1"] = "8.1.1911"
+OS["8.0"] = "8.0.1905"
+OS["7.9"] = "7.9.2009"
+OS["7.8"] = "7.8.2003"
+OS["7.7"] = "7.7.1908"
+OS["7.6"] = "7.6.1810"
+OS["7.5"] = "7.5.1804"
+OS["7.4"] = "7.4.1708"
+OS["7.3"] = "7.3.1611"
+OS["7.2"] = "7.2.1511"
+OS["7.1"] = "7.1.1503"
+OS["7.0"] = "7.0.1406"
+
+X7CENTOS = max([os for os in OS if os.startswith("7.")])
+X8CENTOS = max([os for os in OS if os.startswith("8.")])
 CENTOS = "8.0.1905"
-X8CENTOS = "8.3.2011"
-# CENTOS = "8.3.2011"
-# CENTOS = "8.2.2004"
-# CENTOS = "8.1.1911"
-# CENTOS = "8.0.1905"
-X7CENTOS = "7.9.2009"
-# CENTOS = "7.9.2009"
-# CENTOS = "7.8.2003"
-# CENTOS = "7.7.1908"
-# CENTOS = "7.6.1810"
-# CENTOS = "7.5.1804"
-# CENTOS = "7.4.1708"
-# CENTOS = "7.3.1611"
-# CENTOS = "7.2.1511"
-# CENTOS = "7.1.1503"
-# CENTOS = "7.0.1406"
 
 DOCKER = "docker"
 RSYNC = "rsync"
@@ -94,7 +97,7 @@ def centos_dir():
         else:
             shutil.rmtree(dirname) # local dir
     # we want to put the mirror data on an external disk
-    for data in CENTOSDATADIRS:
+    for data in reversed(CENTOSDATADIRS):
         logg.debug(".. check %s", data)
         if path.isdir(data):
             dirpath = path.join(data, dirname)
@@ -326,6 +329,18 @@ def commands():
                 cmds += [ cmd ]
     return "|".join(cmds)
 
+def set_CENTOS(centos):
+    global CENTOS
+    if centos in OS:
+        CENTOS=OS[centos]
+        return CENTOS
+    if len(centos) <= 2:
+        CENTOS=max([os for os in OS if os.startswith(centos)])
+        return CENTOS
+    if centos not in OS.values():
+        logg.warning("%s is not a known os version", centos)
+    CENTOS = centos
+
 if __name__ == "__main__":
     from optparse import OptionParser
     _o = OptionParser("%%prog [-options] [%s]" % commands(),
@@ -340,12 +355,12 @@ if __name__ == "__main__":
     logging.basicConfig(level = logging.WARNING - opt.verbose * 10)
     #
     DOCKER = opt.docker
-    CENTOS = opt.version
+    CENTOS = set_CENTOS(opt.version)
     #
     if not args: args = [ "make" ]
     for arg in args:
         if arg[0] in "123456789":
-           CENTOS = arg
+           set_CENTOS(arg)
            continue
         funcname = "centos_"+arg.replace("-", "_")
         allnames = globals()
