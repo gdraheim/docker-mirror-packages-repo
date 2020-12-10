@@ -5,6 +5,11 @@
     would be 'mirror.py 19.10 sync repo -v'. If no argument is given
     then 'make' the last version = 'sync pool repo test tags'."""
 
+__copyright__ = "(C) 2020 Guido Draheim"
+__contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
+__license__ = "CC0 Creative Commons Zero (Public Domain)"
+__version__ = "1.6.2494"
+
 # from __future__ import literal_string_interpolation # PEP498 Python3.6
 from typing import Optional, Dict, List, Tuple, Union
 import os
@@ -23,11 +28,11 @@ if sys.version[0] == '3':
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
 
-DATADIRS= [ REPODATADIR,
-    "/srv/docker-mirror-packages",
-    "/data/docker-mirror-packages",
-    "/data/docker-centos-repo-mirror",
-    "/dock/docker-mirror-packages"]
+DATADIRS = [REPODATADIR,
+            "/srv/docker-mirror-packages",
+            "/data/docker-mirror-packages",
+            "/data/docker-centos-repo-mirror",
+            "/dock/docker-mirror-packages"]
 
 
 UBUNTU_OS = "ubuntu"
@@ -36,7 +41,7 @@ RSYNC_UBUNTU = "rsync://ftp5.gwdg.de/pub/linux/debian/ubuntu"
 
 UBUNTU_TMP = "ubuntu.tmp"
 
-LTS = [ "14.04", "16.04", "18.04", "20.04" ]
+LTS = ["14.04", "16.04", "18.04", "20.04"]
 DIST: Dict[str, str] = {}
 DIST["20.10"] = "groovy"
 DIST["20.04"] = "focal"
@@ -59,8 +64,8 @@ RSYNC = "rsync"
 
 ######################################################################
 
-# the Ubuntu package repository has the deb packages of all version and all repos 
-# and almost all areas in the same ./pool subdirectory. It is only the package lists 
+# the Ubuntu package repository has the deb packages of all version and all repos
+# and almost all areas in the same ./pool subdirectory. It is only the package lists
 # that are hosted in different subdirectories. However the 4/-security area is on
 # a different download host (not archive.ubuntu.com but security.ubuntu.com) which
 # is enabled by default. Don't ask.
@@ -70,7 +75,7 @@ RSYNC = "rsync"
 
 def ubuntu_make() -> None:
     ubuntu_sync()
-    ubuntu_pool() # backard compat
+    ubuntu_pool()  # backard compat
     ubuntu_repo()
     ubuntu_test()
     ubuntu_tags()
@@ -105,7 +110,7 @@ def ubuntu_dir() -> None:
         if path.islink(dirname):
             os.unlink(dirname)
         else:
-            shutil.rmtree(dirname) # local dir
+            shutil.rmtree(dirname)  # local dir
     # we want to put the mirror data on an external disk
     for data in reversed(DATADIRS):
         logg.debug(".. check %s", data)
@@ -119,14 +124,14 @@ def ubuntu_dir() -> None:
     if path.isdir(dircheck):
         logg.info("%s -> %s", dirname, dirpath)
     else:
-        os.mkdir(dirname) # local dir
+        os.mkdir(dirname)  # local dir
         logg.warning("%s/. local dir", dirname)
 
 
 def ubuntu_sync_base_1() -> None: ubuntu_sync_base(dist=DIST[UBUNTU])
-def ubuntu_sync_base_2() -> None: ubuntu_sync_base(dist=DIST[UBUNTU]+"-updates")
-def ubuntu_sync_base_3() -> None: ubuntu_sync_base(dist=DIST[UBUNTU]+"-backports")
-def ubuntu_sync_base_4() -> None: ubuntu_sync_base(dist=DIST[UBUNTU]+"-security")
+def ubuntu_sync_base_2() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-updates")
+def ubuntu_sync_base_3() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-backports")
+def ubuntu_sync_base_4() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-security")
 def ubuntu_sync_base(dist: str) -> None:
     logg.info("dist = %s", dist)
     tmpdir = UBUNTU_TMP
@@ -138,38 +143,38 @@ def ubuntu_sync_base(dist: str) -> None:
         os.makedirs(tmpdir)
     tmpfile = "{tmpdir}/Release.{dist}.base.tmp".format(**locals())
     with open(tmpfile, "w") as f:
-         print("Release", file=f)
-         print("InRelease", file=f)
+        print("Release", file=f)
+        print("InRelease", file=f)
     rsync = RSYNC
     mirror = RSYNC_UBUNTU
-    options = "--ignore-times --files-from="+tmpfile
+    options = "--ignore-times --files-from=" + tmpfile
     sh___("{rsync} -v {mirror}/dists/{dist} ubuntu.{ubuntu}/dists/{dist} {options}".format(**locals()))
 
-def when(levels: str, repos: List[str]) -> List[str]: return [ item for item in levels.split(",") if item and item in repos ]
-def ubuntu_sync_main_1() -> None:       ubuntu_sync_main(dist=DIST[UBUNTU], main="main", when=when("updates,restricted,universe,multiverse", REPOS))
+def when(levels: str, repos: List[str]) -> List[str]: return [item for item in levels.split(",") if item and item in repos]
+def ubuntu_sync_main_1() -> None: ubuntu_sync_main(dist=DIST[UBUNTU], main="main", when=when("updates,restricted,universe,multiverse", REPOS))
 def ubuntu_sync_restricted_1() -> None: ubuntu_sync_main(dist=DIST[UBUNTU], main="restricted", when=when("restricted,universe,multiverse", REPOS))
-def ubuntu_sync_universe_1() -> None:   ubuntu_sync_main(dist=DIST[UBUNTU], main="universe", when=when("universe,multiverse", REPOS))
+def ubuntu_sync_universe_1() -> None: ubuntu_sync_main(dist=DIST[UBUNTU], main="universe", when=when("universe,multiverse", REPOS))
 def ubuntu_sync_multiverse_1() -> None: ubuntu_sync_main(dist=DIST[UBUNTU], main="multiverse", when=when("multiverse", REPOS))
-def ubuntu_sync_main_2() -> None:       ubuntu_sync_main(dist=DIST[UBUNTU]+"-updates", main="main", when=when("updates,restricted,universe,multiverse", REPOS))
-def ubuntu_sync_restricted_2() -> None: ubuntu_sync_main(dist=DIST[UBUNTU]+"-updates", main="restricted", when=when("restricted,universe,multiverse", REPOS))
-def ubuntu_sync_universe_2() -> None:   ubuntu_sync_main(dist=DIST[UBUNTU]+"-updates", main="universe", when=when("universe,multiverse", REPOS))
-def ubuntu_sync_multiverse_2() -> None: ubuntu_sync_main(dist=DIST[UBUNTU]+"-updates", main="multiverse", when=when("multiverse", REPOS))
-def ubuntu_sync_main_3() -> None:       ubuntu_sync_main(dist=DIST[UBUNTU]+"-backports", main="main", when=when("updates,restricted,universe,multiverse", REPOS))
-def ubuntu_sync_restricted_3() -> None: ubuntu_sync_main(dist=DIST[UBUNTU]+"-backports", main="restricted", when=when("restricted,universe,multiverse", REPOS))
-def ubuntu_sync_universe_3() -> None:   ubuntu_sync_main(dist=DIST[UBUNTU]+"-backports", main="universe", when=when("universe,multiverse", REPOS))
-def ubuntu_sync_multiverse_3() -> None: ubuntu_sync_main(dist=DIST[UBUNTU]+"-backports", main="multiverse", when=when("multiverse", REPOS))
-def ubuntu_sync_main_4() -> None:       ubuntu_sync_main(dist=DIST[UBUNTU]+"-security", main="main",  when=when("updates,restricted,universe,multiverse", REPOS))
-def ubuntu_sync_restricted_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU]+"-security", main="restricted", when=when("restricted,universe,multiverse", REPOS))
-def ubuntu_sync_universe_4() -> None:   ubuntu_sync_main(dist=DIST[UBUNTU]+"-security", main="universe", when=when("universe,multiverse", REPOS))
-def ubuntu_sync_multiverse_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU]+"-security", main="multiverse", when=when("multiverse", REPOS))
+def ubuntu_sync_main_2() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-updates", main="main", when=when("updates,restricted,universe,multiverse", REPOS))
+def ubuntu_sync_restricted_2() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-updates", main="restricted", when=when("restricted,universe,multiverse", REPOS))
+def ubuntu_sync_universe_2() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-updates", main="universe", when=when("universe,multiverse", REPOS))
+def ubuntu_sync_multiverse_2() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-updates", main="multiverse", when=when("multiverse", REPOS))
+def ubuntu_sync_main_3() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-backports", main="main", when=when("updates,restricted,universe,multiverse", REPOS))
+def ubuntu_sync_restricted_3() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-backports", main="restricted", when=when("restricted,universe,multiverse", REPOS))
+def ubuntu_sync_universe_3() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-backports", main="universe", when=when("universe,multiverse", REPOS))
+def ubuntu_sync_multiverse_3() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-backports", main="multiverse", when=when("multiverse", REPOS))
+def ubuntu_sync_main_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-security", main="main", when=when("updates,restricted,universe,multiverse", REPOS))
+def ubuntu_sync_restricted_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-security", main="restricted", when=when("restricted,universe,multiverse", REPOS))
+def ubuntu_sync_universe_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-security", main="universe", when=when("universe,multiverse", REPOS))
+def ubuntu_sync_multiverse_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-security", main="multiverse", when=when("multiverse", REPOS))
 
-downloads=["universe"]
+downloads = ["universe"]
 def ubuntu_check() -> None:
-        print(": %s" % when("update,universe", downloads))
+    print(": %s" % when("update,universe", downloads))
 
 def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
     ubuntu = UBUNTU
-    maindir= "ubuntu.{ubuntu}/dists/{dist}/{main}".format(**locals())
+    maindir = "ubuntu.{ubuntu}/dists/{dist}/{main}".format(**locals())
     if not path.isdir(maindir): os.makedirs(maindir)
     rsync = RSYNC
     mirror = RSYNC_UBUNTU
@@ -177,7 +182,7 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
     sh___("{rsync} -rv {mirror}/dists/{dist}/{main}/binary-i386  {maindir} --ignore-times".format(**locals()))
     sh___("{rsync} -rv {mirror}/dists/{dist}/{main}/source       {maindir} --ignore-times".format(**locals()))
     gz1 = "{maindir}/binary-amd64/Packages.gz".format
-    packages=output("zcat {maindir}/binary-amd64/Packages.gz {maindir}/binary-i386/Packages.gz".format(**locals()))
+    packages = output("zcat {maindir}/binary-amd64/Packages.gz {maindir}/binary-i386/Packages.gz".format(**locals()))
     tmpdir = UBUNTU_TMP
     if not path.isdir(tmpdir): os.makedirs(tmpdir)
     tmpfile = "{tmpdir}/Packages.{dist}.{main}.tmp".format(**locals())
@@ -187,10 +192,10 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
                 continue
             filename = re.sub("Filename: *pool/", "", line)
             print(filename, file=f)
-    pooldir= "ubuntu.{ubuntu}/pools/{dist}/{main}/pool".format(**locals())
+    pooldir = "ubuntu.{ubuntu}/pools/{dist}/{main}/pool".format(**locals())
     if not path.isdir(pooldir): os.makedirs(pooldir)
     if when:
-      	sh___("{rsync} -rv {mirror}/pool {pooldir} --size-only --files-from={tmpfile}".format(**locals()))
+        sh___("{rsync} -rv {mirror}/pool {pooldir} --size-only --files-from={tmpfile}".format(**locals()))
 
 def ubuntu_pool() -> None:
     ubuntu = UBUNTU
@@ -211,14 +216,14 @@ def ubuntu_poolcount() -> None:
     ubuntu = UBUNTU
     sh___("echo `find ubuntu.{ubuntu}/pool -type f | wc -l` pool files".format(**locals()))
 
-ubunturepo_CMD = ["python","/srv/scripts/filelist.py","--data","/srv/repo"]
+ubunturepo_CMD = ["python", "/srv/scripts/filelist.py", "--data", "/srv/repo"]
 ubunturepo_PORT = "80"
 def ubuntu_repo() -> None:
     docker = DOCKER
     ubuntu = UBUNTU
     image = UBUNTU_OS
     imagesrepo = IMAGESREPO
-    cname = "ubuntu-repo-"+ubuntu # container name
+    cname = "ubuntu-repo-" + ubuntu  # container name
     sx___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} run --name={cname} --detach {image}:{ubuntu} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/ubuntu".format(**locals()))
@@ -228,7 +233,8 @@ def ubuntu_repo() -> None:
     sh___("{docker} cp ubuntu.{ubuntu}/pool  {cname}:/srv/repo/ubuntu".format(**locals()))
     sh___("{docker} exec {cname} apt-get update".format(**locals()))
     sh___("{docker} exec {cname} apt-get install -y python".format(**locals()))
-    CMD = ubunturepo_CMD ; PORT = ubunturepo_PORT
+    CMD = ubunturepo_CMD
+    PORT = ubunturepo_PORT
     sh___("{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {imagesrepo}/ubuntu-repo:{ubuntu}".format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
     if REPOS: ubuntu_tags()
@@ -265,45 +271,45 @@ def decodes(text: Union[bytes, str]) -> str:
         encoded = sys.getdefaultencoding()
         if encoded in ["ascii"]:
             encoded = "utf-8"
-        try: 
+        try:
             return text.decode(encoded)
         except:
             return text.decode("latin-1")
     return text
 
-def sh___(cmd: Union[str, List[str]], shell:bool=True) -> int:
+def sh___(cmd: Union[str, List[str]], shell: bool = True) -> int:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
-    else:    
+    else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.check_call(cmd, shell=shell)
 
-def sx___(cmd: Union[str, List[str]], shell:bool=True) -> int:
+def sx___(cmd: Union[str, List[str]], shell: bool = True) -> int:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
-    else:    
+    else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.call(cmd, shell=shell)
-def output(cmd: Union[str, List[str]], shell:bool=True) -> str:
+def output(cmd: Union[str, List[str]], shell: bool = True) -> str:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
-    else:    
+    else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
     return decodes(out)
-def output2(cmd: Union[str,List[str]], shell:bool=True) -> Tuple[str, int]:
+def output2(cmd: Union[str, List[str]], shell: bool = True) -> Tuple[str, int]:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
-    else:    
+    else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
     return decodes(out), run.returncode
-def output3(cmd: Union[str,List[str]], shell:bool=True) -> Tuple[str, str, int]:
+def output3(cmd: Union[str, List[str]], shell: bool = True) -> Tuple[str, str, int]:
     if isinstance(cmd, basestring):
         logg.info(": %s", cmd)
-    else:    
+    else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = run.communicate()
@@ -318,26 +324,26 @@ def path_find(base: str, name: str) -> Optional[str]:
     return None
 
 def commands() -> str:
-    cmds : List[str] = []
+    cmds: List[str] = []
     for name in sorted(globals()):
         if name.startswith("ubuntu_"):
             if "_sync_" in name: continue
             func = globals()[name]
             if callable(func):
                 cmd = name.replace("ubuntu_", "")
-                cmds += [ cmd ]
+                cmds += [cmd]
     return "|".join(cmds)
 
 def UBUNTU_set(ubuntu: str) -> str:
     global UBUNTU
     if len(ubuntu) <= 2:
-        UBUNTU=max([os for os in DIST if os.startswith(ubuntu)])
+        UBUNTU = max([os for os in DIST if os.startswith(ubuntu)])
         return UBUNTU
     if ubuntu in DIST.values():
-       for version, dist in DIST.items():
-          if dist == ubuntu:
-              UBUNTU = version
-              break
+        for version, dist in DIST.items():
+            if dist == ubuntu:
+                UBUNTU = version
+                break
     elif ubuntu not in DIST:
         logg.warning("%s is not a known os version", ubuntu)
         UBUNTU = ubuntu
@@ -346,19 +352,19 @@ def UBUNTU_set(ubuntu: str) -> str:
 if __name__ == "__main__":
     from optparse import OptionParser
     _o = OptionParser("%%prog [-options] [%s]" % commands(),
-       epilog=re.sub("\\s+", " ", __doc__).strip())
-    _o.add_option("-v","--verbose", action="count", default=0,
-       help="increase logging level [%default]")
-    _o.add_option("-D","--docker", metavar="EXE", default=DOCKER,
-       help="use other docker exe or podman [%default]")
-    _o.add_option("-V","--ver", metavar="NUM", default=UBUNTU,
-       help="use other ubuntu version [%default]")
-    _o.add_option("-u","--universe", action="store_true", default=False,
-       help="include universe packages [%default]")
-    _o.add_option("-m","--multiverse", action="store_true", default=False,
-       help="include all packages [%default]")
+                      epilog=re.sub("\\s+", " ", __doc__).strip())
+    _o.add_option("-v", "--verbose", action="count", default=0,
+                  help="increase logging level [%default]")
+    _o.add_option("-D", "--docker", metavar="EXE", default=DOCKER,
+                  help="use other docker exe or podman [%default]")
+    _o.add_option("-V", "--ver", metavar="NUM", default=UBUNTU,
+                  help="use other ubuntu version [%default]")
+    _o.add_option("-u", "--universe", action="store_true", default=False,
+                  help="include universe packages [%default]")
+    _o.add_option("-m", "--multiverse", action="store_true", default=False,
+                  help="include all packages [%default]")
     opt, args = _o.parse_args()
-    logging.basicConfig(level = logging.WARNING - opt.verbose * 10)
+    logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
     #
     DOCKER = opt.docker
     UBUNTU_set(opt.ver)
@@ -367,12 +373,12 @@ if __name__ == "__main__":
     if opt.multiverse:
         REPOS = ALL_REPOS
     #
-    if not args: args = [ "make" ]
+    if not args: args = ["make"]
     for arg in args:
         if arg[0] in "123456789":
-           UBUNTU_set(arg)
-           continue
-        funcname = "ubuntu_"+arg.replace("-", "_")
+            UBUNTU_set(arg)
+            continue
+        funcname = "ubuntu_" + arg.replace("-", "_")
         allnames = globals()
         if funcname in globals():
             func = globals()[funcname]
