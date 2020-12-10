@@ -3,13 +3,15 @@
 B= 2018
 FOR=today
 
-VERSIONFILES = *.py */*.py
+VERSIONFILES = *.py */*.py *.cfg
 version1:
 	@ grep -l __version__ $(VERSIONFILES)  | { while read f; do echo $$f; done; } 
 
 version:
 	@ grep -l __version__ $(VERSIONFILES) | { while read f; do : \
 	; Y=`date +%Y -d "$(FOR)"` ; X=$$(expr $$Y - $B); D=`date +%W%u -d "$(FOR)"` ; sed -i \
+	-e "/^version *=/s/[.]-*[0123456789][0123456789][0123456789]*\$$/.$$X$$D\"/" \
+	-e "/^version *=/s/[.]\\([0123456789]\\)\$$/.\\1.$$X$$D/" \
 	-e "/^ *__version__/s/[.]-*[0123456789][0123456789][0123456789]*\"/.$$X$$D\"/" \
 	-e "/^ *__version__/s/[.]\\([0123456789]\\)\"/.\\1.$$X$$D\"/" \
 	-e "/^ *__copyright__/s/(C) [0123456789]*-[0123456789]*/(C) $B-$$Y/" \
