@@ -4,7 +4,7 @@
 __copyright__ = "(C) 2020 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.6.2491"
+__version__ = "1.6.2494"
 
 from collections import OrderedDict, namedtuple
 import os.path
@@ -15,19 +15,19 @@ import logging
 import subprocess
 
 if sys.version[0] != '2':
-   xrange = range
-   basestring = str
+    xrange = range
+    basestring = str
 
 logg = logging.getLogger("mirror")
 DOCKER = "docker"
 ADDHOSTS = False
 
-UBUNTU_VERSIONS = { "12.04": "precise", "14.04": "trusty", "16.04": "xenial", "17.10": "artful",
-                    "18.04": "bionic", "18.10": "cosmic", "19.04": "disco", "19.10": "eoan",
-                    "20.04": "focal", "20.10": "groovy" }
-CENTOS_VERSIONS = { "7.0": "7.0.1406", "7.1": "7.1.1503", "7.2": "7.2.1511", "7.3": "7.3.1611",
-                    "7.4": "7.4.1708", "7.5": "7.5.1804", "7.6": "7.6.1810", "7.7": "7.7.1908",
-                    "8.0": "8.0.1905", "8.1": "8.1.1911", "8.2": "8.2.2004" }
+UBUNTU_VERSIONS = {"12.04": "precise", "14.04": "trusty", "16.04": "xenial", "17.10": "artful",
+                   "18.04": "bionic", "18.10": "cosmic", "19.04": "disco", "19.10": "eoan",
+                   "20.04": "focal", "20.10": "groovy"}
+CENTOS_VERSIONS = {"7.0": "7.0.1406", "7.1": "7.1.1503", "7.2": "7.2.1511", "7.3": "7.3.1611",
+                   "7.4": "7.4.1708", "7.5": "7.5.1804", "7.6": "7.6.1810", "7.7": "7.7.1908",
+                   "8.0": "8.0.1905", "8.1": "8.1.1911", "8.2": "8.2.2004"}
 
 def decodes(text):
     if text is None: return None
@@ -37,7 +37,7 @@ def decodes_(text):
         encoded = sys.getdefaultencoding()
         if encoded in ["ascii"]:
             encoded = "utf-8"
-        try: 
+        try:
             return text.decode(encoded)
         except:
             return text.decode("latin-1")
@@ -53,12 +53,12 @@ def output3(cmd, shell=True):
 
 class DockerMirror:
     def __init__(self, cname, image, hosts):
-        self.cname = cname # name of running container
-        self.image = image # image used to start the container
-        self.hosts = hosts # domain names for the container
+        self.cname = cname  # name of running container
+        self.image = image  # image used to start the container
+        self.hosts = hosts  # domain names for the container
 
 class DockerMirrorPackagesRepo:
-    def __init__(self, image = None):
+    def __init__(self, image=None):
         self._image = image
     def image(self):
         """ when a function has no image argument then a default
@@ -90,7 +90,7 @@ class DockerMirrorPackagesRepo:
                     key, value = m.group(1), m.group(2)
                 # logg.debug("%s => '%s' '%s'", line.strip(), key, value)
                 if key in ["ID"]:
-                    distro = value.replace("-","/")
+                    distro = value.replace("-", "/")
                 if key in ["VERSION_ID"]:
                     version = value
         if os.path.exists("/etc/redhat-release"):
@@ -161,15 +161,15 @@ class DockerMirrorPackagesRepo:
                 codename = UBUNTU_VERSIONS[version]
                 if codename.startswith(ver):
                     if version > latest:
-                       latest = version
+                        latest = version
                 elif version.startswith(ver):
                     if version > latest:
-                       latest = version
+                        latest = version
             ver = latest or ver
         return self.docker_mirror(rmi, rep, ver, "archive.ubuntu.com", "security.ubuntu.com")
     def get_ubuntu_docker_mirrors(self, ver):
         main = self.get_ubuntu_docker_mirror(ver)
-        return [ main ]
+        return [main]
     def get_centos_docker_mirror(self, ver):
         """ detects a local centos mirror or starts a local
             docker container with a centos repo mirror. It
@@ -179,17 +179,17 @@ class DockerMirrorPackagesRepo:
         if "." not in ver:
             latest = ""
             for version in CENTOS_VERSIONS:
-               if version.startswith(ver):
-                   fullversion = CENTOS_VERSIONS[version]
-                   if fullversion > latest:
-                       latest = fullversion
+                if version.startswith(ver):
+                    fullversion = CENTOS_VERSIONS[version]
+                    if fullversion > latest:
+                        latest = fullversion
             ver = latest or ver
         if ver in CENTOS_VERSIONS:
-           ver = CENTOS_VERSIONS[ver]
+            ver = CENTOS_VERSIONS[ver]
         return self.docker_mirror(rmi, rep, ver, "mirrorlist.centos.org")
     def get_centos_docker_mirrors(self, ver):
         main = self.get_centos_docker_mirror(ver)
-        return [ main ]
+        return [main]
     def get_opensuse_docker_mirror(self, ver):
         """ detects a local opensuse mirror or starts a local
             docker container with a centos repo mirror. It
@@ -200,7 +200,7 @@ class DockerMirrorPackagesRepo:
         return self.docker_mirror(rmi, rep, ver, "download.opensuse.org")
     def get_opensuse_docker_mirrors(self, ver):
         main = self.get_opensuse_docker_mirror(ver)
-        return [ main ]
+        return [main]
     def docker_mirror(self, rmi, rep, ver, *hosts):
         image = "{rmi}/{rep}:{ver}".format(**locals())
         cname = "{rep}-{ver}".format(**locals())
@@ -217,7 +217,7 @@ class DockerMirrorPackagesRepo:
         values = json.loads(out)
         if not values or "NetworkSettings" not in values[0]:
             logg.critical(" docker inspect %s => %s ", name, values)
-        addr =  values[0]["NetworkSettings"]["IPAddress"]
+        addr = values[0]["NetworkSettings"]["IPAddress"]
         assert isinstance(addr, basestring)
         logg.debug("address %s for %s", addr, name)
         return addr
@@ -295,7 +295,7 @@ class DockerMirrorPackagesRepo:
             done.append(mirror.cname)
         return done
     def inspect_containers(self, image):
-        mirrors= self.get_docker_mirrors(image)
+        mirrors = self.get_docker_mirrors(image)
         docker = DOCKER
         done = OrderedDict()
         for mirror in mirrors:
@@ -303,7 +303,7 @@ class DockerMirrorPackagesRepo:
             done[mirror.cname] = addr
         return done
     #
-    def add_hosts(self, image, done = {}):
+    def add_hosts(self, image, done={}):
         mirrors = self.get_docker_mirrors(image)
         args = []
         for mirror in mirrors:
@@ -312,7 +312,7 @@ class DockerMirrorPackagesRepo:
                 addr = done[name]
                 if addr:
                     for host in mirror.hosts:
-                        args += ["--add-host", "%s:%s" % (host, addr) ]
+                        args += ["--add-host", "%s:%s" % (host, addr)]
         return args
     def helps(self):
         return """helper to start/stop mirror-container with the packages-repo
@@ -326,35 +326,35 @@ class DockerMirrorPackagesRepo:
     def detect(self):
         image = self.host_system_image()
         return image
-    def repo(self, image = None):
+    def repo(self, image=None):
         image = image or self.image()
         mirrors = self.get_docker_mirrors(image)
         for mirror in mirrors:
             return mirror.image
         return ""
-    def repos(self, image = None):
+    def repos(self, image=None):
         image = image or self.image()
         mirrors = self.get_docker_mirrors(image)
         shown = ""
         for mirror in mirrors:
             shown = mirror.image + "\n"
         return ""
-    def facts(self, image = None):
+    def facts(self, image=None):
         image = image or self.image()
         mirrors = self.get_docker_mirrors(image)
         data = {}
         for mirror in mirrors:
-            data[mirror.cname] = { "image": mirror.image, "name": mirror.cname,
-                                   "hosts": mirror.hosts }
+            data[mirror.cname] = {"image": mirror.image, "name": mirror.cname,
+                                  "hosts": mirror.hosts}
         return json.dumps(data, indent=2)
-    def starts(self, image = None):
+    def starts(self, image=None):
         image = image or self.image()
         done = self.start_containers(image)
         if ADDHOSTS:
             return " ".join(self.add_hosts(image, done))
         else:
             return json.dumps(done, indent=2)
-    def stops(self, image = None):
+    def stops(self, image=None):
         image = image or self.image()
         done = self.stop_containers(image)
         if ADDHOSTS:
@@ -362,21 +362,21 @@ class DockerMirrorPackagesRepo:
             return " ".join(names)
         else:
             return json.dumps(done, indent=2)
-    def infos(self, image = None):
+    def infos(self, image=None):
         image = image or self.image()
         done = self.info_containers(image)
         if ADDHOSTS:
             return " ".join(self.add_hosts(image, done))
         else:
             return json.dumps(done, indent=2)
-    def containers(self, image = None):
+    def containers(self, image=None):
         image = image or self.image()
         done = self.get_containers(image)
         if ADDHOSTS:
             return " ".join(done)
         else:
             return json.dumps(done, indent=2)
-    def inspects(self, image = None):
+    def inspects(self, image=None):
         image = image or self.image()
         done = self.inspect_containers(image)
         if ADDHOSTS:
@@ -386,42 +386,42 @@ class DockerMirrorPackagesRepo:
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
-    _o = ArgumentParser(description = """starts local containers representing mirrors of package repo repositories 
+    _o = ArgumentParser(description="""starts local containers representing mirrors of package repo repositories 
         which are required by a container type. Subsequent 'docker run' can use the '--add-hosts' from this
         helper script to divert 'pkg install' calls to a local docker container as the real source.""")
     _o.add_argument("-v", "--verbose", action="count", default=0, help="more logging")
-    _o.add_argument("-a", "--add-hosts", "--add-host", action="store_true", default=ADDHOSTS, 
-        help="show options for 'docker run'")
-    commands = ["help","detect","image","repo","info","facts","start","stop"]
+    _o.add_argument("-a", "--add-hosts", "--add-host", action="store_true", default=ADDHOSTS,
+                    help="show options for 'docker run'")
+    commands = ["help", "detect", "image", "repo", "info", "facts", "start", "stop"]
     _o.add_argument("command", nargs="?", default="detect", help="|".join(commands))
     _o.add_argument("image", nargs="?", default=None, help="defaults to image name of the local host system")
     opt = _o.parse_args()
-    logging.basicConfig(level = max(0, logging.WARNING - opt.verbose * 10))
+    logging.basicConfig(level=max(0, logging.WARNING - opt.verbose * 10))
     ADDHOSTS = opt.add_hosts
     command = "detect"
     repo = DockerMirrorPackagesRepo()
-    if opt.command in [ "?", "help"]:
+    if opt.command in ["?", "help"]:
         print(repo.helps())
-    elif opt.command in [ "detect", "image" ]:
+    elif opt.command in ["detect", "image"]:
         print(repo.detect())
-    elif opt.command in [ "repo", "from" ]:
+    elif opt.command in ["repo", "from"]:
         print(repo.repo(opt.image))
-    elif opt.command in [ "repos", "for" ]:
+    elif opt.command in ["repos", "for"]:
         print(repo.repos(opt.image))
-    elif opt.command in [ "facts" ]:
+    elif opt.command in ["facts"]:
         print(repo.facts(opt.image))
-    elif opt.command in [ "start", "starts" ]:
+    elif opt.command in ["start", "starts"]:
         print(repo.starts(opt.image))
-    elif opt.command in [ "stop", "stops" ]:
+    elif opt.command in ["stop", "stops"]:
         print(repo.stops(opt.image))
-    elif opt.command in [ "show", "shows", "info", "infos" ]:
+    elif opt.command in ["show", "shows", "info", "infos"]:
         print(repo.infos(opt.image))
-    elif opt.command in [ "addhost", "add-host", "addhosts", "add-hosts" ]:
+    elif opt.command in ["addhost", "add-host", "addhosts", "add-hosts"]:
         ADDHOSTS = True
         print(repo.infos(opt.image))
-    elif opt.command in [ "inspect" ]:
+    elif opt.command in ["inspect"]:
         print(repo.inspects(opt.image))
-    elif opt.command in [ "containers" ]:
+    elif opt.command in ["containers"]:
         print(repo.containers(opt.image))
     else:
         print("unknown command", opt.command)
