@@ -29,3 +29,4 @@ epel.*
 tmp
 *.tmp
 tmp.*
+.mypy_cache/
