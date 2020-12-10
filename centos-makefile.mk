@@ -5,11 +5,14 @@ IMAGESREPO ?= localhost:5000/mirror-packages
 CENTOSDATADIRS= $(REPODATADIR) /srv/docker-mirror-packages /data/docker-mirror-packages /data/docker-centos-repo-mirror /dock/docker-mirror-packages
 
 CENTOS = 8.0.1905
-X8CENTOS = 8.2.2004
+X8CENTOS = 8.3.2011
+# CENTOS = 8.3.2011
 # CENTOS = 8.2.2004
 # CENTOS = 8.1.1911
 # CENTOS = 8.0.1905
-X7CENTOS = 7.7.1908
+X7CENTOS = 7.9.2009
+# CENTOS = 7.9.2009
+# CENTOS = 7.8.2003
 # CENTOS = 7.7.1908
 # CENTOS = 7.6.1810
 # CENTOS = 7.5.1804
@@ -56,7 +59,7 @@ http://ftp.tu-chemnitz.de/pub/linux/centos/
 centossync:
 	$(MAKE) centosdir
 	case "$(CENTOS)" in 7*) : ;; *) exit 0 ;; esac ; \
-	$(MAKE) sync-os sync-extras sync-updates
+	$(MAKE) sync-os sync-extras sync-updates sync-sclo
 	case "$(CENTOS)" in 8*) : ;; *) exit 0 ;; esac ; \
 	$(MAKE) sync-BaseOS sync-AppStream sync-extras sync-PowerTools sync-centosplus
 centosdir:
@@ -80,18 +83,21 @@ sync-extras: ;     rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/extras      centos.$(CEN
 sync-PowerTools: ; rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/PowerTools  centos.$(CENTOS)/ $(CENTOS_XXX)
 sync-centosplus: ; rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/centosplus  centos.$(CENTOS)/ $(CENTOS_XXX)
 sync-updates: ;    rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/updates     centos.$(CENTOS)/ $(CENTOS_XXX)
+sync-sclo: ;       rsync -rv $(CENTOS_MIRROR)/$(CENTOS)/sclo        centos.$(CENTOS)/ $(CENTOS_XXX)
 centos-unpack:
 	- docker rm --force $@
 	docker run --name=$@ --detach localhost:5000/centos-repo:$(CENTOS) sleep 9999
 	docker cp $@:/srv/repo/7/os centos.$(CENTOS)/
 	docker cp $@:/srv/repo/7/extras centos.$(CENTOS)/
 	docker cp $@:/srv/repo/7/updates centos.$(CENTOS)/
+	docker cp $@:/srv/repo/7/sclo centos.$(CENTOS)/
 	docker rm --force $@
 	du -sh centos-$(CENTOS)/.
 centos-clean:
 	rm -rf centos.$(CENTOS)/os
 	rm -rf centos.$(CENTOS)/extras
 	rm -rf centos.$(CENTOS)/updates
+	rm -rf centos.$(CENTOS)/sclo
 
 centosrepo7_CMD = ["python","/srv/scripts/mirrorlist.py","--data","/srv/repo"]
 centosrepo7_PORT = 80
@@ -109,6 +115,7 @@ centosrepo7:
 	docker cp centos.$(CENTOS)/os $@:/srv/repo/7/
 	docker cp centos.$(CENTOS)/extras $@:/srv/repo/7/
 	docker cp centos.$(CENTOS)/updates $@:/srv/repo/7/
+	docker cp centos.$(CENTOS)/sclo $@:/srv/repo/7/
 	docker commit -c 'CMD $($@_CMD)' -c 'EXPOSE $($@_PORT)' $@ $(IMAGESREPO)/centos-repo:$(CENTOS)
 	docker rm --force $@
 	$(MAKE) centos-restore
