@@ -128,7 +128,7 @@ class DockerMirrorPackagesRepo:
                     distro = "centos"
                     version = m.group(1)
         return distro, version
-    def image_base_image(self, image):
+    def detect_base_image(self, image):
         """ returns the docker image name which corresponds to the 
             operating system distribution of the image provided. This
             image name is the key for the other mirror functions. """
@@ -143,7 +143,7 @@ class DockerMirrorPackagesRepo:
             logg.info("%s --name %s : %s", image, cname, err.strip())
         tempdir = tempfile.mkdtemp("docker_mirror_detect")
         try:
-            distro, version = self.image_base_image_detect(cname, tempdir)
+            distro, version = self.detect_base_image_from(cname, tempdir)
             logg.info(":%s:%s base image detected", distro, version)
             if distro and version:
                 return "%s:%s" % (distro, version)
@@ -152,7 +152,7 @@ class DockerMirrorPackagesRepo:
             cmd = "{docker} rm {cname}"
             out, err, end = output3(cmd.format(**locals()))
         return ""
-    def image_base_image_detect(self, cname, tempdir):
+    def detect_base_image_from(self, cname, tempdir):
         debug = False
         docker = DOCKER
         cmd = "{docker} cp {cname}:/usr/lib/os-release {tempdir}/os-release"
@@ -488,8 +488,12 @@ class DockerMirrorPackagesRepo:
     def detect(self, image=None):
         if not image or image in ["host", "system"]:
             return self.host_system_image()
+        latest = self.get_docker_latest_version(image)
+        if latest:
+            return latest
         else:
-            return self.image_base_image(image)
+            # actually create a container and look into it
+            return self.detect_base_image(image)
     def epel(self, image=None):
         image = image or self.image()
         mirrors = self.get_extra_mirrors(image)
