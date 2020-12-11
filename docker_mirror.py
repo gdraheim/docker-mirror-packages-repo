@@ -72,12 +72,6 @@ class DockerMirror:
 class DockerMirrorPackagesRepo:
     def __init__(self, image=None):
         self._image = image
-    def image(self):
-        """ when a function has no image argument then a default
-            is used - either explict from _init_ or local system. """
-        if self._image:
-            return self._image
-        return self.host_system_image()
     def host_system_image(self):
         """ returns the docker image name which corresponds to the 
             operating system distribution of the host system. This
@@ -486,6 +480,8 @@ class DockerMirrorPackagesRepo:
         addhosts [image] shows the --add-hosts string for the client container
 """
     def detect(self, image=None):
+        if not image and self._image:
+            image = self._image
         if not image or image in ["host", "system"]:
             return self.host_system_image()
         latest = self.get_docker_latest_version(image)
@@ -495,26 +491,37 @@ class DockerMirrorPackagesRepo:
             # actually create a container and look into it
             return self.detect_base_image(image)
     def epel(self, image=None):
-        image = image or self.image()
+        image = self.detect(image)
         mirrors = self.get_extra_mirrors(image)
         for mirror in mirrors:
             return mirror.image
         return ""
     def repo(self, image=None):
-        image = image or self.image()
+        image = self.detect(image)
         mirrors = self.get_docker_mirrors(image)
         for mirror in mirrors:
-            return mirror.image
+            if ADDHOSTS:
+                refer = mirror.image
+                host = mirror.hosts[0]
+                return "--add-host={host}:({refer})".format(**locals())
+            else:
+                return mirror.image
         return ""
     def repos(self, image=None):
-        image = image or self.image()
+        image = self.detect(image)
         mirrors = self.get_docker_mirrors(image)
         shown = ""
         for mirror in mirrors:
-            shown = mirror.image + "\n"
-        return ""
+            if ADDHOSTS:
+                if shown: shown += " "
+                for host in mirror.hosts:
+                    refer = mirror.image
+                    shown += "--add-host={host}:({refer})".format(**locals())
+            else:
+                shown += mirror.image + "\n"
+        return shown
     def facts(self, image=None):
-        image = image or self.image()
+        image = self.detect(image)
         mirrors = self.get_docker_mirrors(image)
         data = {}
         for mirror in mirrors:
@@ -522,14 +529,14 @@ class DockerMirrorPackagesRepo:
                                   "hosts": mirror.hosts}
         return json.dumps(data, indent=2)
     def starts(self, image=None):
-        image = image or self.image()
+        image = self.detect(image)
         done = self.start_containers(image)
         if ADDHOSTS:
             return " ".join(self.add_hosts(image, done))
         else:
             return json.dumps(done, indent=2)
     def stops(self, image=None):
-        image = image or self.image()
+        image = self.detect(image)
         done = self.stop_containers(image)
         if ADDHOSTS:
             names = sorted(done.keys())
@@ -537,21 +544,21 @@ class DockerMirrorPackagesRepo:
         else:
             return json.dumps(done, indent=2)
     def infos(self, image=None):
-        image = image or self.image()
+        image = self.detect(image)
         done = self.info_containers(image)
         if ADDHOSTS:
             return " ".join(self.add_hosts(image, done))
         else:
             return json.dumps(done, indent=2)
     def containers(self, image=None):
-        image = image or self.image()
+        image = self.detect(image)
         done = self.get_containers(image)
         if ADDHOSTS:
             return " ".join(done)
         else:
             return json.dumps(done, indent=2)
     def inspects(self, image=None):
-        image = image or self.image()
+        image = self.detect(image)
         done = self.inspect_containers(image)
         if ADDHOSTS:
             return " ".join(self.add_hosts(image, done))
