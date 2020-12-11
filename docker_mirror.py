@@ -13,6 +13,8 @@ import re
 import json
 import logging
 import subprocess
+import tempfile
+import shutil
 
 if sys.version[0] != '2':
     xrange = range
@@ -47,11 +49,11 @@ def decodes_(text):
         except:
             return text.decode("latin-1")
     return text
-def output3(cmd, shell=True):
+def output3(cmd, shell=True, debug=True):
     if isinstance(cmd, basestring):
-        logg.debug("run: %s", cmd)
+        if debug: logg.debug("run: %s", cmd)
     else:
-        logg.debug("run: %s", " ".join(["'%s'" % item for item in cmd]))
+        if debug: logg.debug("run: %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = run.communicate()
     return decodes_(out), decodes_(err), run.returncode
@@ -80,8 +82,15 @@ class DockerMirrorPackagesRepo:
         """ returns the docker image name which corresponds to the 
             operating system distribution of the host system. This
             image name is the key for the other mirror functions. """
+        distro, version = self.detect_etc_image("/etc")
+        logg.info(":%s:%s host system image detected", distro, version)
+        if distro and version:
+            return "%s:%s" % (distro, version)
+        return ""
+    def detect_etc_image(self, etc):
         distro, version = "", ""
-        if os.path.exists("/etc/os-release"):
+        os_release = os.path.join(etc,"os-release")
+        if os.path.exists(os_release):
             # rhel:7.4 # VERSION="7.4 (Maipo)" ID="rhel" VERSION_ID="7.4"
             # centos:7.3  # VERSION="7 (Core)" ID="centos" VERSION_ID="7"
             # centos:7.4  # VERSION="7 (Core)" ID="centos" VERSION_ID="7"
@@ -90,7 +99,7 @@ class DockerMirrorPackagesRepo:
             # opensuse/leap:15.0 # VERSION="15.0" ID="opensuse-leap" VERSION_ID="15.0"
             # ubuntu:16.04 # VERSION="16.04.3 LTS (Xenial Xerus)" ID=ubuntu VERSION_ID="16.04"
             # ubuntu:18.04 # VERSION="18.04.1 LTS (Bionic Beaver)" ID=ubuntu VERSION_ID="18.04"
-            for line in open("/etc/os-release"):
+            for line in open(os_release):
                 key, value = "", ""
                 m = re.match('^([_\\w]+)=([^"].*).*', line.strip())
                 if m:
@@ -103,23 +112,74 @@ class DockerMirrorPackagesRepo:
                     distro = value.replace("-", "/")
                 if key in ["VERSION_ID"]:
                     version = value
-        if os.path.exists("/etc/redhat-release"):
-            for line in open("/etc/redhat-release"):
+        redhat_release= os.path.join(etc, "redhat-release")
+        if os.path.exists(redhat_release):
+            for line in open(redhat_release):
                 m = re.search("release (\\d+[.]\\d+).*", line)
                 if m:
                     distro = "rhel"
                     version = m.group(1)
-        if os.path.exists("/etc/centos-release"):
+        centos_release = os.path.join(etc, "centos-release")
+        if os.path.exists(centos_release):
             # CentOS Linux release 7.5.1804 (Core)
-            for line in open("/etc/centos-release"):
+            for line in open(centos_release):
                 m = re.search("release (\\d+[.]\\d+).*", line)
                 if m:
                     distro = "centos"
                     version = m.group(1)
-        logg.info(":%s:%s host system image detected", distro, version)
-        if distro and version:
-            return "%s:%s" % (distro, version)
+        return distro, version
+    def image_base_image(self, image):
+        """ returns the docker image name which corresponds to the 
+            operating system distribution of the image provided. This
+            image name is the key for the other mirror functions. """
+        docker = DOCKER
+        distro, version = "", ""
+        cname = "docker_mirror_detect." + os.path.basename(image).replace(":",".")
+        cmd = "{docker} rm -f {cname}"
+        out, err, end = output3(cmd.format(**locals()))
+        cmd = "{docker} create --name={cname} {image}"
+        out, err, end = output3(cmd.format(**locals()))
+        if end:
+            logg.info("%s --name %s : %s", image, cname, err.strip())
+        tempdir = tempfile.mkdtemp("docker_mirror_detect")
+        try:
+            distro, version = self.image_base_image_detect(cname, tempdir)
+            logg.info(":%s:%s base image detected", distro, version)
+            if distro and version:
+                return "%s:%s" % (distro, version)
+        finally:
+            shutil.rmtree(tempdir)
+            cmd = "{docker} rm {cname}"
+            out, err, end = output3(cmd.format(**locals()))
         return ""
+    def image_base_image_detect(self, cname, tempdir):
+        debug = False
+        docker = DOCKER
+        cmd = "{docker} cp {cname}:/usr/lib/os-release {tempdir}/os-release"
+        out, err, end = output3(cmd.format(**locals()), debug=debug)
+        if not end:
+            logg.debug("get: /usr/lib/os-release copied")
+        else:
+            logg.debug("get: /usr/lib/os-release: %s", err.strip().replace(cname, "{cname}"))
+            cmd = "{docker} cp {cname}:/etc/os-release {tempdir}/os-release"
+            out, err, end = output3(cmd.format(**locals()), debug=debug)
+            if not end:
+                logg.debug("get: /etc/os-release copied")
+            else:
+                logg.debug("get: /etc/os-release: %s", err.strip().replace(cname, "{cname}"))
+        cmd = "{docker} cp {cname}:/etc/redhat-release {tempdir}/redhat-release"
+        out, err, end = output3(cmd.format(**locals()), debug=debug)
+        if not end:
+            logg.debug("get: /etc/redhat-release copied")
+        else:
+            logg.debug("get: /etc/redhat-release: %s", err.strip().replace(cname, "{cname}"))
+        cmd = "{docker} cp {cname}:/etc/centos-release {tempdir}/centos-release"
+        out, err, end = output3(cmd.format(**locals()), debug=debug)
+        if not end:
+            logg.debug("get: /etc/centos-release copied")
+        else:
+            logg.debug("get: /etc/centos-release: %s", err.strip().replace(cname, "{cname}"))
+        return self.detect_etc_image(tempdir)
     def get_docker_latest_version(self, image):
         """ converts a shorthand version into the version string used on an image name. """
         if image.startswith("centos:"):
@@ -425,9 +485,11 @@ class DockerMirrorPackagesRepo:
         stop  [image]    stops the containers(s) with the mirror-packages-repo
         addhosts [image] shows the --add-hosts string for the client container
 """
-    def detect(self):
-        image = self.host_system_image()
-        return image
+    def detect(self, image=None):
+        if not image or image in ["host", "system"]:
+            return self.host_system_image()
+        else:
+            return self.image_base_image(image)
     def epel(self, image=None):
         image = image or self.image()
         mirrors = self.get_extra_mirrors(image)
@@ -511,7 +573,7 @@ if __name__ == "__main__":
     if opt.command in ["?", "help"]:
         print(repo.helps())
     elif opt.command in ["detect", "image"]:
-        print(repo.detect())
+        print(repo.detect(opt.image))
     elif opt.command in ["repo", "from"]:
         print(repo.repo(opt.image))
     elif opt.command in ["repos", "for"]:
