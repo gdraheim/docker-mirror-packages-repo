@@ -3,7 +3,9 @@
     Try to run 'sync' followed be 'repo'. If a command starts with a
     number then it changes the version to be handled. A usual command
     would be 'mirror.py 7.7 sync repo -v'. If no argument is given
-    then 'make' the last version = 'sync pull repo test check tags'."""
+    then 'make' the last version = 'sync pull repo test check tags'.
+    ((with ''epelsync'' and ''epelrepo'' you can also take a snapshot
+     from the fedora epel repos (which do not have real releases)))."""
 
 __copyright__ = "(C) 2020 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
@@ -18,6 +20,7 @@ import sys
 import re
 import subprocess
 import shutil
+import datetime
 import logging
 logg = logging.getLogger("MIRROR")
 
@@ -53,6 +56,7 @@ OS["7.0"] = "7.0.1406"
 X7CENTOS = max([os for os in OS if os.startswith("7.")])
 X8CENTOS = max([os for os in OS if os.startswith("8.")])
 CENTOS = "8.0.1905"
+ARCH = "x86_64"
 
 DOCKER = "docker"
 RSYNC = "rsync"
@@ -60,8 +64,24 @@ RSYNC = "rsync"
 CENTOS_MIRROR = "rsync://rsync.hrz.tu-chemnitz.de/ftp/pub/linux/centos"
 # "http://ftp.tu-chemnitz.de/pub/linux/centos/"
 
+##### basearch=x86_64
+###baseurl=http://download.fedoraproject.org/pub/epel/7/$basearch
+##metalink=https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch
+#  http://fedora.tu-chemnitz.de/pub/linux/fedora-epel/7/x86_64/debug/repodata/repomd.xml
+# rsync://fedora.tu-chemnitz.de/ftp/pub/linux/fedora-epel/7/x86_64/debug/repodata/repomd.xml
+EPEL_MIRROR = "rsync://fedora.tu-chemnitz.de/ftp/pub/linux/fedora-epel"
+
 
 #############################################################################
+
+def major(version: str) -> str:
+    version = version or CENTOS
+    return version[0]
+
+def centos_epel() -> None:
+    centos_epeldir()
+    centos_epelsync()
+    centos_epelrepo()
 
 def centos_make() -> None:
     centos_sync()
@@ -120,6 +140,31 @@ def centos_dir() -> None:
         os.mkdir(dirname)  # local dir
         logg.warning("%s/. local dir", dirname)
 
+def centos_epeldir() -> None:
+    centos = CENTOS
+    epel = major(centos)
+    dirname = "epel.{epel}".format(**locals())
+    if path.isdir(dirname):
+        if path.islink(dirname):
+            os.unlink(dirname)
+        else:
+            shutil.rmtree(dirname)  # local dir
+    # we want to put the mirror data on an external disk
+    for data in reversed(DATADIRS):
+        logg.debug(".. check %s", data)
+        if path.isdir(data):
+            dirpath = path.join(data, dirname)
+            if not path.isdir(dirpath):
+                os.makedirs(dirpath)
+            os.symlink(dirpath, dirname)
+            break
+    dircheck = path.join(dirname, ".")
+    if path.isdir(dircheck):
+        logg.info("%s -> %s", dirname, dirpath)
+    else:
+        os.mkdir(dirname)  # local dir
+        logg.warning("%s/. local dir", dirname)
+
 CENTOS_XXX = " ".join([
     "--exclude ppc64le",
     "--exclude aarch64",
@@ -145,6 +190,15 @@ def centos_sync_centosplus() -> None: sync_subdir("centosplus")
 def centos_sync_updates() -> None: sync_subdir("updates")
 def centos_sync_sclo() -> None: sync_subdir("sclo")
 
+def centos_epelsync() -> None:
+    rsync = RSYNC
+    mirror = EPEL_MIRROR
+    centos = CENTOS
+    epel = major(centos)
+    arch = ARCH
+    excludes = """ --exclude "*.iso" """
+    sh___("{rsync} -rv {mirror}/{epel}/{arch} epel.{epel}/{epel}/ {excludes}".format(**locals()))  
+
 def centos_unpack() -> None:
     docker = DOCKER
     centos = CENTOS
@@ -163,6 +217,33 @@ def centos_clean() -> None:
     centos = CENTOS
     for subdir in ["os", "extras", "updates", "sclo"]:
         sh___("rm -rf centos.{centos}/{subdir}".format(**locals()))
+
+def centos_epelrepo() -> None:
+    docker = DOCKER
+    centos = CENTOS
+    epel = major(centos)
+    arch = ARCH
+    cname = "epel-repo-" + epel  # container name
+    sx___("{docker} rm --force {cname}".format(**locals()))
+    sh___("{docker} run --name={cname} --detach centos:{centos} sleep 9999".format(**locals()))
+    sh___("{docker} exec {cname} mkdir -p /srv/repo/epel".format(**locals()))
+    sh___("{docker} exec {cname} yum install -y openssl".format(**locals()))
+    if epel.startswith("8"):
+        sh___("{docker} exec {cname} yum install -y python2".format(**locals()))
+    sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
+    sh___("{docker} cp epel.{epel}/epel {cname}:/srv/repo/epel/".format(**locals()))
+    cmd = epelrepo_CMD
+    port = epelrepo_PORT
+    repo = IMAGESREPO
+    yymm = datetime.date.today().strftime("%y%m")
+    sh___("{docker} commit -c 'CMD {cmd}' -c 'EXPOSE {port}' {cname} {repo}/epel-repo:{epel}.x.{yymm}}".format(**locals()))
+    sh___("{docker} rm --force {cname}".format(**locals()))
+
+epelrepo_port = 443
+epelrepo_cmd = ["python","/srv/scripts/mirrors.fedoraproject.org.py",
+                "--data","/srv/repo/epel", "--ssl", "https://mirrors.fedoraproject.org"]
+epelrepo_PORT = 80
+epelrepo_CMD = ["python","/srv/scripts/mirrors.fedoraproject.org.py","--data","/srv/repo/epel"]
 
 centosrepo7_CMD = ["python", "/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
 centosrepo7_PORT = 80
@@ -367,7 +448,7 @@ if __name__ == "__main__":
                   help="increase logging level [%default]")
     _o.add_option("-D", "--docker", metavar="EXE", default=DOCKER,
                   help="use other docker exe or podman [%default]")
-    _o.add_option("-V", "--verp", metavar="NUM", default=CENTOS,
+    _o.add_option("-V", "--ver", metavar="NUM", default=CENTOS,
                   help="use other centos version [%default]")
     opt, args = _o.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
