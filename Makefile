@@ -139,3 +139,7 @@ type.m:
 	python3 ../retype/retype.py scripts/mirrorlist.py -t scripts.tmp -p scripts
 	mypy --strict scripts.tmp/mirrorlist.py
 	- rm -rf .mypy_cache
+type.e:
+	python3 ../retype/retype.py scripts/mirrors.fedoraproject.org.py -t scripts.tmp -p scripts
+	mypy --strict scripts.tmp/mirrors.fedoraproject.org.py
+	- rm -rf .mypy_cache
