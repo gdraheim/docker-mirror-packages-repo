@@ -197,6 +197,22 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
+    def test_1079_centos(self):
+        prefix = PREFIX
+        docker = DOCKER
+        repo_image = "centos-repo:7.9.2009"
+        box1_image = "centos:7.9.2009"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host mirrorlist.centos.org:{mirror_ip}".format(**locals())
+        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sx____("{docker} rm -f test-repo".format(**locals()))
     def test_1080_centos(self):
         prefix = PREFIX
         docker = DOCKER
@@ -210,6 +226,44 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         mirror_ip = ip_container("test-repo")
         add_host = "--add-host mirrorlist.centos.org:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        # sh____("{docker} exec test-box1 yum install -y python-docker-py") # all /extras are now in epel
+        sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sx____("{docker} rm -f test-repo".format(**locals()))
+    def test_1081_centos(self):
+        prefix = PREFIX
+        docker = DOCKER
+        repo_image = "centos-repo:8.1.1911"
+        box1_image = "centos:8.1.1911"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host mirrorlist.centos.org:{mirror_ip}".format(**locals())
+        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        # sh____("{docker} exec test-box1 yum install -y python-docker-py") # all /extras are now in epel
+        sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sx____("{docker} rm -f test-repo".format(**locals()))
+    def test_1083_centos(self):
+        prefix = PREFIX
+        docker = DOCKER
+        repo_image = "centos-repo:8.3.2011"
+        box1_image = "centos:8.3.2011"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sx____("{docker} rm -f test-repo".format(**locals()))
+        cmd = "{docker} run -d --name test-repo {prefix}/{repo_image}"
+        logg.warning("%s", cmd.format(**locals()))
+        sh____(cmd.format(**locals()))
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host mirrorlist.centos.org:{mirror_ip}".format(**locals())
+        cmd = "{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
+        logg.warning("%s", cmd.format(**locals()))
+        sh____(cmd.format(**locals()))
         # sh____("{docker} exec test-box1 yum install -y python-docker-py") # all /extras are now in epel
         sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
