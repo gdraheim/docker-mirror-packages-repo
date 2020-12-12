@@ -127,6 +127,6 @@ mypy:
 	cd ../retype && git checkout 17.12.0
 
 type:
-	python3 ../retype/retype.py docker_mirror.py -t tmp.files -p .
-	mypy --strict tmp.files/docker_mirror.py
+	python3 ../retype/retype.py docker_mirror.py -t docker_mirror.tmp -p .
+	mypy --strict docker_mirror.tmp/docker_mirror.py
 	- rm -rf .mypy_cache
