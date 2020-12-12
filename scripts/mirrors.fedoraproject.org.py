@@ -1,18 +1,32 @@
-#! /usr/bin/python
+#! /usr/bin/python3
+
+from __future__ import print_function
 
 __copyright__ = "(C) 2018-2020 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.5.2256"
+__version__ = "1.6.2256"
 
-import SimpleHTTPServer
-import SocketServer
 import optparse
 import os
 import os.path
 import re
 import time
 import hashlib
+
+try:
+    from http.server import SimpleHTTPRequestHandler
+except: #py2
+    from SimpleHTTPServer import SimpleHTTPRequestHandler # type: ignore
+try:
+    from socketserver import TCPServer
+except: #py2
+    from SocketServer import TCPServer # type: ignore
+try:
+    from urllib.parse import urlparse
+except: #py2
+    from urlparse import urlparse # type: ignore
+
 
 URL="http://mirrors.fedoraproject.org"
 SSL=""
@@ -36,15 +50,15 @@ def boot_time():
     return int(open('/proc/stat').read().split('btime ')[1].split()[0])
 def os_path_md5(path):
     m = hashlib.md5()
-    m.update(open(path).read())
+    m.update(open(path, "rb").read())
     return m.hexdigest()
 def os_path_sha256(path):
     m = hashlib.sha256()
-    m.update(open(path).read())
+    m.update(open(path, "rb").read())
     return m.hexdigest()
 def os_path_sha512(path):
     m = hashlib.sha512()
-    m.update(open(path).read())
+    m.update(open(path, "rb").read())
     return m.hexdigest()
 def fix_mtime_repomd_xml(path):
     timestamp = 0
@@ -58,14 +72,13 @@ def fix_mtime_repomd_xml(path):
         now = time.time()
         old = os.path.getmtime(path)
         if int(old) != int(timestamp):
-            print "FIXED", path, timestamp, "(old", old, ")"
+            print("FIXED", path, timestamp, "(old", old, ")")
             os.utime(path, (now, timestamp))
 
 if opt.data and opt.data != ".":
     os.chdir(opt.data)
 
-Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-class MyHandler(Handler):
+class MyHandler(SimpleHTTPRequestHandler):
   def do_GET(self):
     if self.path.startswith("/metalink?"):
        metalink=True # epel/fedora format as long as we know
@@ -85,20 +98,21 @@ class MyHandler(Handler):
        else:
            use = "%s/%s/" % (repo, arch)
        url = "%s/%s" % (URL, use)
-       print "SERVE", self.path
-       print "   AS", url
+       print("SERVE", self.path)
+       print("   AS", url)
        if metalink:
            repomd_xml = use.rstrip("/") + "/repodata/repomd.xml"
            repomd_url = url.rstrip("/") + "/repodata/repomd.xml"
            fix_mtime_repomd_xml(repomd_xml)
            if not os.path.exists(repomd_xml):
                text = "did not find " + repomd_xml
+               data = text.encode("utf-8")
                self.send_response(404)
                self.send_header("Content-Type", "text/plain")
-               self.send_header("Content-Length", len(text))
+               self.send_header("Content-Length", str(len(data)))
                self.send_header("X-Filepath", repomd_xml)
                self.end_headers()
-               self.wfile.write(text)
+               self.wfile.write(data)
                return
            generator="http://github/gdraheim/docker-mirror-packages-repo"
            ns="http://www.metalinker.org/"
@@ -125,27 +139,28 @@ class MyHandler(Handler):
                </file>
               </files>
              </metalink>""".format(**locals())
+           data = xml.encode("utf-8")
            self.send_response(200)
            self.send_header("Content-Type", "application/metalink+xml")
-           self.send_header("Content-Length", len(xml))
+           self.send_header("Content-Length", str(len(data)))
            self.end_headers()
-           self.wfile.write(xml)
+           self.wfile.write(data)
        else:
+           data = (url+"\r\n").encode("utf-8")
            self.send_response(200)
            self.send_header("Content-Type", "text/plain")
-           self.send_header("Content-Length", len(url)+2)
+           self.send_header("Content-Length", str(len(data)))
            self.end_headers()
-           self.wfile.write(text+"\r\n")
+           self.wfile.write(data)
        return
-    print "CHECK", self.path
-    return Handler.do_GET(self)
+    print("CHECK", self.path)
+    return SimpleHTTPRequestHandler.do_GET(self)
 
-import urlparse
-server = urlparse.urlparse(SSL or URL)
+server = urlparse(SSL or URL)
 
 if not SSL:
-    httpd = SocketServer.TCPServer(("", opt.port), MyHandler)
-    print "serving at port", opt.port
+    httpd = TCPServer(("", opt.port), MyHandler)
+    print("serving at port", opt.port)
     httpd.serve_forever()
 else:
     port = server.port
@@ -160,11 +175,11 @@ else:
     if len(cc) > 2: cc = "US"
     cmd = "openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes"
     cmd += " -keyout /tmp/{hostname}.key -out /tmp/{hostname}.crt -subj /C={cc}/L={og}/CN={hostname}".format(**locals())
-    print cmd
+    print(cmd)
     subprocess.call(cmd, shell=True)
     cmd = "cat /tmp/{hostname}.key /tmp/{hostname}.crt > /tmp/{hostname}.pem".format(**locals())
     subprocess.call(cmd, shell=True)
-    httpd = SocketServer.TCPServer(("", port), MyHandler)
+    httpd = TCPServer(("", port), MyHandler)
     httpd.socket = ssl.wrap_socket(httpd.socket, certfile='/tmp/%s.pem' % hostname, server_side=True)
-    print "serving at port", port, "for", SSL
+    print("serving at port", port, "for", SSL)
     httpd.serve_forever()
