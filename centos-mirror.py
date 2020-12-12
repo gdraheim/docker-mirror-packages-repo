@@ -228,9 +228,11 @@ def centos_epelrepo() -> None:
     sh___("{docker} run --name={cname} --detach centos:{centos} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/epel".format(**locals()))
     sh___("{docker} exec {cname} yum install -y openssl".format(**locals()))
-    if epel.startswith("8"):
-        sh___("{docker} exec {cname} yum install -y python2".format(**locals()))
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
+    for script in os.listdir("scripts/."):
+        if epel.startswith("8"):
+             sh___("{docker} exec {cname} sed -i s:/usr/bin/python:/usr/libexec/platform-python: /srv/scripts/{script}".format(**locals()))
+        sh___("{docker} exec {cname} chmod +x /srv/scripts/{script}".format(**locals()))
     sh___("{docker} cp epel.{epel}/epel {cname}:/srv/repo/epel/".format(**locals()))
     cmd = epelrepo_CMD
     port = epelrepo_PORT
@@ -245,9 +247,9 @@ epelrepo_cmd = ["python","/srv/scripts/mirrors.fedoraproject.org.py",
 epelrepo_PORT = 80
 epelrepo_CMD = ["python","/srv/scripts/mirrors.fedoraproject.org.py","--data","/srv/repo/epel"]
 
-centosrepo7_CMD = ["python", "/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
+centosrepo7_CMD = ["/usr/bin/python", "/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
 centosrepo7_PORT = 80
-centosrepo8_CMD = ["python", "/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
+centosrepo8_CMD = ["/usr/libexec/platform-python","/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
 centosrepo8_PORT = 80
 
 def centos_repo() -> None:
@@ -268,10 +270,11 @@ def centos_repo7() -> None:
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
     for subdir in ["os", "extras", "updates", "sclo"]:
         sh___("{docker} cp centos.{centos}/{subdir} {cname}:/srv/repo/7/".format(**locals()))
-    cmd = centosrepo7_CMD
-    port = centosrepo7_PORT
+    CMD = str(centosrepo7_CMD).replace("'",'"')
+    PORT = centosrepo7_PORT
     repo = IMAGESREPO
-    sh___("{docker} commit -c 'CMD {cmd}' -c 'EXPOSE {port}' {cname} {repo}/centos-repo:{centos}".format(**locals()))
+    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/centos-repo:{centos}"
+    sh___(cmd.format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
     centos_restore()
 
@@ -283,16 +286,17 @@ def centos_repo8() -> None:
     cname = "centos-repo-" + centos  # container name
     sx___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} run --name={cname} --detach centos:{centos} sleep 9999".format(**locals()))
-    sh___("{docker} exec {cname} mkdir -p /srv/repo/7".format(**locals()))
+    sh___("{docker} exec {cname} mkdir -p /srv/repo/8".format(**locals()))
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
     for subdir in ["BaseOS", "AppStream", "extras", "PowerTools", "centosplus"]:
-        sh___("{docker} cp centos.{centos}/{subdir} $@:/srv/repo/8/".format(**locals()))
-    sh___("{docker} exec yum install -y python2".format(**locals()))
-    sh___("{docker} exec ln -sv /usr/bin/python2 /usr/bin/python".format(**locals()))
-    cmd = centosrepo8_CMD
-    port = centosrepo8_PORT
+        sh___("{docker} cp centos.{centos}/{subdir} {cname}:/srv/repo/8/".format(**locals()))
+    # for script in os.listdir("scripts/."):
+    #     sh___("{docker} exec {cname} chmod +x /srv/scripts/{script}".format(**locals()))
+    CMD = str(centosrepo8_CMD).replace("'",'"')
+    PORT = centosrepo8_PORT
     repo = IMAGESREPO
-    sh___("{docker} commit -c 'CMD {cmd}' -c 'EXPOSE {port}' {cname} {repo}/centos-repo:{centos}".format(**locals()))
+    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/centos-repo:{centos}"
+    sh___(cmd.format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
     centos_restore()
 
