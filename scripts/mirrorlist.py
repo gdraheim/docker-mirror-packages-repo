@@ -1,14 +1,23 @@
-#! /usr/bin/python
+#! /usr/bin/python3
+
+from __future__ import print_function
 
 __copyright__ = "(C) 2018-2020 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.5.2256"
+__version__ = "1.6.2256"
 
-import SimpleHTTPServer
-import SocketServer
 import optparse
 import os
+
+try:
+    from http.server import SimpleHTTPRequestHandler
+except: #py2
+    from SimpleHTTPServer import SimpleHTTPRequestHandler # type: ignore
+try:
+    from socketserver import TCPServer
+except: #py2
+    from SocketServer import TCPServer # type: ignore
 
 PORT = 80
 URL="http://mirrorlist.centos.org"
@@ -27,8 +36,7 @@ URL = opt.url
 if opt.data and opt.data != ".":
     os.chdir(opt.data)
 
-Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-class MyHandler(Handler):
+class MyHandler(SimpleHTTPRequestHandler):
   def do_GET(self):
     if self.path.startswith("/?"):
        values = {}
@@ -43,21 +51,21 @@ class MyHandler(Handler):
        if infra in ["container"]:
            infra = "os"
        if release in ["8"]:
-           text = "%s/%s/%s/%s/%s/\n" % (URL, release, repo, arch, infra)
+           text = b"%s/%s/%s/%s/%s/\n" % (URL, release, repo, arch, infra)
        else:
-           text = "%s/%s/%s/%s/\n" % (URL, release, repo, arch)
-       print "SERVE", self.path
-       print "   AS", text.strip()
+           text = b"%s/%s/%s/%s/\n" % (URL, release, repo, arch)
+       print("SERVE", self.path)
+       print("   AS", text.strip())
        self.send_response(200)
        self.send_header("Content-Type", "text/plain")
-       self.send_header("Content-Length", len(text))
+       self.send_header("Content-Length", str(len(text)))
        self.end_headers()
        self.wfile.write(text)
        return
-    print "CHECK", self.path
-    return Handler.do_GET(self)
+    print("CHECK", self.path)
+    return SimpleHTTPRequestHandler.do_GET(self)
 
-httpd = SocketServer.TCPServer(("", opt.port), MyHandler)
+httpd = TCPServer(("", opt.port), MyHandler)
 
-print "serving at port", opt.port
+print("serving at port", opt.port)
 httpd.serve_forever()
