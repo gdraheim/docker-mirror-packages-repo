@@ -1,14 +1,23 @@
-#! /usr/bin/python
+#! /usr/bin/python3
+
+from __future__ import print_function
 
 __copyright__ = "(C) 2018-2020 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.5.2256"
+__version__ = "1.6.2256"
 
-import SimpleHTTPServer
-import SocketServer
 import optparse
 import os
+
+try:
+    from http.server import SimpleHTTPRequestHandler
+except: #py2
+    from SimpleHTTPServer import SimpleHTTPRequestHandler # type: ignore
+try:
+    from socketserver import TCPServer
+except: #py2
+    from SocketServer import TCPServer # type: ignore
 
 PORT = 80
 
@@ -23,17 +32,16 @@ opt, args = ext.parse_args()
 if opt.data and opt.data != ".":
     os.chdir(opt.data)
 
-Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-class MyHandler(Handler):
+class MyHandler(SimpleHTTPRequestHandler):
   def do_GET(self):
     # nothing special to be done for just files
     if os.path.exists("./"+self.path):
-        print "OK", self.path
+        print("OK", self.path)
     else:
-        print "NO", self.path
-    return Handler.do_GET(self)
+        print("NO", self.path)
+    return SimpleHTTPRequestHandler.do_GET(self)
 
-httpd = SocketServer.TCPServer(("", opt.port), MyHandler)
+httpd = TCPServer(("", opt.port), MyHandler)
 
-print "serving at port", opt.port
+print("serving at port", opt.port)
 httpd.serve_forever()
