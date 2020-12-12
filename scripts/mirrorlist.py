@@ -51,16 +51,17 @@ class MyHandler(SimpleHTTPRequestHandler):
        if infra in ["container"]:
            infra = "os"
        if release in ["8"]:
-           text = b"%s/%s/%s/%s/%s/\n" % (URL, release, repo, arch, infra)
+           text = "%s/%s/%s/%s/%s/\n" % (URL, release, repo, arch, infra)
        else:
-           text = b"%s/%s/%s/%s/\n" % (URL, release, repo, arch)
+           text = "%s/%s/%s/%s/\n" % (URL, release, repo, arch)
        print("SERVE", self.path)
        print("   AS", text.strip())
+       data = text.encode("utf-8")
        self.send_response(200)
        self.send_header("Content-Type", "text/plain")
-       self.send_header("Content-Length", str(len(text)))
+       self.send_header("Content-Length", str(len(data)))
        self.end_headers()
-       self.wfile.write(text)
+       self.wfile.write(data)
        return
     print("CHECK", self.path)
     return SimpleHTTPRequestHandler.do_GET(self)
