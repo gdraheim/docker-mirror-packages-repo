@@ -1006,7 +1006,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
      - name: fixup setup container
        command: {docker} exec test-box1 bash -c "zypper repos ; zypper mr --no-gpgcheck oss-update"
        when: 'distro_os_family == "Suse"'
-     - name: fixup setup container
+     - name: refresh and install package
        command: {docker} exec test-box1 bash -c "zypper refresh oss oss-update; zypper install -y python python-xml"
        when: 'distro_os_family == "Suse"'
      - name: attach setup container
@@ -1075,7 +1075,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
      - name: fixup setup container
        command: {docker} exec test-box1 bash -c "zypper repos"
        when: 'distro_os_family == "Suse"'
-     - name: fixup setup container
+     - name: refresh and install package
        command: {docker} exec test-box1 bash -c "zypper refresh repo-oss repo-update; zypper install -y python python-xml"
        when: 'distro_os_family == "Suse"'
      - name: attach setup container
@@ -1142,9 +1142,9 @@ class DockerMirrorPackagesTest(unittest.TestCase):
        command: {docker} run -d --rm=true {{{{ distro_packages_mirror_add_hosts }}}} \\
                      --name "test-box1" "{{{{ base_image }}}}" {{{{ base_command }}}}
      - name: fixup setup container
-       command: {docker} exec test-box1 bash -c "zypper repos ; zypper mr --no-gpgcheck repo-update"
+       command: {docker} exec test-box1 bash -c "zypper repos ; zypper mr --no-gpgcheck repo-oss repo-update repo-non-oss repo-update-non-oss"
        when: 'distro_os_family == "Suse"'
-     - name: fixup setup container
+     - name: refresh and install package
        command: {docker} exec test-box1 bash -c "zypper refresh repo-oss repo-update; zypper install -y python python-xml"
        when: 'distro_os_family == "Suse"'
      - name: attach setup container
