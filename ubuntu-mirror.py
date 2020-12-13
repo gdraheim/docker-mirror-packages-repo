@@ -3,7 +3,7 @@
     Try to run 'sync' followed be 'repo'. If a command starts with a
     number then it changes the version to be handled. A usual command
     would be 'mirror.py 19.10 sync repo -v'. If no argument is given
-    then 'make' the last version = 'sync pool repo test tags'."""
+    then 'make' the last version = 'sync repo test'."""
 
 __copyright__ = "(C) 2020 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
@@ -75,10 +75,8 @@ RSYNC = "rsync"
 
 def ubuntu_make() -> None:
     ubuntu_sync()
-    ubuntu_pool()  # backard compat
     ubuntu_repo()
     ubuntu_test()
-    ubuntu_tags()
 
 def ubuntu_sync() -> None:
     ubuntu_dir()
@@ -230,27 +228,30 @@ def ubuntu_repo() -> None:
     sh___("{docker} exec {cname} mkdir -p /srv/repo/ubuntu".format(**locals()))
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
     sh___("{docker} cp ubuntu.{ubuntu}/dists {cname}:/srv/repo/ubuntu".format(**locals()))
-    sh___("{docker} cp ubuntu.{ubuntu}/pool  {cname}:/srv/repo/ubuntu".format(**locals()))
     sh___("{docker} exec {cname} apt-get update".format(**locals()))
     sh___("{docker} exec {cname} apt-get install -y python".format(**locals()))
-    CMD = ubunturepo_CMD
+    sh___("{docker} exec {cname} mkdir -p /srv/repo/ubuntu/pool".format(**locals()))
+    base = "base"
+    CMD = str(ubunturepo_CMD).replace("'",'"')
     PORT = ubunturepo_PORT
-    sh___("{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {imagesrepo}/ubuntu-repo:{ubuntu}".format(**locals()))
+    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/ubuntu-repo/{base}:{ubuntu}"
+    sh___(cmd.format(**locals()))
+    for main in ["main", "restricted", "universe", "multivers"]:
+        sh___("{docker} rm --force {cname}".format(**locals()))
+        sh___("{docker} run --name={cname} --detach {imagesrepo}/ubuntu-repo/{base}:{ubuntu} sleep 9999".format(**locals()))
+        for dist in [ DIST[ubuntu], DIST[ubuntu]+"-updates", DIST[ubuntu]+"-backports", DIST[ubuntu]+"-security" ]:
+            pooldir = "ubuntu.{ubuntu}/pools/{dist}/{main}/pool".format(**locals())
+            if path.isdir(pooldir):
+                sh___("{docker} cp {pooldir}  {cname}:/srv/repo/ubuntu/pool".format(**locals()))
+                base = main
+        if base == main:
+            cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/ubuntu-repo/{base}:{ubuntu}"
+            sh___(cmd.format(**locals()))
+    cmd = "{docker} tag {imagesrepo}/ubuntu-repo/{base}:{ubuntu} {imagesrepo}/ubuntu-repo:{ubuntu}"
+    sh___(cmd.format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
-    if REPOS: ubuntu_tags()
-
-def ubuntu_tags() -> None:
-    docker = DOCKER
-    ubuntu = UBUNTU
-    imagesrepo = IMAGESREPO
-    if when("updates,restricted,universe,multiverse", REPOS):
-        sh___("{docker} tag {imagesrepo}/ubuntu-repo:{ubuntu} {imagesrepo}/ubuntu-repo/updates:{ubuntu}".format(**locals()))
-    if when("restricted,universe,multiverse", REPOS):
-        sh___("{docker} tag {imagesrepo}/ubuntu-repo:{ubuntu} {imagesrepo}/ubuntu-repo/restricted:{ubuntu}".format(**locals()))
-    if when("universe,multiverse", REPOS):
-        sh___("{docker} tag {imagesrepo}/ubuntu-repo:{ubuntu} {imagesrepo}/ubuntu-repo/universe:{ubuntu}".format(**locals()))
-    if when("multiverse", REPOS):
-        sh___("{docker} tag {imagesrepo}/ubuntu-repo:{ubuntu} {imagesrepo}/ubuntu-repo/multiverse:{ubuntu}".format(**locals()))
+    cmd = "{docker} rmi {imagesrepo}/ubuntu-repo/base:{ubuntu}" # untag base image
+    sh___(cmd.format(**locals()))
 
 def ubuntu_test() -> None:
     ubuntu = UBUNTU
