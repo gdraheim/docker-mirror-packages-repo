@@ -41,7 +41,7 @@ BASE["15.0"] = "opensuse/leap"
 BASE["15.1"] = "opensuse/leap"
 BASE["15.2"] = "opensuse/leap"
 BASE["15.3"] = "opensuse/leap"
-XXLEAP = ["15.2"]
+XXLEAP = [] # ["15.2"]
 LEAP: str ="15.2"
 
 RSYNC_SUSE1="rsync://suse.uni-leipzig.de/opensuse-full/opensuse"
@@ -130,7 +130,7 @@ def opensuse_sync_4() -> None:
 # /etc/zypp/repos.d/oss.repo:baseurl=http://download.opensuse.org/distribution/leap/42.2/repo/oss/
 # /etc/zypp/repos.d/non-oss.repo:baseurl=http://download.opensuse.org/distribution/leap/42.2/repo/non-oss/
 
-opensuserepo_CMD = ["python","/srv/scripts/filelist.py","--data","/srv/repo"]
+opensuserepo_CMD = ["/usr/bin/python","/srv/scripts/filelist.py","--data","/srv/repo"]
 opensuserepo_PORT = "80"
 def opensuse_repo() -> None:
      docker = DOCKER
@@ -146,12 +146,15 @@ def opensuse_repo() -> None:
      sh___("{docker} cp opensuse.{leap}/update       {cname}:/srv/repo/".format(**locals()))
      # sh___("{docker} exec {cname} rm -r /srv/repo/update/{leap}".format(**locals()))
      sh___("{docker} exec {cname} ln -s /srv/repo/update/leap/{leap}/oss /srv/repo/update/{leap}".format(**locals()))
-     sh___("{docker} exec {cname} zypper ar file:///srv/repo/distribution/leap/{leap}/repo/oss oss-repo".format(**locals()))
-     sh___("{docker} exec {cname} zypper --no-remote install -y python createrepo".format(**locals()))
-     if leap in XXLEAP:   
-        sh___(""" {docker} exec {cname} bash -c "cd /srv/repo/update/leap/$(LEAP)/oss && createrepo ." """.format(**locals()))
-     CMD = opensuserepo_CMD ; PORT = opensuserepo_PORT
-     sh___("{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {imagesrepo}/opensuse-repo:{leap}".format(**locals()))
+     sh___("{docker} exec {cname} zypper ar --no-gpgcheck file:///srv/repo/distribution/leap/{leap}/repo/oss oss-repo".format(**locals()))
+     sh___("{docker} exec {cname} zypper install -y -r oss-repo python createrepo".format(**locals()))
+     if leap in XXLEAP:
+        cmd = """ {docker} exec {cname} bash -c "cd /srv/repo/update/leap/{leap}/oss && createrepo ." """
+        sh___(cmd.format(**locals()))
+     CMD = str(opensuserepo_CMD).replace("'",'"')
+     PORT = opensuserepo_PORT
+     cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {imagesrepo}/opensuse-repo:{leap}"
+     sh___(cmd.format(**locals()))
      sh___("{docker} rm --force {cname}".format(**locals()))
 
 def opensuse_test() -> None:
@@ -241,7 +244,7 @@ def LEAP_set(leap: str) -> str:
     if len(leap) <= 2:
         LEAP = max([os for os in BASE if os.startswith(leap) and not os.startswith("42") ])
         return LEAP
-    if leap not in BASE.values():
+    if leap not in BASE:
         logg.warning("%s is not a known os version", leap)
     LEAP = leap
     return LEAP
@@ -267,7 +270,7 @@ if __name__ == "__main__":
         if arg[0] in "123456789":
             LEAP_set(arg)
             continue
-        funcname = "centos_" + arg.replace("-", "_")
+        funcname = "opensuse_" + arg.replace("-", "_")
         allnames = globals()
         if funcname in globals():
             func = globals()[funcname]
