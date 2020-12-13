@@ -14,6 +14,7 @@ __version__ = "1.6.2495"
 
 # from __future__ import literal_string_interpolation # PEP498 Python3.6
 from typing import Optional, Dict, List, Tuple, Union
+from collections import OrderedDict
 import os
 import os.path as path
 import sys
@@ -115,6 +116,7 @@ def centos_sync() -> None:
         centos_sync_extras()
         centos_sync_PowerTools()
         centos_sync_centosplus()
+        centos_sync_sclo()
 
 def centos_dir() -> None:
     centos = CENTOS
@@ -268,14 +270,29 @@ def centos_repo7() -> None:
     sh___("{docker} run --name={cname} --detach centos:{centos} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/7".format(**locals()))
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
-    for subdir in ["os", "extras", "updates", "sclo"]:
-        sh___("{docker} cp centos.{centos}/{subdir} {cname}:/srv/repo/7/".format(**locals()))
+    base = "base"
     CMD = str(centosrepo7_CMD).replace("'",'"')
     PORT = centosrepo7_PORT
     repo = IMAGESREPO
-    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/centos-repo:{centos}"
+    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}"
     sh___(cmd.format(**locals()))
+    dists: Dist[str, List[str]] = OrderedDict()
+    dists["main"] = ["os", "extras", "updates"] # "extras" was not in 'main' for CentOS 6
+    dists["sclo"] = ["sclo"]
+    for dist in dists:
+        sx___("{docker} rm --force {cname}".format(**locals()))
+        sh___("{docker} run --name={cname} --detach {repo}/centos-repo/{base}:{centos} sleep 9999".format(**locals()))
+        for subdir in dists[dist]:
+            pooldir = "centos.{centos}/{subdir}".format(**locals())
+            if path.isdir(pooldir):
+                sh___("{docker} cp {pooldir} {cname}:/srv/repo/7/".format(**locals()))
+                base = dist
+        if base == dist:
+            cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}"
+            sh___(cmd.format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
+    sh___("{docker} tag {repo}/centos-repo/{base}:{centos} {repo}/centos-repo:{centos}".format(**locals()))
+    sh___("{docker} rmi {repo}/centos-repo/base:{centos}".format(**locals())) # untag non-packages base
     centos_restore()
 
 def centos_repo8() -> None:
@@ -288,16 +305,30 @@ def centos_repo8() -> None:
     sh___("{docker} run --name={cname} --detach centos:{centos} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/8".format(**locals()))
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
-    for subdir in ["BaseOS", "AppStream", "extras", "PowerTools", "centosplus"]:
-        sh___("{docker} cp centos.{centos}/{subdir} {cname}:/srv/repo/8/".format(**locals()))
-    # for script in os.listdir("scripts/."):
-    #     sh___("{docker} exec {cname} chmod +x /srv/scripts/{script}".format(**locals()))
+    base = "base"
     CMD = str(centosrepo8_CMD).replace("'",'"')
     PORT = centosrepo8_PORT
     repo = IMAGESREPO
-    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/centos-repo:{centos}"
+    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}"
     sh___(cmd.format(**locals()))
+    dists: Dist[str, List[str]] = OrderedDict()
+    dists["main"] = ["BaseOS", "AppStream", "extras"] # "extras" was not in 'main' for CentOS 6
+    dists["plus"] = ["PowerTools", "centosplus"]
+    dists["sclo"] = ["sclo"]
+    for dist in dists:
+        sx___("{docker} rm --force {cname}".format(**locals()))
+        sh___("{docker} run --name={cname} --detach {repo}/centos-repo/{base}:{centos} sleep 9999".format(**locals()))
+        for subdir in dists[dist]:
+            pooldir = "centos.{centos}/{subdir}".format(**locals())
+            if path.isdir(pooldir):
+                sh___("{docker} cp {pooldir} {cname}:/srv/repo/8/".format(**locals()))
+                base = dist
+        if base == dist:
+            cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}"
+            sh___(cmd.format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
+    sh___("{docker} tag {repo}/centos-repo/{base}:{centos} {repo}/centos-repo:{centos}".format(**locals()))
+    sh___("{docker} rmi {repo}/centos-repo/base:{centos}".format(**locals())) # untag non-packages base
     centos_restore()
 
 def centos_tags() -> None:
