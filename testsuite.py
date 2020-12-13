@@ -354,7 +354,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         # if MR152:
         #   sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-update".format(**locals()))
-        sh____("{docker} exec test-box1 zypper install -y python-docker-py".format(**locals()))
+        sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
     def test_1404_ubuntu(self):
