@@ -7,7 +7,7 @@
 __copyright__ = "(C) 2018-2020 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.5.2256"
+__version__ = "1.5.2501"
 
 import sys
 import subprocess
@@ -354,6 +354,25 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         # if MR152:
         #   sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-update".format(**locals()))
+        sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y python-docker-py".format(**locals()))
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sx____("{docker} rm -f test-repo".format(**locals()))
+    def test_1252_opensuse(self):
+        prefix = PREFIX
+        docker = DOCKER
+        repo_image = "opensuse-repo:15.2"
+        box1_image = "opensuse/leap:15.2"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sx____("{docker} rm -f test-repo".format(**locals()))
+        sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host download.opensuse.org:{mirror_ip}".format(**locals())
+        sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
+        # if MR152:
+        #   sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-update".format(**locals()))
+        sh____("{docker} exec test-box1 zypper --no-gpg-checks refresh".format(**locals()))
         sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
