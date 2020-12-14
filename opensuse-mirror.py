@@ -8,14 +8,16 @@
 __copyright__ = "(C) 2020 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.6.2495"
+__version__ = "1.6.2501"
 
 # from __future__ import literal_string_interpolation # PEP498 Python3.6
 from typing import Optional, Dict, List, Tuple, Union
+from collections import OrderedDict
 import os
 import os.path as path
 import sys
 import re
+import datetime
 import subprocess
 import shutil
 import logging
@@ -41,13 +43,14 @@ BASE["15.0"] = "opensuse/leap"
 BASE["15.1"] = "opensuse/leap"
 BASE["15.2"] = "opensuse/leap"
 BASE["15.3"] = "opensuse/leap"
-XXLEAP = [] # ["15.2"]
+XXLEAP: List[str] = [] # ["15.2"]
 LEAP: str ="15.2"
 
-RSYNC_SUSE1="rsync://suse.uni-leipzig.de/opensuse-full/opensuse"
+RSYNC_SUSE="rsync://suse.uni-leipzig.de/opensuse-full/opensuse"
 RSYNC_SUSE2="rsync://ftp.tu-chemnitz.de/pub/linux/opensuse"
-RSYNC_SUSE="rsync://mirror.cs.upb.de/opensuse"
+RSYNC_SUSE3="rsync://mirror.cs.upb.de/opensuse"
 
+RSYNC = "rsync"
 DOCKER = "docker"
 
 def opensuse_make() -> None:
@@ -62,9 +65,9 @@ def opensuse_sync() -> None:
     opensuse_sync_3()
     opensuse_sync_4()
 
-def opensuse_dir() -> None:
+def opensuse_dir(suffix: str = "") -> str:
     leap = LEAP
-    dirname = "opensuse.{leap}".format(**locals())
+    dirname = "opensuse.{leap}{suffix}".format(**locals())
     if path.isdir(dirname):
         if path.islink(dirname):
             os.unlink(dirname)
@@ -85,10 +88,35 @@ def opensuse_dir() -> None:
     else:
         os.mkdir(dirname)  # local dir
         logg.warning("%s/. local dir", dirname)
+    return dirname
+
+def opensuse_save() -> None:
+    yymmdd = datetime.date.today().strftime("%Y.%m%d")
+    leap = LEAP
+    src = "opensuse.{leap}/.".format(**locals())
+    dst = opensuse_dir("." + yymmdd) + "/."
+    logg.info("src = %s", src)
+    logg.info("dst = %s", dst)
+    for srcpath, dirnames, filenames in os.walk(src):
+        logg.info("dirpath %s dirnames %s", srcpath, dirnames)
+        dstpath = srcpath.replace(src, dst)
+        for dirname in dirnames:
+            dirpath = path.join(dstpath, dirname)
+            if not path.isdir(dirpath):
+                os.mkdir(dirpath)
+        for filename in filenames:
+            srcfile = path.join(srcpath, filename)
+            dstfile = path.join(dstpath, filename)
+            if not path.exists(dstfile):
+                if dstfile.endswith(".rpm"):
+                    os.link(srcfile, dstfile)
+                else:
+                    shutil.copy(srcfile, dstfile)
 
 def opensuse_sync_1() -> None:
     leap = LEAP
     mirror = RSYNC_SUSE
+    rsync = RSYNC
     excludes = """  --filter="exclude boot" --filter="exclude EFI"  """
     excludes += """ --size-only --filter="exclude *.src.rpm" """
     leaprepo = "opensuse.{leap}/distribution/leap/{leap}/repo".format(**locals())
@@ -98,6 +126,7 @@ def opensuse_sync_1() -> None:
 def opensuse_sync_2() -> None:
     leap = LEAP
     mirror = RSYNC_SUSE
+    rsync = RSYNC
     excludes = """  --filter="exclude boot" --filter="exclude EFI"  """
     excludes += """  --filter="exclude x86_64" --filter="exclude noarch"  """
     excludes += """ --size-only --filter="exclude *.src.rpm" """
@@ -108,22 +137,24 @@ def opensuse_sync_2() -> None:
 def opensuse_sync_3() -> None:
     leap = LEAP
     mirror = RSYNC_SUSE
+    rsync = RSYNC
     excludes = """  --filter="exclude boot" --filter="exclude *.drpm"  """
     excludes += """ --size-only --filter="exclude *.src.rpm" """
-    leaprepo = "opensuse.{leap}/update/leap/{leap}/repo".format(**locals())
+    leaprepo = "opensuse.{leap}/update/leap/{leap}".format(**locals())
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
-    sh___("{rsync} -rv {mirror}/update/leap/{leap}/repo/oss {leaprepo}/ {excludes}".format(**locals()))
+    sh___("{rsync} -rv {mirror}/update/leap/{leap}/oss {leaprepo}/ {excludes}".format(**locals()))
 
 def opensuse_sync_4() -> None:
     leap = LEAP
     mirror = RSYNC_SUSE
+    rsync = RSYNC
     excludes = """  --filter="exclude boot" --filter="exclude EFI"  """
     excludes += """  --filter="exclude x86_64" --filter="exclude noarch"  """
     excludes += """  --filter="exclude strc" --filter="exclude nosrc"  """
     excludes += """ --size-only --filter="exclude *.src.rpm" """
-    leaprepo = "opensuse.{leap}/update/leap/{leap}/repo".format(**locals())
+    leaprepo = "opensuse.{leap}/update/leap/{leap}".format(**locals())
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
-    sh___("{rsync} -rv {mirror}/update/leap/{leap}/repo/non-oss {leaprepo}/ {excludes}".format(**locals()))
+    sh___("{rsync} -rv {mirror}/update/leap/{leap}/non-oss {leaprepo}/ {excludes}".format(**locals()))
 
 # /etc/zypp/repos.d/oss-update.repo:baseurl=http://download.opensuse.org/update/42.2/
 # /etc/zypp/repos.d/update-non-oss.repo:baseurl=http://download.opensuse.org/update/leap/42.2/non-oss/
@@ -138,24 +169,54 @@ def opensuse_repo() -> None:
      cname = "opensuse-repo-" + leap
      image = BASE[LEAP]
      imagesrepo = IMAGESREPO
+     bind_repo=""
+     base_repo="opensuse.{leap}/distribution/leap/{leap}/repo/oss".format(**locals())
+     logg.info("/base-repo -> %s", base_repo)
+     if path.isdir(base_repo):
+         base_repo_path=path.abspath(base_repo)
+         bind_repo="-v {base_repo_path}:/base-repo".format(**locals())
      sx___("{docker} rm --force {cname}".format(**locals()))
-     sh___("{docker} run --name={cname} --detach {image}:{leap} sleep 9999".format(**locals()))
+     sh___("{docker} run --name={cname} {bind_repo} --detach {image}:{leap} sleep 9999".format(**locals()))
      sh___("{docker} exec {cname} mkdir -p /srv/repo/".format(**locals()))
      sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
-     sh___("{docker} cp opensuse.{leap}/distribution {cname}:/srv/repo/".format(**locals()))
-     sh___("{docker} cp opensuse.{leap}/update       {cname}:/srv/repo/".format(**locals()))
-     # sh___("{docker} exec {cname} rm -r /srv/repo/update/{leap}".format(**locals()))
-     sh___("{docker} exec {cname} ln -s /srv/repo/update/leap/{leap}/oss /srv/repo/update/{leap}".format(**locals()))
-     sh___("{docker} exec {cname} zypper ar --no-gpgcheck file:///srv/repo/distribution/leap/{leap}/repo/oss oss-repo".format(**locals()))
-     sh___("{docker} exec {cname} zypper install -y -r oss-repo python createrepo".format(**locals()))
+     oss = "repo-oss" # Opensuse 15.x main repo
+     if bind_repo:
+         oss="local-repo"
+         sh___("{docker} exec {cname} zypper ar --no-gpgcheck file:///base-repo {oss}".format(**locals()))
+     if True:
+         sh___("{docker} exec {cname} zypper install -y -r {oss} python".format(**locals()))
      if leap in XXLEAP:
-        cmd = """ {docker} exec {cname} bash -c "cd /srv/repo/update/leap/{leap}/oss && createrepo ." """
-        sh___(cmd.format(**locals()))
+         sh___("{docker} exec {cname} zypper install -y -r {oss} createrepo".format(**locals()))
+     if bind_repo:
+         sh___("{docker} exec {cname} zypper rr {oss}".format(**locals()))
+     base="base"
      CMD = str(opensuserepo_CMD).replace("'",'"')
      PORT = opensuserepo_PORT
-     cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {imagesrepo}/opensuse-repo:{leap}"
+     cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/opensuse-repo/{base}:{leap}"
      sh___(cmd.format(**locals()))
+     dists: Dict[str, List[str]] = OrderedDict()
+     dists["main"] = ["distribution"]
+     dists["update"] = ["update"]
+     for dist in dists:
+         sx___("{docker} rm --force {cname}".format(**locals()))
+         sh___("{docker} run --name={cname} --detach {imagesrepo}/opensuse-repo/{base}:{leap} sleep 9999".format(**locals()))
+         for subdir in dists[dist]:
+             pooldir = "opensuse.{leap}/{subdir}".format(**locals())
+             if path.isdir(pooldir):
+                 sh___("{docker} cp {pooldir} {cname}:/srv/repo/".format(**locals()))
+                 base = dist
+         if dist in ["update"]:
+             # sh___("{docker} exec {cname} rm -r /srv/repo/{dist}/{leap}".format(**locals()))
+             sh___("{docker} exec {cname} ln -s /srv/repo/{dist}/leap/{leap}/oss /srv/repo/{dist}/{leap}".format(**locals()))
+             if leap in XXLEAP:
+                 cmd = """ {docker} exec {cname} bash -c "cd /srv/repo/{dist}/leap/{leap}/oss && createrepo ." """
+                 sh___(cmd.format(**locals()))
+         if base == dist:
+             cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/opensuse-repo/{base}:{leap}"
+             sh___(cmd.format(**locals()))
      sh___("{docker} rm --force {cname}".format(**locals()))
+     sh___("{docker} tag {imagesrepo}/opensuse-repo/{base}:{leap} {imagesrepo}/opensuse-repo:{leap}".format(**locals()))
+     sh___("{docker} rmi {imagesrepo}/opensuse-repo/base:{leap}".format(**locals())) # untag non-packages base
 
 def opensuse_test() -> None:
      leap = LEAP
