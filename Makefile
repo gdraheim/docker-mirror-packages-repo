@@ -127,7 +127,10 @@ mypy:
 	cd ../retype && git checkout 17.12.0
 
 type: 
-	$(MAKE) type.d type.f type.m type.e
+	$(MAKE) type.r type.d type.f type.m type.e
+type.r:
+	mypy --strict centos-mirror.py opensuse-mirror.py ubuntu-mirror.py
+	- rm -rf .mypy_cache
 type.d:
 	python3 ../retype/retype.py docker_mirror.py -t docker_mirror.tmp -p .
 	mypy --strict docker_mirror.tmp/docker_mirror.py
