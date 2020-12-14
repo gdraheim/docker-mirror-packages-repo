@@ -43,7 +43,7 @@ BASE["15.0"] = "opensuse/leap"
 BASE["15.1"] = "opensuse/leap"
 BASE["15.2"] = "opensuse/leap"
 BASE["15.3"] = "opensuse/leap"
-XXLEAP: List[str] = [] # ["15.2"]
+XXLEAP: List[str] = [] # ["15.2"] # obsolete, using repodata-fix.py now
 LEAP: str ="15.2"
 
 RSYNC_SUSE="rsync://suse.uni-leipzig.de/opensuse-full/opensuse"
@@ -52,6 +52,7 @@ RSYNC_SUSE3="rsync://mirror.cs.upb.de/opensuse"
 
 RSYNC = "rsync"
 DOCKER = "docker"
+LAYER = "base"
 
 def opensuse_make() -> None:
     opensuse_sync()
@@ -185,13 +186,14 @@ def opensuse_repo() -> None:
          sh___("{docker} exec {cname} zypper ar --no-gpgcheck file:///base-repo {oss}".format(**locals()))
      if True:
          sh___("{docker} exec {cname} zypper install -y -r {oss} python".format(**locals()))
+         sh___("{docker} exec {cname} zypper install -y -r {oss} python-xml".format(**locals()))
      if leap in XXLEAP:
          sh___("{docker} exec {cname} zypper install -y -r {oss} createrepo".format(**locals()))
      if bind_repo:
          sh___("{docker} exec {cname} zypper rr {oss}".format(**locals()))
-     base="base"
      CMD = str(opensuserepo_CMD).replace("'",'"')
      PORT = opensuserepo_PORT
+     base="base"
      cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/opensuse-repo/{base}:{leap}"
      sh___(cmd.format(**locals()))
      dists: Dict[str, List[str]] = OrderedDict()
@@ -205,6 +207,7 @@ def opensuse_repo() -> None:
              if path.isdir(pooldir):
                  sh___("{docker} cp {pooldir} {cname}:/srv/repo/".format(**locals()))
                  base = dist
+                 sh___("{docker} exec {cname} bash -c \"find /srv/repo/{subdir} -name repomd.xml -exec python /srv/scripts/repodata-fix.py {{}} -v ';'\" ".format(**locals()))
          if dist in ["update"]:
              # sh___("{docker} exec {cname} rm -r /srv/repo/{dist}/{leap}".format(**locals()))
              sh___("{docker} exec {cname} ln -s /srv/repo/{dist}/leap/{leap}/oss /srv/repo/{dist}/{leap}".format(**locals()))
