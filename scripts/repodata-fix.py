@@ -1,5 +1,10 @@
 #! /usr/bin/python3
 
+__copyright__ = "(C) 2018-2020 Guido Draheim"
+__contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
+__license__ = "CC0 Creative Commons Zero (Public Domain)"
+__version__ = "1.6.2501"
+
 import xml.dom.minidom as minidom
 import os.path as path
 import os
