@@ -10,7 +10,7 @@
 __copyright__ = "(C) 2020 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.6.2495"
+__version__ = "1.6.2501"
 
 # from __future__ import literal_string_interpolation # PEP498 Python3.6
 from typing import Optional, Dict, List, Tuple, Union
@@ -276,7 +276,7 @@ def centos_repo7() -> None:
     repo = IMAGESREPO
     cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}"
     sh___(cmd.format(**locals()))
-    dists: Dist[str, List[str]] = OrderedDict()
+    dists: Dict[str, List[str]] = OrderedDict()
     dists["main"] = ["os", "extras", "updates"] # "extras" was not in 'main' for CentOS 6
     dists["sclo"] = ["sclo"]
     for dist in dists:
@@ -311,7 +311,7 @@ def centos_repo8() -> None:
     repo = IMAGESREPO
     cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}"
     sh___(cmd.format(**locals()))
-    dists: Dist[str, List[str]] = OrderedDict()
+    dists: Dict[str, List[str]] = OrderedDict()
     dists["main"] = ["BaseOS", "AppStream", "extras"] # "extras" was not in 'main' for CentOS 6
     dists["plus"] = ["PowerTools", "centosplus"]
     dists["sclo"] = ["sclo"]
