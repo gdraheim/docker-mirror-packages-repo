@@ -16,7 +16,14 @@ I did have bad experiences with a direct download to package container, so now t
 
 ### different versions for the ubuntu-repo
 
-The toplevel Makfile contains some targets to download older (or more recent) versions. That would combine the steps above.
+The makefiles were later replaced by a python script which does run the "rsync" and "docker" commands as 
+subshell processes. It does make it easier to cover the quirks that are needed the different versions of
+the opensuse-repo need. Simply provide the intended version as the first argument and you are good to go.
 
-    make ubuntu-18.10
-    make ubuntu-16.04
+    ./ubuntu-mirror.py 15.2 sync
+    ./ubuntu-mirror.py 15.2 repo
+    ./ubuntu-mirror.py 15.2 test
+
+The original makefiles targets have been switched to do that with a default version. The old makefiles
+implementation may be checked on the github 'makefiles' branch.
+
