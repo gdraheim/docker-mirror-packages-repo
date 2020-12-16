@@ -17,6 +17,7 @@ import os
 import os.path as path
 import sys
 import re
+import json
 import datetime
 import subprocess
 import shutil
@@ -162,6 +163,29 @@ def opensuse_sync_4() -> None:
 # /etc/zypp/repos.d/oss.repo:baseurl=http://download.opensuse.org/distribution/leap/42.2/repo/oss/
 # /etc/zypp/repos.d/non-oss.repo:baseurl=http://download.opensuse.org/distribution/leap/42.2/repo/non-oss/
 
+# noarch/supertuxkart-data-1.1-lp152.1.2.noarch.rpm: Group       : Amusements/Games/3D/Race
+def opensuse_games(suffix: str = "") -> str:
+    games: Dict[str,str] = {}
+    leap = LEAP
+    dirname = "opensuse.{leap}{suffix}".format(**locals())
+    repodir = dirname + "/."
+    logg.info("check %s", repodir)
+    if path.isdir(repodir):
+        for dirpath, dirnames, filenames in os.walk(repodir):
+            for filename in filenames:
+                if filename.endswith(".rpm"):
+                    rpm = path.join(dirpath, filename)
+                    # if "tux" not in rpm: continue
+                    out, end = output2("rpm -q --info {rpm}".format(**locals()))
+                    for line in out.splitlines():
+                        if line.startswith("Group"):
+                            if "/Games/" in line:
+                                games[filename] = line.split(":", 1)[1].strip()
+    gameslist = dirname + "-games.json"
+    if games:
+        json.dump(games, open(gameslist, "w"), indent=2, ensure_ascii=False, sort_keys=True)
+        logg.info("found %s games, written to %s", len(games), gameslist)
+
 opensuserepo_CMD = ["/usr/bin/python","/srv/scripts/filelist.py","--data","/srv/repo"]
 opensuserepo_PORT = "80"
 def opensuse_repo() -> None:
@@ -197,14 +221,33 @@ def opensuse_repo() -> None:
      cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/opensuse-repo/{base}:{leap}"
      sh___(cmd.format(**locals()))
      dists: Dict[str, List[str]] = OrderedDict()
+     # dists["mini"] = ["distribution", "-games"]
      dists["main"] = ["distribution"]
      dists["update"] = ["update"]
      for dist in dists:
          sx___("{docker} rm --force {cname}".format(**locals()))
          sh___("{docker} run --name={cname} --detach {imagesrepo}/opensuse-repo/{base}:{leap} sleep 9999".format(**locals()))
+         clean = {}
          for subdir in dists[dist]:
+             repodir = "opensuse.{leap}/.".format(**locals())
              pooldir = "opensuse.{leap}/{subdir}".format(**locals())
-             if path.isdir(pooldir):
+             if subdir.startswith("-"):
+                 gamesfile = "opensuse.{leap}{subdir}.json".format(**locals())
+                 clean = json.load(open(gamesfile))
+                 if not clean:
+                     continue
+                 logg.info("loaded %s files from %s", len(clean), gamesfile)
+                 remove : Dict[str, str] = {}
+                 for dirpath, dirfiles, filenames in os.walk(repodir):
+                     for filename in filenames:
+                         if filename in clean:
+                             repopath = dirpath.replace(repodir, "/srv/repo")
+                             filepath = path.join(repopath, filename)
+                             remove[filepath] = filename
+                 logg.info("removing %s files from %s", len(remove), subdir)
+                 removes = " ".join(remove.keys())
+                 sh___("{docker} exec {cname} rm -f {removes}".format(**locals()), debugs=False)
+             elif path.isdir(pooldir):
                  sh___("{docker} cp {pooldir} {cname}:/srv/repo/".format(**locals()))
                  base = dist
                  sh___("{docker} exec {cname} bash -c \"find /srv/repo/{subdir} -name repomd.xml -exec python /srv/scripts/repodata-fix.py {{}} -v ';'\" ".format(**locals()))
@@ -246,40 +289,50 @@ def decodes(text: Union[bytes, str]) -> str:
             return text.decode("latin-1")
     return text
 
-def sh___(cmd: Union[str, List[str]], shell: bool = True) -> int:
+def sh___(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -> int:
     if isinstance(cmd, basestring):
-        logg.info(": %s", cmd)
+        if debugs:
+            logg.info(": %s", cmd)
     else:
-        logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
+        if debugs:
+            logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.check_call(cmd, shell=shell)
 
-def sx___(cmd: Union[str, List[str]], shell: bool = True) -> int:
+def sx___(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -> int:
     if isinstance(cmd, basestring):
-        logg.info(": %s", cmd)
+        if debugs:
+            logg.info(": %s", cmd)
     else:
-        logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
+        if debugs:
+            logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.call(cmd, shell=shell)
-def output(cmd: Union[str, List[str]], shell: bool = True) -> str:
+def output(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -> str:
     if isinstance(cmd, basestring):
-        logg.info(": %s", cmd)
+        if debugs:
+            logg.info(": %s", cmd)
     else:
-        logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
+        if debugs:
+            logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
     return decodes(out)
-def output2(cmd: Union[str, List[str]], shell: bool = True) -> Tuple[str, int]:
+def output2(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -> Tuple[str, int]:
     if isinstance(cmd, basestring):
-        logg.info(": %s", cmd)
+        if debugs:
+            logg.info(": %s", cmd)
     else:
-        logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
+        if debugs:
+            logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
     return decodes(out), run.returncode
-def output3(cmd: Union[str, List[str]], shell: bool = True) -> Tuple[str, str, int]:
+def output3(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -> Tuple[str, str, int]:
     if isinstance(cmd, basestring):
-        logg.info(": %s", cmd)
+        if debugs:
+            logg.info(": %s", cmd)
     else:
-        logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
+        if debugs:
+            logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = run.communicate()
     return decodes(out), decodes(err), run.returncode
