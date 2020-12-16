@@ -14,3 +14,7 @@ Edit /etc/sysconfig/docker and increase that like
 Theoretically one can just do "service docker restart"
 but in reality some versions needed the old baseimage
 to be removed from disk so that it is allocated again.
+
+Oh, and by the way, switching to overlay2 does help as well:
+
+    DOCKER_OPTS="-g /data/docker --storage-driver=overlay2"
