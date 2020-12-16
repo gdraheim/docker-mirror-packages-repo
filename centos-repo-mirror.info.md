@@ -19,3 +19,16 @@ I did have bad experiences with a direct download to package container, so now t
     make centosrepo
     make centostest
 
+### different versions for the centos-repo
+
+The makefiles were later replaced by a python script which does run the "rsync" and "docker" commands as 
+subshell processes. It does make it easier to cover the quirks that are needed the different versions of
+the opensuse-repo need. Simply provide the intended version as the first argument and you are good to go.
+
+    ./centos-mirror.py 8.3 sync
+    ./centos-mirror.py 8.3 repo
+    ./centos-mirror.py 8.3 test
+
+The original makefiles targets have been switched to do that with a default version. The old makefiles
+implementation may be checked on the github 'makefiles' branch.
+
