@@ -24,9 +24,21 @@ projects. And those might bring in a dependency that does not allow to update so
     7.6.1810 # 2018-12 # 2023 (2024-08)
     7.7.1908 # 2019-09 # 2024 (2024-08)
     7.8.2003 # 2020-04 # 2024 (2024-08)
+    7.9.2009 #
     8.0.1905 # 2019-09 # 2029 (2029-05)
     8.1.1911 # 2020-01 # 2029 (2029-05)
     8.2.2004 # 2020-06 # 2029 (2029-05)
+    8.3.2011 # 2020-12 # 2029 (2029-05)
+    Stream-8 # (start) # 2021 (2021-12)
+
+### CentOs Stream
+
+Note that the CentOs team has announced an end-of-life of CentOS 8 at the end of 2021.
+This follows the idea to switch from CentOS being behind the schedule of Redhat release
+to be ahead of the current RHEL release. >> CentOS Stream continues after that date, 
+serving as the upstream (development) branch of Red Hat Enterprise Linux. <<
+
+ * https://blog.centos.org/2020/12/future-is-centos-stream/
 
 ### Redhat Releases
 
@@ -109,6 +121,7 @@ as the enterprise IT departments are usually quieker than that.
      15.0 # 2018-05 # 2019-12
      15.1 # 2019-05 # 2020-11
      15.2 # 2020-07 # 2021-11
+     15.3 # 2021-07 ?
 
 ### SLES Releases
 
