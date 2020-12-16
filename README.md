@@ -6,18 +6,28 @@ packages repo of the operating system.
 
 Tested repos are
 
- * localhost:5000/mirror-packages/**centos-repo:7.3.1611** _(17.3GB)_
- * localhost:5000/mirror-packages/**centos-repo:7.4.1708** _(13.2GB)_
- * localhost:5000/mirror-packages/**centos-repo:7.5.1804** _(14.7GB)_
- * localhost:5000/mirror-packages/**centos-repo:7.7.1908** _(14.6GB)_
- * localhost:5000/mirror-packages/**opensuse-repo:42.3**   _(38.6GB)_
- * localhost:5000/mirror-packages/**opensuse-repo:15.0**   _(48.9GB)_
- * localhost:5000/mirror-packages/**opensuse-repo:15.1**   _(54.6GB)_
- * localhost:5000/mirror-packages/**ubuntu-repo:16.04**    _(74.7GB)_
- * localhost:5000/mirror-packages/**ubuntu-repo:18.04**    _(19.5GB)_
- * localhost:5000/mirror-packages/**ubuntu-repo/universe:16.04** _(186GB)_
- * localhost:5000/mirror-packages/**ubuntu-repo/updates:16.04** _(74.7GB)_
- * localhost:5000/mirror-packages/**ubuntu-repo/updates:18.04** _(19.5GB)_
+ * localhost:5000/mirror-packages/**centos-repo:7.3.1611**       _(17.3GB)_
+ * localhost:5000/mirror-packages/**centos-repo:7.4.1708**       _(13.2GB)_
+ * localhost:5000/mirror-packages/**centos-repo:7.5.1804**       _(14.7GB)_
+ * localhost:5000/mirror-packages/**centos-repo:7.7.1908**       _(14.6GB)_
+ * localhost:5000/mirror-packages/**centos-repo:8.0.1905**       _(18.7GB)_
+ * localhost:5000/mirror-packages/**centos-repo/main:7.9.2009**  _(15.1GB)_
+ * localhost:5000/mirror-packages/**centos-repo/sclo:7.9.2009**  _(22.4GB)_
+ * localhost:5000/mirror-packages/**centos-repo/main:8.3.2011**  _(18.6GB)_
+ * localhost:5000/mirror-packages/**centos-repo/plus:8.3.2011**  _(21.6GB)_
+ * localhost:5000/mirror-packages/**epel-repo:7.x.1910**         _(39.4GB)_
+ * localhost:5000/mirror-packages/**opensuse-repo:42.3**         _(38.6GB)_
+ * localhost:5000/mirror-packages/**opensuse-repo:15.0**         _(48.9GB)_
+ * localhost:5000/mirror-packages/**opensuse-repo:15.1**         _(54.6GB)_
+ * localhost:5000/mirror-packages/**opensuse-repo/main:15.2**    _(93.1GB)_
+ * localhost:5000/mirror-packages/**opensuse-repo/update:15.2**   _(118GB)_
+ * localhost:5000/mirror-packages/**ubuntu-repo:16.04**          _(74.7GB)_
+ * localhost:5000/mirror-packages/**ubuntu-repo:18.04**          _(19.5GB)_
+ * localhost:5000/mirror-packages/**ubuntu-repo/main:16.04**     _(74.7GB)_
+ * localhost:5000/mirror-packages/**ubuntu-repo/universe:16.04**  _(186GB)_
+ * localhost:5000/mirror-packages/**ubuntu-repo/main:18.04**     _(19.5GB)_
+ * localhost:5000/mirror-packages/**ubuntu-repo/main:20.04**     _(25.5GB)_
+ * localhost:5000/mirror-packages/**ubuntu-repo/universe:20.04**  _(125GB)_
 
 Remember that the internet package repos contain updates for the last
 distribution release, so they do grow in size over time. As such the
@@ -77,12 +87,6 @@ in the container and a sendfile will return the content. These are mostly
 
 For more information check the [centos-repo mirror info](./centos-repo-mirror.info.md)
 
-Currently tested are
-
-     make centos-7.5   # really centos-7.5.1804
-     make centos-7.4   # really centos-7.4.1708
-     make centos-7.3   # really centos-7.3.1611
-
 ## OPENSUSE
 
 Mimics the default URL of http://download.opensuse.org
@@ -98,12 +102,6 @@ return the content. These are mostly `*.rpm` packages as well
 as some package index files.
 
 For mor information check the [opensuse-repo mirror info](./opensuse-repo-mirror.info.md)
-
-Currently tested are
-
-     make opensuse-15.0
-     make opensuse-42.3
-     make opensuse-42.2
 
 ## UBUNTU
 
@@ -121,11 +119,6 @@ as well as some package index files.
 
 For more information check the [ubuntu-repo mirror info](./ubuntu-repo-mirror.info.md)
 
-Currently tested are
-
-     make ubuntu-18.10
-     make ubuntu-16.04
-
 ## IMPLEMENTATION
 
 Every package repo has a different way to store data in its
@@ -139,15 +132,16 @@ version are listed in a `$host:/dists/$version/Packages.gz`
 file. The distro version is not given by number (16.04) but 
 by code name (xenial).
 
-The makefiles in this project know about that - so the rsync
-will first download the `Packages.gz` files, in order to
-unpack/filter them into a list of `/pool/x/y/*.deb` paths
+The mirror scripts in this project know about that - so the 
+rsync will first download the `Packages.gz` files, in order 
+to unpack/filter them into a list of `/pool/x/y/*.deb` paths
 in a temporary file. Then `rsync --files-from=pool-files.tmp` 
 will do the rest.
 
 When the rsync is complete, only a little web service script
 is added on top of building the image. So when the image is
 started as a container, it does accept requests on 80/http
-serving the rsync'ed files back.
+serving the rsync'ed files back (except epel-repo since the
+usual Fedora URL is shown running on 443/https).
 
 For tips and tricks please see [PROBLEMS FAQ](./PROBLEMS.md).
