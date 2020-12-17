@@ -126,7 +126,7 @@ class MyHandler(SimpleHTTPRequestHandler):
                 md5 = os_path_md5(repomd_xml)
                 sha256 = os_path_sha256(repomd_xml)
                 sha512 = os_path_sha512(repomd_xml)
-                http=url.split(":")[0]
+                http = url.split(":")[0]
                 xml = """<?xml version="1.0" encoding="utf-8"?>
              <metalink version="3.0" xmlns="{ns}" xmlns:mm="{mm}" generator="{generator}">
               <files>
