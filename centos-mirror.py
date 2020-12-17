@@ -258,12 +258,15 @@ def centos_epelrepo7() -> None:
     for script in os.listdir("scripts/."):
         sh___("{docker} exec {cname} chmod +x /srv/scripts/{script}".format(**locals()))
     #
-    CMD = str(epelrepo_CMD).replace("'", '"')
-    PORT = str(epelrepo_PORT)
+    CMD = str(epelrepo7_CMD).replace("'", '"')
+    PORT = str(epelrepo7_PORT)
+    CMD2 = str(epelrepo7_http_CMD).replace("'", '"')
+    PORT2 = str(epelrepo7_http_PORT)
     repo = IMAGESREPO
     yymm = datetime.date.today().strftime("%y%m")
     sh___("{docker} cp epel.{epel}/{epel} {cname}:/srv/repo/epel/".format(**locals()))
     sh___("{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/epel-repo:{epel}.x.{yymm}}".format(**locals()))
+    sh___("{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' {cname} {repo}/epel-repo/http:{epel}.x.{yymm}}".format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
 
 def centos_epelrepo8() -> None:
@@ -279,42 +282,58 @@ def centos_epelrepo8() -> None:
     sh___("{docker} exec {cname} mkdir -p /srv/repo/epel/{epel}".format(**locals()))
     sh___("{docker} exec {cname} yum install -y openssl".format(**locals()))
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
-    for script in os.listdir("scripts/."):
-        sh___("{docker} exec {cname} sed -i s:/usr/bin/python:/usr/libexec/platform-python: /srv/scripts/{script}".format(**locals()))
-        sh___("{docker} exec {cname} chmod +x /srv/scripts/{script}".format(**locals()))
-    #
+    # for script in os.listdir("scripts/."):
+    #    sh___("{docker} exec {cname} sed -i s:/usr/bin/python:/usr/libexec/platform-python: /srv/scripts/{script}".format(**locals()))
+    #    sh___("{docker} exec {cname} chmod +x /srv/scripts/{script}".format(**locals()))
     base = "base"
-    CMD = str(epelrepo_CMD).replace("'", '"')
-    PORT = str(epelrepo_PORT)
+    CMD = str(epelrepo8_CMD).replace("'", '"')
+    PORT = str(epelrepo8_PORT)
     repo = IMAGESREPO
     yymm = datetime.date.today().strftime("%y%m")
-    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{epel}.x.{yymm}"
+    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/epel-repo/{base}:{epel}.x.{yymm}"
     sh___(cmd.format(**locals()))
     dists: Dict[str, List[str]] = {}
     dists["main"] = ["Everything"]
     dists["plus"] = ["Modular"]
     for dist in dists:
         sx___("{docker} rm --force {cname}".format(**locals()))
-        sh___("{docker} run --name={cname} --detach {repo}/centos-repo/{base}:{epel}.x.{yymm} sleep 9999".format(**locals()))
+        sh___("{docker} run --name={cname} --detach {repo}/epel-repo/{base}:{epel}.x.{yymm} sleep 9999".format(**locals()))
         for subdir in dists[dist]:
             sh___("{docker} cp epel.{epel}/{epel}/{subdir} {cname}:/srv/repo/epel/{epel}/".format(**locals()))
             base = dist
         if base == dist:
-            cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{epel}.x.{yymm}"
+            cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/epel-repo/{base}:{epel}.x.{yymm}"
             sh___(cmd.format(**locals()))
+    cmd = "{docker} tag {repo}/epel-repo/{base}:{epel}.x.{yymm} {repo}/epel-repo:{epel}.x.{yymm}"
+    sh___(cmd.format(**locals()))
     sx___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} rmi {repo}/centos-repo/base:{epel}.x.{yymm}".format(**locals()))
+    sh___("{docker} rmi {repo}/epel-repo/base:{epel}.x.{yymm}".format(**locals()))
+    #
+    CMD = str(epelrepo8_http_CMD).replace("'", '"')
+    PORT = str(epelrepo8_http_PORT)
+    base = "http"
+    sh___("{docker} run --name={cname} --detach {repo}/epel-repo:{epel}.x.{yymm} sleep 9999".format(**locals()))
+    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/epel-repo/{base}:{epel}.x.{yymm}"
+    sx___("{docker} rm --force {cname}".format(**locals()))
 
-epelrepo_port = 443
-epelrepo_cmd = ["python", "/srv/scripts/mirrors.fedoraproject.org.py",
+epelrepo7_PORT = 443
+epelrepo7_CMD = ["/usr/bin/python", "/srv/scripts/mirrors.fedoraproject.org.py",
                 "--data", "/srv/repo/epel", "--ssl", "https://mirrors.fedoraproject.org"]
-epelrepo_PORT = 80
-epelrepo_CMD = ["python", "/srv/scripts/mirrors.fedoraproject.org.py", "--data", "/srv/repo/epel"]
+epelrepo7_http_PORT = 80
+epelrepo7_http_CMD = ["/usr/bin/python", "/srv/scripts/mirrors.fedoraproject.org.py", "--data", "/srv/repo/epel"]
+
+epelrepo8_PORT = 443
+epelrepo8_CMD = ["/usr/libexec/platform-python", "/srv/scripts/mirrors.fedoraproject.org.py",
+                "--data", "/srv/repo/epel", "--ssl", "https://mirrors.fedoraproject.org"]
+epelrepo8_http_PORT = 80
+epelrepo8_http_CMD = ["/usr/libexec/platform-python", "/srv/scripts/mirrors.fedoraproject.org.py", "--data", "/srv/repo/epel"]
 
 centosrepo7_CMD = ["/usr/bin/python", "/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
 centosrepo7_PORT = 80
 centosrepo8_CMD = ["/usr/libexec/platform-python", "/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
 centosrepo8_PORT = 80
+centosrepo8_http_CMD = ["/usr/libexec/platform-python", "/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
+centosrepo8_http_PORT = 80
 
 def centos_repo() -> None:
     if CENTOS.startswith("7"):
