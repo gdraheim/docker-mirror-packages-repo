@@ -290,7 +290,7 @@ def centos_epelrepo8() -> None:
     yymm = datetime.date.today().strftime("%y%m")
     cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{epel}.x.{yymm}"
     sh___(cmd.format(**locals()))
-    dists: Dict[str, str] = {}
+    dists: Dict[str, List[str]] = {}
     dists["main"] = ["Everything"]
     dists["plus"] = ["Modular"]
     for dist in dists:
