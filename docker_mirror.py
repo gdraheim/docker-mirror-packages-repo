@@ -27,7 +27,7 @@ ADDHOSTS = False
 LEAP = "opensuse/leap"
 SUSE = "opensuse"
 OPENSUSE_VERSIONS = {"42.2": SUSE, "42.3": SUSE, "15.0": LEAP, "15.1": LEAP, "15.2": LEAP, "15.3": LEAP}
-UBUNTU_LTS = {"16": "16.04", "18": "18.04", "20": "20.04" }
+UBUNTU_LTS = {"16": "16.04", "18": "18.04", "20": "20.04"}
 UBUNTU_VERSIONS = {"12.04": "precise", "14.04": "trusty", "16.04": "xenial", "17.10": "artful",
                    "18.04": "bionic", "18.10": "cosmic", "19.04": "disco", "19.10": "eoan",
                    "20.04": "focal", "20.10": "groovy"}
@@ -83,7 +83,7 @@ class DockerMirrorPackagesRepo:
         return ""
     def detect_etc_image(self, etc):
         distro, version = "", ""
-        os_release = os.path.join(etc,"os-release")
+        os_release = os.path.join(etc, "os-release")
         if os.path.exists(os_release):
             # rhel:7.4 # VERSION="7.4 (Maipo)" ID="rhel" VERSION_ID="7.4"
             # centos:7.3  # VERSION="7 (Core)" ID="centos" VERSION_ID="7"
@@ -106,7 +106,7 @@ class DockerMirrorPackagesRepo:
                     distro = value.replace("-", "/")
                 if key in ["VERSION_ID"]:
                     version = value
-        redhat_release= os.path.join(etc, "redhat-release")
+        redhat_release = os.path.join(etc, "redhat-release")
         if os.path.exists(redhat_release):
             for line in open(redhat_release):
                 m = re.search("release (\\d+[.]\\d+).*", line)
@@ -128,7 +128,7 @@ class DockerMirrorPackagesRepo:
             image name is the key for the other mirror functions. """
         docker = DOCKER
         distro, version = "", ""
-        cname = "docker_mirror_detect." + os.path.basename(image).replace(":",".")
+        cname = "docker_mirror_detect." + os.path.basename(image).replace(":", ".")
         cmd = "{docker} rm -f {cname}"
         out, err, end = output3(cmd.format(**locals()))
         cmd = "{docker} create --name={cname} {image}"
@@ -180,13 +180,13 @@ class DockerMirrorPackagesRepo:
             distro = "centos"
             version = image[len("centos:"):]
             latest = self.get_centos_latest_version(version)
-            if latest: 
+            if latest:
                 return "{distro}:{latest}".format(**locals())
         if image.startswith("opensuse/leap:"):
             distro = "opensuse/leap"
             version = image[len("opensuse/leap:"):]
             latest = self.get_opensuse_latest_version(version)
-            if latest: 
+            if latest:
                 if latest in OPENSUSE_VERSIONS:
                     distro = OPENSUSE_VERSIONS[latest]
                 return "{distro}:{latest}".format(**locals())
@@ -194,7 +194,7 @@ class DockerMirrorPackagesRepo:
             distro = "opensuse"
             version = image[len("opensuse:"):]
             latest = self.get_opensuse_latest_version(version)
-            if latest: 
+            if latest:
                 if latest in OPENSUSE_VERSIONS:
                     distro = OPENSUSE_VERSIONS[latest]
                 return "{distro}:{latest}".format(**locals())
@@ -330,8 +330,8 @@ class DockerMirrorPackagesRepo:
                 if release.startswith(ver):
                     logg.debug("release %s", release)
                     # opensuse:42.0 was before opensuse/leap:15.0
-                    release42 = release.replace("42.","14.")
-                    latest42 = latest.replace("42.","14.")
+                    release42 = release.replace("42.", "14.")
+                    latest42 = latest.replace("42.", "14.")
                     if latest42 < release42:
                         latest = release
             ver = latest or ver
@@ -374,7 +374,7 @@ class DockerMirrorPackagesRepo:
         released = version.split(".")[-1]
         latest = ""
         # and then check for actual images around
-        cmd = docker+" images --format '{{.Repository}}:{{.Tag}}'"
+        cmd = docker + " images --format '{{.Repository}}:{{.Tag}}'"
         out, err, end = output3(cmd)
         if end:
             logg.error("docker images [%s]\n\t", end, cmd)
