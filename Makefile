@@ -117,8 +117,9 @@ universerepo.19.10: ; $(MAKE) ubunturepo UBUNTU=19.10 REPOS=universe
 universerepo.18.04: ; $(MAKE) ubunturepo UBUNTU=18.04 REPOS=universe
 universerepo.16.04: ; $(MAKE) ubunturepo UBUNTU=16.04 REPOS=universe
 
-test_%: ; ./testsuite.py $@ -v
-check: ; ./testsuite.py -vv
+K=
+test_%: ; ./testsuite.py $@ -v $K
+check: ; ./testsuite.py -vv $K
 
 mypy:
 	zypper install -y mypy
