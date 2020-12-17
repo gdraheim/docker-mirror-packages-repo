@@ -34,47 +34,46 @@ def fix(datafile):
             basename = path.basename(href)
             dirsname = path.dirname(href)
             if "-" in basename:
-               found=""
-               suffix = basename.split("-")[-1]
-               for dirpath, dirnames, filenames in os.walk(repodatadir):
-                   for filename in filenames:
-                       if filename.endswith("-"+suffix):
-                           found=path.join(dirpath, filename)
+                found = ""
+                suffix = basename.split("-")[-1]
+                for dirpath, dirnames, filenames in os.walk(repodatadir):
+                    for filename in filenames:
+                        if filename.endswith("-" + suffix):
+                            found = path.join(dirpath, filename)
             if found:
-               newhref = path.join(repodata, path.basename(found))
-               logg.info("%s having: %s", kind, newhref)
-               xmlgz = open(found, "rb").read()
-               checksum_gz = hashlib.sha256(xmlgz).hexdigest()
-               logg.info("%s        checksum: %s", kind, checksum_gz)
-               xml = gzip.open(found, "rb").read()
-               checksum_xml = hashlib.sha256(xml).hexdigest()
-               logg.info("%s   open checksum: %s", kind, checksum_xml)
-               a = data.getElementsByTagName("location")
-               a[0].setAttribute("href", newhref)
-               b = data.getElementsByTagName("checksum")
-               b[0].firstChild.replaceWholeText(checksum_gz)
-               c = data.getElementsByTagName("size")
-               c[0].firstChild.replaceWholeText(str(len(xmlgz)))
-               d = data.getElementsByTagName("open-size")
-               d[0].firstChild.replaceWholeText(str(len(xml)))
-               e = data.getElementsByTagName("open-checksum")
-               e[0].firstChild.replaceWholeText(checksum_xml)
-               fixes += 1
+                newhref = path.join(repodata, path.basename(found))
+                logg.info("%s having: %s", kind, newhref)
+                xmlgz = open(found, "rb").read()
+                checksum_gz = hashlib.sha256(xmlgz).hexdigest()
+                logg.info("%s        checksum: %s", kind, checksum_gz)
+                xml = gzip.open(found, "rb").read()
+                checksum_xml = hashlib.sha256(xml).hexdigest()
+                logg.info("%s   open checksum: %s", kind, checksum_xml)
+                a = data.getElementsByTagName("location")
+                a[0].setAttribute("href", newhref)
+                b = data.getElementsByTagName("checksum")
+                b[0].firstChild.replaceWholeText(checksum_gz)
+                c = data.getElementsByTagName("size")
+                c[0].firstChild.replaceWholeText(str(len(xmlgz)))
+                d = data.getElementsByTagName("open-size")
+                d[0].firstChild.replaceWholeText(str(len(xml)))
+                e = data.getElementsByTagName("open-checksum")
+                e[0].firstChild.replaceWholeText(checksum_xml)
+                fixes += 1
     if fixes:
         logg.debug("done %i fixes -> overwrite repomd.xml", fixes)
-        os.rename(datafile, datafile+".old")
+        os.rename(datafile, datafile + ".old")
         dom.writexml(open(datafile, "w"))
         logg.warning("done %i fixes -> %s", fixes, datafile)
-               
+
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
     _o = ArgumentParser()
-    _o.add_argument("-v", "--verbose", action="count", default=0, 
-        help="increase logging level")
+    _o.add_argument("-v", "--verbose", action="count", default=0,
+                    help="increase logging level")
     _o.add_argument("repomd", default="repodata/repomd.xml",
-        help="the repomd to be fixed")
+                    help="the repomd to be fixed")
     opt = _o.parse_args()
-    logging.basicConfig(level = max(0, logging.ERROR - 10 * opt.verbose))
+    logging.basicConfig(level=max(0, logging.ERROR - 10 * opt.verbose))
     fix(opt.repomd)
-    
