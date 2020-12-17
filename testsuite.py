@@ -716,15 +716,15 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         repo_image = output("{mirror} repo {image}".format(**locals()))
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} repos {image} --add-hosts --epel".format(**locals()))
         sh____("{mirror} start {image} --add-hosts --epel".format(**locals()))
         add_host = output("{mirror} start {image} --add-hosts --epel".format(**locals())).strip()
         sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 yum install -y epel-release".format(**locals()))
         sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >> /etc/yum.conf'".format(**locals()))
-        sh____("{docker} exec test-box1 yum install -y python3-flask-sqlalchemy".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y python36-flask".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    @unittest.expectedFailure
     def test_3079_centos_epel(self):
         docker = DOCKER
         mirror = _docker_mirror
@@ -733,12 +733,13 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         repo_image = output("{mirror} repo {image}".format(**locals()))
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} repos {image} --add-hosts --epel".format(**locals()))
         sh____("{mirror} start {image} --add-hosts --epel".format(**locals()))
         add_host = output("{mirror} start {image} --add-hosts --epel".format(**locals())).strip()
         sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 yum install -y epel-release".format(**locals()))
         sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >> /etc/yum.conf'".format(**locals()))
-        sh____("{docker} exec test-box1 yum install -y python3-flask-sqlalchemy".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y python36-flask".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_3081_centos_epel(self):
