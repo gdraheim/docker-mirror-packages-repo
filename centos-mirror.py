@@ -265,8 +265,10 @@ def centos_epelrepo7() -> None:
     repo = IMAGESREPO
     yymm = datetime.date.today().strftime("%y%m")
     sh___("{docker} cp epel.{epel}/{epel} {cname}:/srv/repo/epel/".format(**locals()))
-    sh___("{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/epel-repo:{epel}.x.{yymm}}".format(**locals()))
-    sh___("{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' {cname} {repo}/epel-repo/http:{epel}.x.{yymm}}".format(**locals()))
+    sh___("{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/epel-repo:{epel}.x.{yymm}".format(**locals()))
+    sh___("{docker} rm --force {cname}".format(**locals()))
+    sh___("{docker} run --name={cname} --detach {repo}/epel-repo:{epel}.x.{yymm} sleep 999".format(**locals()))
+    sh___("{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' {cname} {repo}/epel-repo/http:{epel}.x.{yymm}".format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
 
 def centos_epelrepo8() -> None:
