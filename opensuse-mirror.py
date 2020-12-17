@@ -164,7 +164,7 @@ def opensuse_sync_4() -> None:
 # /etc/zypp/repos.d/non-oss.repo:baseurl=http://download.opensuse.org/distribution/leap/42.2/repo/non-oss/
 
 # noarch/supertuxkart-data-1.1-lp152.1.2.noarch.rpm: Group       : Amusements/Games/3D/Race
-def opensuse_games(suffix: str = "") -> str:
+def opensuse_games(suffix: str = "") -> None:
     games: Dict[str, str] = {}
     leap = LEAP
     dirname = "opensuse.{leap}{suffix}".format(**locals())
@@ -227,7 +227,7 @@ def opensuse_repo() -> None:
     for dist in dists:
         sx___("{docker} rm --force {cname}".format(**locals()))
         sh___("{docker} run --name={cname} --detach {imagesrepo}/opensuse-repo/{base}:{leap} sleep 9999".format(**locals()))
-        clean = {}
+        clean : Dict[str, str] = {}
         for subdir in dists[dist]:
             repodir = "opensuse.{leap}/.".format(**locals())
             pooldir = "opensuse.{leap}/{subdir}".format(**locals())
