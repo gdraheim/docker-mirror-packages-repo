@@ -227,7 +227,7 @@ def opensuse_repo() -> None:
     for dist in dists:
         sx___("{docker} rm --force {cname}".format(**locals()))
         sh___("{docker} run --name={cname} --detach {imagesrepo}/opensuse-repo/{base}:{leap} sleep 9999".format(**locals()))
-        clean : Dict[str, str] = {}
+        clean: Dict[str, str] = {}
         for subdir in dists[dist]:
             repodir = "opensuse.{leap}/.".format(**locals())
             pooldir = "opensuse.{leap}/{subdir}".format(**locals())
