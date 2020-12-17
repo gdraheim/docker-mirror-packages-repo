@@ -514,7 +514,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
     def test_2080_centos(self):
         docker = DOCKER
         mirror = _docker_mirror
-        image = "centos:8"
+        image = "centos:8.0.1905"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         repo_image = output("{mirror} repo {image}".format(**locals()))
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
@@ -526,6 +526,37 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
+    def test_2081_centos(self):
+        docker = DOCKER
+        mirror = _docker_mirror
+        image = "centos:8.1.1911"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
+        # sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals())) # all /extras are now in epel
+        sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
+    def test_2083_centos(self):
+        docker = DOCKER
+        mirror = _docker_mirror
+        image = "centos:8.3.2011"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
+        # sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals())) # all /extras are now in epel
+        sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
+        if not KEEP:
+            sx____("{docker} rm -f test-box1".format(**locals()))
+            sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_2142_opensuse(self):
         docker = DOCKER
         mirror = _docker_mirror
@@ -653,6 +684,97 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 apt-get install -y apache2".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
+
+    def test_3007_centos(self):
+        prefix = PREFIX
+        docker = DOCKER
+        mirrors = _docker_mirror
+        repo_image = "centos-repo:7.3.1611"
+        base_image = "centos:7.3.1611"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        sh____("{mirrors} repos {base_image} --epel".format(**locals()))
+        sh____("{mirrors} start {base_image} --add-hosts --epel".format(**locals()))
+        sh____("{mirrors} stop {base_image} --epel".format(**locals()))
+    def test_3008_centos(self):
+        prefix = PREFIX
+        docker = DOCKER
+        mirrors = _docker_mirror
+        repo_image = "centos-repo:8.3.2011"
+        base_image = "centos:8.3.2011"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        sh____("{mirrors} repos {base_image} --epel".format(**locals()))
+        sh____("{mirrors} start {base_image} --add-hosts --epel".format(**locals()))
+        sh____("{mirrors} stop {base_image} --epel".format(**locals()))
+    @unittest.expectedFailure
+    def test_3077_centos_epel(self):
+        docker = DOCKER
+        mirror = _docker_mirror
+        image = "centos:7.7.1908"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts --epel".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts --epel".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y epel-release".format(**locals()))
+        sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >> /etc/yum.conf'".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y python3-flask-sqlalchemy".format(**locals()))
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
+    @unittest.expectedFailure
+    def test_3079_centos_epel(self):
+        docker = DOCKER
+        mirror = _docker_mirror
+        image = "centos:7.9.2009"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts --epel".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts --epel".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y epel-release".format(**locals()))
+        sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >> /etc/yum.conf'".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y python3-flask-sqlalchemy".format(**locals()))
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
+    def test_3081_centos_epel(self):
+        docker = DOCKER
+        mirror = _docker_mirror
+        image = "centos:8.1.1911"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts --epel".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts --epel".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y epel-release".format(**locals()))
+        sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >> /etc/yum.conf'".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y python3-flask-sqlalchemy".format(**locals()))
+        if not KEEP:
+            sx____("{docker} rm -f test-box1".format(**locals()))
+            sh____("{mirror} stop {image} --add-host".format(**locals()))
+    def test_3083_centos_epel(self):
+        docker = DOCKER
+        mirror = _docker_mirror
+        image = "centos:8.3.2011"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts --epel".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts --epel".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y epel-release".format(**locals()))
+        sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >> /etc/yum.conf'".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y python3-flask-sqlalchemy".format(**locals()))
+        if not KEEP:
+            sx____("{docker} rm -f test-box1".format(**locals()))
+            sh____("{mirror} stop {image} --add-host".format(**locals()))
 ##
     def test_9999_hello(self):
         print("... finished the testsuite ...")
