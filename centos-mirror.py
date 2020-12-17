@@ -320,13 +320,13 @@ def centos_epelrepo8() -> None:
 
 epelrepo7_PORT = 443
 epelrepo7_CMD = ["/usr/bin/python", "/srv/scripts/mirrors.fedoraproject.org.py",
-                "--data", "/srv/repo/epel", "--ssl", "https://mirrors.fedoraproject.org"]
+                 "--data", "/srv/repo/epel", "--ssl", "https://mirrors.fedoraproject.org"]
 epelrepo7_http_PORT = 80
 epelrepo7_http_CMD = ["/usr/bin/python", "/srv/scripts/mirrors.fedoraproject.org.py", "--data", "/srv/repo/epel"]
 
 epelrepo8_PORT = 443
 epelrepo8_CMD = ["/usr/libexec/platform-python", "/srv/scripts/mirrors.fedoraproject.org.py",
-                "--data", "/srv/repo/epel", "--ssl", "https://mirrors.fedoraproject.org"]
+                 "--data", "/srv/repo/epel", "--ssl", "https://mirrors.fedoraproject.org"]
 epelrepo8_http_PORT = 80
 epelrepo8_http_CMD = ["/usr/libexec/platform-python", "/srv/scripts/mirrors.fedoraproject.org.py", "--data", "/srv/repo/epel"]
 
