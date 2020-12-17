@@ -389,10 +389,12 @@ class DockerMirrorPackagesRepo:
         docker = DOCKER
         rmi = "localhost:5000/mirror-packages"
         rep = "epel-repo"
-        version = self.get_centos_latest_version(onlyversion(image))
+        ver = onlyversion(image)
+        version = self.get_centos_latest_version(ver)
         # cut the yymm date part from the centos release
         released = version.split(".")[-1]
-        latest = ""
+        later = ""
+        before = ""
         # and then check for actual images around
         cmd = docker + " images --format '{{.Repository}}:{{.Tag}}'"
         out, err, end = output3(cmd)
@@ -407,10 +409,15 @@ class DockerMirrorPackagesRepo:
             accepts = tagname.startswith(major(version))
             logg.debug(": %s (%s) (%s) %s:%s", line.strip(), created, released, major(version), accepts and "x" or "ignore")
             if created >= released and accepts:
-                if not latest or latest > tagname:
-                    latest = tagname
-        if latest:
-            ver = latest
+                if not later or later > tagname:
+                    later = tagname
+            elif created < released and accepts:
+                if not before or before < tagname:
+                    before = tagname
+        if later:
+            ver = later
+        elif before:
+            ver = before
         return self.docker_mirror(rmi, rep, ver, "mirrors.fedoraproject.org")
     #
     def ip_container(self, name):
