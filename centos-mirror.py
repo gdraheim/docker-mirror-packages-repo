@@ -193,6 +193,12 @@ def centos_sync_updates() -> None: sync_subdir("updates")
 def centos_sync_sclo() -> None: sync_subdir("sclo")
 
 def centos_epelsync() -> None:
+    if CENTOS.startswith("7"):
+         centos_epelsync7()
+    if CENTOS.startswith("8"):
+         centos_epelsync8()
+
+def centos_epelsync7() -> None:
     rsync = RSYNC
     mirror = EPEL_MIRROR
     centos = CENTOS
@@ -200,6 +206,18 @@ def centos_epelsync() -> None:
     arch = ARCH
     excludes = """ --exclude "*.iso" """
     sh___("{rsync} -rv {mirror}/{epel}/{arch} epel.{epel}/{epel}/ {excludes}".format(**locals()))  
+def centos_epelsync8() -> None:
+    rsync = RSYNC
+    mirror = EPEL_MIRROR
+    centos = CENTOS
+    epel = major(centos)
+    arch = ARCH
+    excludes = """ --exclude "*.iso" """
+    for subdir in ["Everything", "Modular"]:
+        repodir="epel.{epel}/{epel}/{subdir}".format(**locals())
+        if not path.isdir(repodir):
+            os.makedirs(repodir)
+        sh___("{rsync} -rv {mirror}/{epel}/{subdir}/{arch} {repodir}/ {excludes}".format(**locals()))  
 
 def centos_unpack() -> None:
     docker = DOCKER
@@ -221,6 +239,12 @@ def centos_clean() -> None:
         sh___("rm -rf centos.{centos}/{subdir}".format(**locals()))
 
 def centos_epelrepo() -> None:
+    if CENTOS.startswith("7"):
+         centos_epelrepo7()
+    if CENTOS.startswith("8"):
+         centos_epelrepo8()
+
+def centos_epelrepo7() -> None:
     docker = DOCKER
     centos = CENTOS
     epel = major(centos)
@@ -232,16 +256,54 @@ def centos_epelrepo() -> None:
     sh___("{docker} exec {cname} yum install -y openssl".format(**locals()))
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
     for script in os.listdir("scripts/."):
-        if epel.startswith("8"):
-             sh___("{docker} exec {cname} sed -i s:/usr/bin/python:/usr/libexec/platform-python: /srv/scripts/{script}".format(**locals()))
         sh___("{docker} exec {cname} chmod +x /srv/scripts/{script}".format(**locals()))
-    sh___("{docker} cp epel.{epel}/epel {cname}:/srv/repo/epel/".format(**locals()))
-    cmd = epelrepo_CMD
-    port = epelrepo_PORT
+    #
+    CMD = str(epelrepo_CMD).replace("'",'"')
+    PORT = str(epelrepo_PORT)
     repo = IMAGESREPO
     yymm = datetime.date.today().strftime("%y%m")
-    sh___("{docker} commit -c 'CMD {cmd}' -c 'EXPOSE {port}' {cname} {repo}/epel-repo:{epel}.x.{yymm}}".format(**locals()))
+    sh___("{docker} cp epel.{epel}/{epel} {cname}:/srv/repo/epel/".format(**locals()))
+    sh___("{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/epel-repo:{epel}.x.{yymm}}".format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
+
+def centos_epelrepo8() -> None:
+    docker = DOCKER
+    centos = CENTOS
+    epel = major(centos)
+    arch = ARCH
+    cname = "epel-repo-" + epel  # container name
+    out, end =output2("./docker_mirror.py start centos:{centos} -a".format(**locals()))
+    addhosts = out.strip()
+    sx___("{docker} rm --force {cname}".format(**locals()))
+    sh___("{docker} run --name={cname} {addhosts} --detach centos:{centos} sleep 9999".format(**locals()))
+    sh___("{docker} exec {cname} mkdir -p /srv/repo/epel/{epel}".format(**locals()))
+    sh___("{docker} exec {cname} yum install -y openssl".format(**locals()))
+    sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
+    for script in os.listdir("scripts/."):
+        sh___("{docker} exec {cname} sed -i s:/usr/bin/python:/usr/libexec/platform-python: /srv/scripts/{script}".format(**locals()))
+        sh___("{docker} exec {cname} chmod +x /srv/scripts/{script}".format(**locals()))
+    #
+    base="base"
+    CMD = str(epelrepo_CMD).replace("'",'"')
+    PORT = str(epelrepo_PORT)
+    repo = IMAGESREPO
+    yymm = datetime.date.today().strftime("%y%m")
+    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{epel}.x.{yymm}"
+    sh___(cmd.format(**locals()))
+    dists: Dict[str, str] = {}
+    dists["main"] = ["Everything"] 
+    dists["plus"] = ["Modular"]
+    for dist in dists:
+        sx___("{docker} rm --force {cname}".format(**locals()))
+        sh___("{docker} run --name={cname} --detach {repo}/centos-repo/{base}:{epel}.x.{yymm} sleep 9999".format(**locals()))
+        for subdir in dists[dist]:
+            sh___("{docker} cp epel.{epel}/{epel}/{subdir} {cname}:/srv/repo/epel/{epel}/".format(**locals()))
+            base = dist
+        if base == dist:
+            cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{epel}.x.{yymm}"
+            sh___(cmd.format(**locals()))
+    sx___("{docker} rm --force {cname}".format(**locals()))
+    sh___("{docker} rmi {repo}/centos-repo/base:{epel}.x.{yymm}".format(**locals()))
 
 epelrepo_port = 443
 epelrepo_cmd = ["python","/srv/scripts/mirrors.fedoraproject.org.py",
