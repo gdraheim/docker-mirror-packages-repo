@@ -150,6 +150,8 @@ type.e:
 	- rm -rf .mypy_cache
 pep style: 
 	$(MAKE) pep.d pep.r pep.s
+pep.i style.i: 
+	$(MAKE) pep.d.i pep.r.i pep.s.i
 pep.d style.d     pep.d.diff style.d.diff:
 	autopep8 docker_mirror.py --diff
 pep.d.i style.d.i pep.d.apply style.d.apply:
