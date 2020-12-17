@@ -232,14 +232,14 @@ def ubuntu_repo() -> None:
     sh___("{docker} exec {cname} apt-get install -y python".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/ubuntu/pool".format(**locals()))
     base = "base"
-    CMD = str(ubunturepo_CMD).replace("'",'"')
+    CMD = str(ubunturepo_CMD).replace("'", '"')
     PORT = ubunturepo_PORT
     cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/ubuntu-repo/{base}:{ubuntu}"
     sh___(cmd.format(**locals()))
     for main in ["main", "restricted", "universe", "multivers"]:
         sh___("{docker} rm --force {cname}".format(**locals()))
         sh___("{docker} run --name={cname} --detach {imagesrepo}/ubuntu-repo/{base}:{ubuntu} sleep 9999".format(**locals()))
-        for dist in [ DIST[ubuntu], DIST[ubuntu]+"-updates", DIST[ubuntu]+"-backports", DIST[ubuntu]+"-security" ]:
+        for dist in [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]:
             pooldir = "ubuntu.{ubuntu}/pools/{dist}/{main}/pool".format(**locals())
             if path.isdir(pooldir):
                 sh___("{docker} cp {pooldir}  {cname}:/srv/repo/ubuntu/pool".format(**locals()))
@@ -250,7 +250,7 @@ def ubuntu_repo() -> None:
     cmd = "{docker} tag {imagesrepo}/ubuntu-repo/{base}:{ubuntu} {imagesrepo}/ubuntu-repo:{ubuntu}"
     sh___(cmd.format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
-    cmd = "{docker} rmi {imagesrepo}/ubuntu-repo/base:{ubuntu}" # untag base image
+    cmd = "{docker} rmi {imagesrepo}/ubuntu-repo/base:{ubuntu}"  # untag base image
     sh___(cmd.format(**locals()))
 
 def ubuntu_test() -> None:

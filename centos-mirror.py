@@ -65,9 +65,9 @@ RSYNC = "rsync"
 CENTOS_MIRROR = "rsync://rsync.hrz.tu-chemnitz.de/ftp/pub/linux/centos"
 # "http://ftp.tu-chemnitz.de/pub/linux/centos/"
 
-##### basearch=x86_64
-###baseurl=http://download.fedoraproject.org/pub/epel/7/$basearch
-##metalink=https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch
+# #### basearch=x86_64
+# ##baseurl=http://download.fedoraproject.org/pub/epel/7/$basearch
+# #metalink=https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch
 #  http://fedora.tu-chemnitz.de/pub/linux/fedora-epel/7/x86_64/debug/repodata/repomd.xml
 # rsync://fedora.tu-chemnitz.de/ftp/pub/linux/fedora-epel/7/x86_64/debug/repodata/repomd.xml
 EPEL_MIRROR = "rsync://fedora.tu-chemnitz.de/ftp/pub/linux/fedora-epel"
@@ -194,9 +194,9 @@ def centos_sync_sclo() -> None: sync_subdir("sclo")
 
 def centos_epelsync() -> None:
     if CENTOS.startswith("7"):
-         centos_epelsync7()
+        centos_epelsync7()
     if CENTOS.startswith("8"):
-         centos_epelsync8()
+        centos_epelsync8()
 
 def centos_epelsync7() -> None:
     rsync = RSYNC
@@ -205,7 +205,7 @@ def centos_epelsync7() -> None:
     epel = major(centos)
     arch = ARCH
     excludes = """ --exclude "*.iso" """
-    sh___("{rsync} -rv {mirror}/{epel}/{arch} epel.{epel}/{epel}/ {excludes}".format(**locals()))  
+    sh___("{rsync} -rv {mirror}/{epel}/{arch} epel.{epel}/{epel}/ {excludes}".format(**locals()))
 def centos_epelsync8() -> None:
     rsync = RSYNC
     mirror = EPEL_MIRROR
@@ -214,10 +214,10 @@ def centos_epelsync8() -> None:
     arch = ARCH
     excludes = """ --exclude "*.iso" """
     for subdir in ["Everything", "Modular"]:
-        repodir="epel.{epel}/{epel}/{subdir}".format(**locals())
+        repodir = "epel.{epel}/{epel}/{subdir}".format(**locals())
         if not path.isdir(repodir):
             os.makedirs(repodir)
-        sh___("{rsync} -rv {mirror}/{epel}/{subdir}/{arch} {repodir}/ {excludes}".format(**locals()))  
+        sh___("{rsync} -rv {mirror}/{epel}/{subdir}/{arch} {repodir}/ {excludes}".format(**locals()))
 
 def centos_unpack() -> None:
     docker = DOCKER
@@ -240,9 +240,9 @@ def centos_clean() -> None:
 
 def centos_epelrepo() -> None:
     if CENTOS.startswith("7"):
-         centos_epelrepo7()
+        centos_epelrepo7()
     if CENTOS.startswith("8"):
-         centos_epelrepo8()
+        centos_epelrepo8()
 
 def centos_epelrepo7() -> None:
     docker = DOCKER
@@ -258,7 +258,7 @@ def centos_epelrepo7() -> None:
     for script in os.listdir("scripts/."):
         sh___("{docker} exec {cname} chmod +x /srv/scripts/{script}".format(**locals()))
     #
-    CMD = str(epelrepo_CMD).replace("'",'"')
+    CMD = str(epelrepo_CMD).replace("'", '"')
     PORT = str(epelrepo_PORT)
     repo = IMAGESREPO
     yymm = datetime.date.today().strftime("%y%m")
@@ -272,7 +272,7 @@ def centos_epelrepo8() -> None:
     epel = major(centos)
     arch = ARCH
     cname = "epel-repo-" + epel  # container name
-    out, end =output2("./docker_mirror.py start centos:{centos} -a".format(**locals()))
+    out, end = output2("./docker_mirror.py start centos:{centos} -a".format(**locals()))
     addhosts = out.strip()
     sx___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} run --name={cname} {addhosts} --detach centos:{centos} sleep 9999".format(**locals()))
@@ -283,15 +283,15 @@ def centos_epelrepo8() -> None:
         sh___("{docker} exec {cname} sed -i s:/usr/bin/python:/usr/libexec/platform-python: /srv/scripts/{script}".format(**locals()))
         sh___("{docker} exec {cname} chmod +x /srv/scripts/{script}".format(**locals()))
     #
-    base="base"
-    CMD = str(epelrepo_CMD).replace("'",'"')
+    base = "base"
+    CMD = str(epelrepo_CMD).replace("'", '"')
     PORT = str(epelrepo_PORT)
     repo = IMAGESREPO
     yymm = datetime.date.today().strftime("%y%m")
     cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{epel}.x.{yymm}"
     sh___(cmd.format(**locals()))
     dists: Dict[str, str] = {}
-    dists["main"] = ["Everything"] 
+    dists["main"] = ["Everything"]
     dists["plus"] = ["Modular"]
     for dist in dists:
         sx___("{docker} rm --force {cname}".format(**locals()))
@@ -306,14 +306,14 @@ def centos_epelrepo8() -> None:
     sh___("{docker} rmi {repo}/centos-repo/base:{epel}.x.{yymm}".format(**locals()))
 
 epelrepo_port = 443
-epelrepo_cmd = ["python","/srv/scripts/mirrors.fedoraproject.org.py",
-                "--data","/srv/repo/epel", "--ssl", "https://mirrors.fedoraproject.org"]
+epelrepo_cmd = ["python", "/srv/scripts/mirrors.fedoraproject.org.py",
+                "--data", "/srv/repo/epel", "--ssl", "https://mirrors.fedoraproject.org"]
 epelrepo_PORT = 80
-epelrepo_CMD = ["python","/srv/scripts/mirrors.fedoraproject.org.py","--data","/srv/repo/epel"]
+epelrepo_CMD = ["python", "/srv/scripts/mirrors.fedoraproject.org.py", "--data", "/srv/repo/epel"]
 
 centosrepo7_CMD = ["/usr/bin/python", "/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
 centosrepo7_PORT = 80
-centosrepo8_CMD = ["/usr/libexec/platform-python","/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
+centosrepo8_CMD = ["/usr/libexec/platform-python", "/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
 centosrepo8_PORT = 80
 
 def centos_repo() -> None:
@@ -333,13 +333,13 @@ def centos_repo7() -> None:
     sh___("{docker} exec {cname} mkdir -p /srv/repo/7".format(**locals()))
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
     base = "base"
-    CMD = str(centosrepo7_CMD).replace("'",'"')
+    CMD = str(centosrepo7_CMD).replace("'", '"')
     PORT = centosrepo7_PORT
     repo = IMAGESREPO
     cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}"
     sh___(cmd.format(**locals()))
     dists: Dict[str, List[str]] = OrderedDict()
-    dists["main"] = ["os", "extras", "updates"] # "extras" was not in 'main' for CentOS 6
+    dists["main"] = ["os", "extras", "updates"]  # "extras" was not in 'main' for CentOS 6
     dists["sclo"] = ["sclo"]
     for dist in dists:
         sx___("{docker} rm --force {cname}".format(**locals()))
@@ -354,7 +354,7 @@ def centos_repo7() -> None:
             sh___(cmd.format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} tag {repo}/centos-repo/{base}:{centos} {repo}/centos-repo:{centos}".format(**locals()))
-    sh___("{docker} rmi {repo}/centos-repo/base:{centos}".format(**locals())) # untag non-packages base
+    sh___("{docker} rmi {repo}/centos-repo/base:{centos}".format(**locals()))  # untag non-packages base
     centos_restore()
 
 def centos_repo8() -> None:
@@ -368,13 +368,13 @@ def centos_repo8() -> None:
     sh___("{docker} exec {cname} mkdir -p /srv/repo/8".format(**locals()))
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
     base = "base"
-    CMD = str(centosrepo8_CMD).replace("'",'"')
+    CMD = str(centosrepo8_CMD).replace("'", '"')
     PORT = centosrepo8_PORT
     repo = IMAGESREPO
     cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}"
     sh___(cmd.format(**locals()))
     dists: Dict[str, List[str]] = OrderedDict()
-    dists["main"] = ["BaseOS", "AppStream", "extras"] # "extras" was not in 'main' for CentOS 6
+    dists["main"] = ["BaseOS", "AppStream", "extras"]  # "extras" was not in 'main' for CentOS 6
     dists["plus"] = ["PowerTools", "centosplus"]
     dists["sclo"] = ["sclo"]
     for dist in dists:
@@ -390,7 +390,7 @@ def centos_repo8() -> None:
             sh___(cmd.format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} tag {repo}/centos-repo/{base}:{centos} {repo}/centos-repo:{centos}".format(**locals()))
-    sh___("{docker} rmi {repo}/centos-repo/base:{centos}".format(**locals())) # untag non-packages base
+    sh___("{docker} rmi {repo}/centos-repo/base:{centos}".format(**locals()))  # untag non-packages base
     centos_restore()
 
 def centos_tags() -> None:
