@@ -93,17 +93,20 @@ class MyHandler(SimpleHTTPRequestHandler):
             infra = values.get("infra", "")
             if infra in ["container"]:
                 infra = "os"
-            if repo in ["epel-7", "epel-8"]:
+            if repo in ["epel-7"]:
                 use = "%s/%s/" % ("7", arch)
+            elif repo in ["epel-8"]:
+                use = "%s/%s/" % ("8/Everything", arch)
+            elif repo in ["epel-modular-8"]:
+                use = "%s/%s/" % ("8/Modular", arch)
             else:
                 use = "%s/%s/" % (repo, arch)
-            url = "%s/%s" % (URL, use)
+            url = "%s/%s" % (SSL or URL, use)
             print("SERVE", self.path)
             print("   AS", url)
             if metalink:
                 repomd_xml = use.rstrip("/") + "/repodata/repomd.xml"
                 repomd_url = url.rstrip("/") + "/repodata/repomd.xml"
-                fix_mtime_repomd_xml(repomd_xml)
                 if not os.path.exists(repomd_xml):
                     text = "did not find " + repomd_xml
                     data = text.encode("utf-8")
@@ -114,6 +117,7 @@ class MyHandler(SimpleHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(data)
                     return
+                fix_mtime_repomd_xml(repomd_xml)
                 generator = "http://github/gdraheim/docker-mirror-packages-repo"
                 ns = "http://www.metalinker.org/"
                 mm = "http://fedorahosted.org/mirrormanager"
@@ -122,6 +126,7 @@ class MyHandler(SimpleHTTPRequestHandler):
                 md5 = os_path_md5(repomd_xml)
                 sha256 = os_path_sha256(repomd_xml)
                 sha512 = os_path_sha512(repomd_xml)
+                http=url.split(":")[0]
                 xml = """<?xml version="1.0" encoding="utf-8"?>
              <metalink version="3.0" xmlns="{ns}" xmlns:mm="{mm}" generator="{generator}">
               <files>
@@ -134,7 +139,7 @@ class MyHandler(SimpleHTTPRequestHandler):
                   <hash type="sha512">{sha512}</hash>
                 </verification>
                 <resources maxconnections="1">
-                 <url protocol="http" type="http" preference="100">{repomd_url}</url>
+                 <url protocol="{http}" type="{http}" preference="100">{repomd_url}</url>
                 </resources>
                </file>
               </files>
