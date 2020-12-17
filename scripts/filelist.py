@@ -12,20 +12,20 @@ import os
 
 try:
     from http.server import SimpleHTTPRequestHandler
-except: #py2
-    from SimpleHTTPServer import SimpleHTTPRequestHandler # type: ignore
+except:  # py2
+    from SimpleHTTPServer import SimpleHTTPRequestHandler  # type: ignore
 try:
     from socketserver import TCPServer
-except: #py2
-    from SocketServer import TCPServer # type: ignore
+except:  # py2
+    from SocketServer import TCPServer  # type: ignore
 
 PORT = 80
 
 ext = optparse.OptionParser("%prog [options]")
 ext.add_option("-d", "--data", default=".",
-    help="change to data directory before")
+               help="change to data directory before")
 ext.add_option("-p", "--port", default=PORT,
-    help="serve on that port for http")
+               help="serve on that port for http")
 
 opt, args = ext.parse_args()
 
@@ -33,13 +33,13 @@ if opt.data and opt.data != ".":
     os.chdir(opt.data)
 
 class MyHandler(SimpleHTTPRequestHandler):
-  def do_GET(self):
-    # nothing special to be done for just files
-    if os.path.exists("./"+self.path):
-        print("OK", self.path)
-    else:
-        print("NO", self.path)
-    return SimpleHTTPRequestHandler.do_GET(self)
+    def do_GET(self):
+        # nothing special to be done for just files
+        if os.path.exists("./" + self.path):
+            print("OK", self.path)
+        else:
+            print("NO", self.path)
+        return SimpleHTTPRequestHandler.do_GET(self)
 
 httpd = TCPServer(("", opt.port), MyHandler)
 
