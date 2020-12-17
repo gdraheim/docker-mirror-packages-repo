@@ -640,7 +640,7 @@ if __name__ == "__main__":
     opt = _o.parse_args()
     logging.basicConfig(level=max(0, logging.WARNING - opt.verbose * 10))
     ADDHOSTS = opt.add_hosts
-    ADDEPEL = opt.epel # centos epel-repo
+    ADDEPEL = opt.epel  # centos epel-repo
     command = "detect"
     repo = DockerMirrorPackagesRepo()
     if opt.command in ["?", "help"]:
