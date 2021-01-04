@@ -150,20 +150,20 @@ type.e:
 	- rm -rf .mypy_cache
 pep style: 
 	$(MAKE) pep.d pep.r pep.s
-pep.i style.i: 
-	$(MAKE) pep.d.i pep.r.i pep.s.i
-pep.d style.d     pep.d.diff style.d.diff:
+pep.diff style.diff: 
+	$(MAKE) pep.d.d pep.r.d pep.s.d
+pep.d.d style.d.d     pep.d.diff style.d.diff:
 	autopep8 docker_mirror.py --diff
-pep.d.i style.d.i pep.d.apply style.d.apply:
+pep.d style.d pep.d.apply style.d.apply:
 	autopep8 docker_mirror.py --in-place
-	git diff docker_mirror.py
-pep.r style.r     pep.r.diff style.r.diff:
+	git --no-pager diff docker_mirror.py
+pep.r.d style.r.d     pep.r.diff style.r.diff:
 	autopep8 centos-mirror.py opensuse-mirror.py ubuntu-mirror.py --diff
-pep.r.i style.r.i pep.r.apply style.r.apply:
+pep.r style.r pep.r.apply style.r.apply:
 	autopep8 centos-mirror.py opensuse-mirror.py ubuntu-mirror.py --in-place
-	git diff centos-mirror.py opensuse-mirror.py ubuntu-mirror.py
-pep.s style.s     pep.s.diff style.s.diff:
+	git --no-pager diff centos-mirror.py opensuse-mirror.py ubuntu-mirror.py
+pep.s.d style.s.d     pep.s.diff style.s.diff:
 	autopep8 scripts/*.py --diff
-pep.s.i style.s.i pep.s.apply style.s.apply:
+pep.s style.s pep.s.apply style.s.apply:
 	autopep8 scripts/*.py --in-place
-	git diff scripts/*.py
+	git --no-pager diff scripts/*.py
