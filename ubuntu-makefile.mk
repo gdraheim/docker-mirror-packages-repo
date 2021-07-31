@@ -1,6 +1,6 @@
 #! /usr/bin/make -f
 
-UBUNTU = 18.04
+UBUNTU = 20.04
 
 ubuntu:
 	$(MAKE) ubuntusync

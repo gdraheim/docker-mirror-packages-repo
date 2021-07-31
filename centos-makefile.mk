@@ -5,7 +5,7 @@
 # however it doubles the required disk #
 # space to get a centos-repo:x image!! #
 
-CENTOS = 8.3
+CENTOS = 8.4
 
 centos:
 	$(MAKE) centossync

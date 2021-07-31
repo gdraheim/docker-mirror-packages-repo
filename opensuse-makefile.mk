@@ -1,6 +1,6 @@
 #! /usr/bin/make -f
 
-LEAP=15.2
+LEAP=15.3
 
 opensuse:
 	$(MAKE) opensusesync
