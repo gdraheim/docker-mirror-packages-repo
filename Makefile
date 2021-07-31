@@ -19,6 +19,8 @@ version:
 	$$f; done; }
 	@ grep ^__version__ $(VERSIONFILES)
 
+PYTHON2=python
+PYTHON3=python3
 
 include centos-makefile.mk
 include opensuse-makefile.mk
@@ -142,10 +144,10 @@ check: ; ./testsuite.py -vv $K
 ####### retype + stubgen
 PY_RETYPE = ../retype
 py-retype:
-        set -ex ; if test -d $(PY_RETYPE); then cd $(PY_RETYPE) && git pull; else : \
-        ; cd $(dir $(PY_RETYPE)) && git clone git@github.com:ambv/retype.git $(notdir $(PY_RETYPE)) \
-        ; cd $(PY_RETYPE) && git checkout 17.12.0 ; fi
-        python3 $(PY_RETYPE)/retype.py --version
+	set -ex ; if test -d $(PY_RETYPE); then cd $(PY_RETYPE) && git pull; else : \
+	; cd $(dir $(PY_RETYPE)) && git clone git@github.com:ambv/retype.git $(notdir $(PY_RETYPE)) \
+	; cd $(PY_RETYPE) && git checkout 17.12.0 ; fi
+	python3 $(PY_RETYPE)/retype.py --version
 
 mypy:
 	zypper install -y mypy
@@ -161,43 +163,45 @@ type.r:
 	$(MYPY) $(MYPY_STRICT) centos-mirror.py opensuse-mirror.py ubuntu-mirror.py
 	- rm -rf .mypy_cache
 type.d:
-	python3 ../retype/retype.py docker_mirror.py -t docker_mirror.tmp -p .
+	$(PYTHON3) $(PY_RETYPE)/retype.py docker_mirror.py -t docker_mirror.tmp -p .
 	$(MYPY) $(MYPY_STRICT) docker_mirror.tmp/docker_mirror.py
 	- rm -rf .mypy_cache
 type.f:
-	python3 ../retype/retype.py scripts/filelist.py -t scripts.tmp -p scripts
+	$(PYTHON3) $(PY_RETYPE)/retype.py scripts/filelist.py -t scripts.tmp -p scripts
 	$(MYPY) $(MYPY_STRICT) scripts.tmp/filelist.py
 	- rm -rf .mypy_cache
 type.m:
-	python3 ../retype/retype.py scripts/mirrorlist.py -t scripts.tmp -p scripts
+	$(PYTHON3) $(PY_RETYPE)/retype.py scripts/mirrorlist.py -t scripts.tmp -p scripts
 	$(MYPY) $(MYPY_STRICT) scripts.tmp/mirrorlist.py
 	- rm -rf .mypy_cache
 type.e:
-	python3 ../retype/retype.py scripts/mirrors.fedoraproject.org.py -t scripts.tmp -p scripts
+	$(PYTHON3) $(PY_RETYPE)/retype.py scripts/mirrors.fedoraproject.org.py -t scripts.tmp -p scripts
 	$(MYPY) $(MYPY_STRICT) scripts.tmp/mirrors.fedoraproject.org.py
 	- rm -rf .mypy_cache
+
+AUTOPEP8=autopep8
 pep style: 
 	$(MAKE) pep.di pep.si pep.d pep.r pep.s 
 pep.diff style.diff: 
 	$(MAKE) pep.d.d pep.r.d pep.s.d
 pep.d.d style.d.d     pep.d.diff style.d.diff:
-	autopep8 docker_mirror.py --diff
+	$(AUTOPEP8) docker_mirror.py --diff
 pep.d style.d pep.d.apply style.d.apply:
-	autopep8 docker_mirror.py --in-place
+	$(AUTOPEP8) docker_mirror.py --in-place
 	git --no-pager diff docker_mirror.py
 pep.di style.di pep.di.apply style.di.apply:
-	autopep8 docker_mirror.pyi --in-place
+	$(AUTOPEP8) docker_mirror.pyi --in-place
 	git --no-pager diff docker_mirror.pyi
 pep.r.d style.r.d     pep.r.diff style.r.diff:
-	autopep8 centos-mirror.py opensuse-mirror.py ubuntu-mirror.py --diff
+	$(AUTOPEP8) centos-mirror.py opensuse-mirror.py ubuntu-mirror.py --diff
 pep.r style.r pep.r.apply style.r.apply:
-	autopep8 centos-mirror.py opensuse-mirror.py ubuntu-mirror.py --in-place
+	$(AUTOPEP8) centos-mirror.py opensuse-mirror.py ubuntu-mirror.py --in-place
 	git --no-pager diff centos-mirror.py opensuse-mirror.py ubuntu-mirror.py
 pep.s.d style.s.d     pep.s.diff style.s.diff:
-	autopep8 scripts/*.py --diff
+	$(AUTOPEP8) scripts/*.py --diff
 pep.s style.s pep.s.apply style.s.apply:
-	autopep8 scripts/*.py --in-place
+	$(AUTOPEP8) scripts/*.py --in-place
 	git --no-pager diff scripts/*.py
 pep.si style.si pep.si.apply style.si.apply:
-	autopep8 scripts/*.pyi --in-place
+	$(AUTOPEP8) scripts/*.pyi --in-place
 	git --no-pager diff scripts/*.pyi
