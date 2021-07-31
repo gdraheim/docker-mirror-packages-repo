@@ -139,32 +139,42 @@ K=
 test_%: ; ./testsuite.py $@ -v $K
 check: ; ./testsuite.py -vv $K
 
+####### retype + stubgen
+PY_RETYPE = ../retype
+py-retype:
+        set -ex ; if test -d $(PY_RETYPE); then cd $(PY_RETYPE) && git pull; else : \
+        ; cd $(dir $(PY_RETYPE)) && git clone git@github.com:ambv/retype.git $(notdir $(PY_RETYPE)) \
+        ; cd $(PY_RETYPE) && git checkout 17.12.0 ; fi
+        python3 $(PY_RETYPE)/retype.py --version
+
 mypy:
 	zypper install -y mypy
 	zypper install -y python3-click python3-pathspec
-	cd .. && git clone git@github.com:ambv/retype.git
-	cd ../retype && git checkout 17.12.0
+	$(MAKE) py-retype
+
+MYPY = mypy
+MYPY_STRICT = --strict --show-error-codes --show-error-context --no-warn-unused-ignores
 
 type: 
 	$(MAKE) type.r type.d type.f type.m type.e
 type.r:
-	mypy --strict centos-mirror.py opensuse-mirror.py ubuntu-mirror.py
+	$(MYPY) $(MYPY_STRICT) centos-mirror.py opensuse-mirror.py ubuntu-mirror.py
 	- rm -rf .mypy_cache
 type.d:
 	python3 ../retype/retype.py docker_mirror.py -t docker_mirror.tmp -p .
-	mypy --strict docker_mirror.tmp/docker_mirror.py
+	$(MYPY) $(MYPY_STRICT) docker_mirror.tmp/docker_mirror.py
 	- rm -rf .mypy_cache
 type.f:
 	python3 ../retype/retype.py scripts/filelist.py -t scripts.tmp -p scripts
-	mypy --strict scripts.tmp/filelist.py
+	$(MYPY) $(MYPY_STRICT) scripts.tmp/filelist.py
 	- rm -rf .mypy_cache
 type.m:
 	python3 ../retype/retype.py scripts/mirrorlist.py -t scripts.tmp -p scripts
-	mypy --strict scripts.tmp/mirrorlist.py
+	$(MYPY) $(MYPY_STRICT) scripts.tmp/mirrorlist.py
 	- rm -rf .mypy_cache
 type.e:
 	python3 ../retype/retype.py scripts/mirrors.fedoraproject.org.py -t scripts.tmp -p scripts
-	mypy --strict scripts.tmp/mirrors.fedoraproject.org.py
+	$(MYPY) $(MYPY_STRICT) scripts.tmp/mirrors.fedoraproject.org.py
 	- rm -rf .mypy_cache
 pep style: 
 	$(MAKE) pep.di pep.si pep.d pep.r pep.s 
