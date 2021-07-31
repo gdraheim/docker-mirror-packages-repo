@@ -41,7 +41,7 @@ class MyHandler(SimpleHTTPRequestHandler):
             print("NO", self.path)
         return SimpleHTTPRequestHandler.do_GET(self)
 
-httpd = TCPServer(("", opt.port), MyHandler)
+httpd = TCPServer(("", opt.port), MyHandler) # type: ignore[arg-type]
 
 print("serving at port", opt.port)
 httpd.serve_forever()
