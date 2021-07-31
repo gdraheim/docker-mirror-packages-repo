@@ -1,3 +1,6 @@
+[![Style Check](https://github.com/gdraheim/docker-mirror-packages-repo/actions/workflows/stylecheck.yml/badge.svg?event=push)](https://github.com/gdraheim/docker-mirror-packages-repo/actions/workflows/stylecheck.yml)
+[![Type Check](https://github.com/gdraheim/docker-mirror-packages-repo/actions/workflows/typecheck.yml/badge.svg?event=push)](https://github.com/gdraheim/docker-mirror-packages-repo/actions/workflows/typecheck.yml)
+
 # docker mirror packages repo
 
 These docker images can be started as a container
