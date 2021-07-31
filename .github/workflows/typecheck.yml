@@ -31,6 +31,10 @@ jobs:
         sudo apt-get install --fix-broken --ignore-missing python3-typed-ast mypy
     - name: 'patch socketserver'
       run: |
+        find /usr/lib -name typeshed | { while read basedirectory
+        do
+          grep TCPServer $basedirectory/*.pyi $basedirectory/*/*.pyi $basedirectory/*/*/*.pyi $basedirectory/*/*/*/*.pyi $basedirectory/*/*/*/*/*.pyi
+        done ; }
         find /usr/lib -name socketserver.pyi | { while read filename
         do
           case "$filename" in */six/*) sudo rm -v "$filename"
