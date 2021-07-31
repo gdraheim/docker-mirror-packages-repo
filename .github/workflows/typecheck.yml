@@ -39,7 +39,7 @@ jobs:
         do
            if grep TCPServer "$filename" ; then
              echo "patch $filename"
-             sudo sed -i -e "s|RequestHandlerClass:[^()]*BaseRequestHandler.)|RequestHandlerClass: Type[BaseRequestHandler])|" "$filename" || true
+             sudo sed -i -e "s|RequestHandlerClass:[^()]*BaseRequestHandler.|RequestHandlerClass: Type[BaseRequestHandler]|" "$filename" || true
              grep -2 __init__ "$filename" || true
            fi
         done ; } || true
