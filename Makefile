@@ -149,7 +149,7 @@ type.e:
 	mypy --strict scripts.tmp/mirrors.fedoraproject.org.py
 	- rm -rf .mypy_cache
 pep style: 
-	$(MAKE) pep.d pep.r pep.s
+	$(MAKE) pep.di pep.si pep.d pep.r pep.s 
 pep.diff style.diff: 
 	$(MAKE) pep.d.d pep.r.d pep.s.d
 pep.d.d style.d.d     pep.d.diff style.d.diff:
@@ -157,6 +157,9 @@ pep.d.d style.d.d     pep.d.diff style.d.diff:
 pep.d style.d pep.d.apply style.d.apply:
 	autopep8 docker_mirror.py --in-place
 	git --no-pager diff docker_mirror.py
+pep.di style.di pep.di.apply style.di.apply:
+	autopep8 docker_mirror.pyi --in-place
+	git --no-pager diff docker_mirror.pyi
 pep.r.d style.r.d     pep.r.diff style.r.diff:
 	autopep8 centos-mirror.py opensuse-mirror.py ubuntu-mirror.py --diff
 pep.r style.r pep.r.apply style.r.apply:
@@ -167,3 +170,6 @@ pep.s.d style.s.d     pep.s.diff style.s.diff:
 pep.s style.s pep.s.apply style.s.apply:
 	autopep8 scripts/*.py --in-place
 	git --no-pager diff scripts/*.py
+pep.si style.si pep.si.apply style.si.apply:
+	autopep8 scripts/*.pyi --in-place
+	git --no-pager diff scripts/*.pyi
