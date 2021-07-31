@@ -175,6 +175,8 @@ else:
     import ssl
     import subprocess
     hostname = server.hostname
+    if not hostname:
+       hostname = "localhost"
     cc = hostname.split(".")[-1]
     og = hostname.split(".")[-2]
     if len(cc) > 2: cc = "US"
