@@ -34,7 +34,7 @@ jobs:
         find /usr/lib -name socketserver.pyi | { while read filename
         do echo "$filename"
           sudo sed -i -e "s|RequestHandlerClass:[^()]*BaseRequestHandler.)|RequestHandlerClass: Type[BaseRequestHandler])|" "$filename" || true
-        done
+        done ; }
     - name: 'show mypy directories'
       run: |
         find . -type d
