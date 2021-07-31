@@ -32,8 +32,11 @@ jobs:
     - name: 'patch socketserver'
       run: |
         find /usr/lib -name socketserver.pyi | { while read filename
-        do echo "$filename"
-          sudo sed -i -e "s|RequestHandlerClass:[^()]*BaseRequestHandler.)|RequestHandlerClass: Type[BaseRequestHandler])|" "$filename" || true
+        do
+          case "$filename" in */six/*) sudo rm -v "$filename"
+          ;; *) echo "patch $filename"
+            sudo sed -i -e "s|RequestHandlerClass:[^()]*BaseRequestHandler.)|RequestHandlerClass: Type[BaseRequestHandler])|" "$filename" || true
+          ;; esac
         done ; }
     - name: 'show mypy directories'
       run: |
