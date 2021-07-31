@@ -29,9 +29,12 @@ jobs:
     - name: 'install python3 mypy'
       run: |
         sudo apt-get install --fix-broken --ignore-missing python3-typed-ast mypy
-    - name: 'find socketserver'
+    - name: 'patch socketserver'
       run: |
-         find /usr/lib -name socketserver.pyi
+        find /usr/lib -name socketserver.pyi | { while read filename
+        do echo "$filename"
+          sudo sed -i -e "s|RequestHandlerClass:[^()]*BaseRequestHandler.)|RequestHandlerClass: Type[BaseRequestHandler])|" "$filename" || true
+        done
     - name: 'show mypy directories'
       run: |
         find . -type d
