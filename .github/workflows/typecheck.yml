@@ -31,22 +31,17 @@ jobs:
         sudo apt-get install --fix-broken --ignore-missing python3-typed-ast mypy
     - name: 'patch socketserver'
       run: |
-        find /usr/lib -name typeshed | { while read basedirectory
-        do
-          grep TCPServer $basedirectory/*/*/*.pyi $basedirectory/*/*/*/*.pyi $basedirectory/*/*/*/*/*.pyi
-        done ; } || true
+        mypy --version
         find /usr/lib -name socketserver.pyi | { while read filename
         do
            if grep TCPServer "$filename" ; then
-             echo "patch $filename"
-             sudo sed -i -e "s|RequestHandlerClass:[^()]*BaseRequestHandler.|RequestHandlerClass: Any|" "$filename" || true
-             grep -2 __init__ "$filename" || true
+             case "`mypy --version`" in *0.76?)
+               echo "patch $filename"
+               sudo sed -i -e "s|RequestHandlerClass:[^()]*BaseRequestHandler.|RequestHandlerClass: Any|" "$filename" || true
+               grep -2 __init__ "$filename" || true
+             ;; esac
            fi
         done ; } || true
-    - name: 'show mypy directories'
-      run: |
-        find . -type d
-        mypy --version
     - name: 'make type (mypy strict type checking)'
       id: check
       run: |
