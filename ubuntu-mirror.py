@@ -27,7 +27,7 @@ if sys.version[0] == '3':
 
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
-REPODIR = "."
+REPODIR = os.environ.get("REPODIR", ".")
 
 DATADIRS = [REPODATADIR,
             "/srv/docker-mirror-packages",
