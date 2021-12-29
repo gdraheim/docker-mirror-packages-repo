@@ -99,6 +99,9 @@ SUBDIRS8["main"] = ["BaseOS", "AppStream", "extras"]
 SUBDIRS8["plus"] = ["PowerTools", "centosplus"]
 #SUBDIRS8["dev"] = ["Devel", "HighAvailibility"]
 
+BASEVERSION: Dict[str, str] = {}
+BASEVERSION["8.5.2111"] = "8.3.2011"  # image:centos/base
+
 #############################################################################
 
 def major(version: str) -> str:
@@ -379,9 +382,12 @@ def centos_repo7() -> None:
     repodir = REPODIR
     centos_restore()
     centos_cleaner()
+    baseversion = centos
+    if baseversion in BASEVERSION:
+        baseversion = BASEVERSION[baseversion]
     cname = "centos-repo-" + centos  # container name
     sx___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} run --name={cname} --detach centos:{centos} sleep 9999".format(**locals()))
+    sh___("{docker} run --name={cname} --detach centos:{baseversion} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/7".format(**locals()))
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
     base = "base"
@@ -413,9 +419,12 @@ def centos_repo8() -> None:
     repodir = REPODIR
     centos_restore()
     centos_cleaner()
+    version = centos
+    if centos in BASEVERSION:
+        version = BASEVERSION[centos]
     cname = "centos-repo-" + centos  # container name
     sx___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} run --name={cname} --detach centos:{centos} sleep 9999".format(**locals()))
+    sh___("{docker} run --name={cname} --detach centos:{version} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/8".format(**locals()))
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
     base = "base"
