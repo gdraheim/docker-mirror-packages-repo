@@ -39,6 +39,7 @@ DATADIRS = [REPODATADIR,
             "/dock/docker-mirror-packages"]
 
 OS: Dict[str, str] = {}
+OS["8.5"] = "8.5.2111"
 OS["8.4"] = "8.4.2105"
 OS["8.3"] = "8.3.2011"
 OS["8.2"] = "8.2.2004"
@@ -57,7 +58,7 @@ OS["7.0"] = "7.0.1406"
 
 X7CENTOS = max([os for os in OS if os.startswith("7.")])
 X8CENTOS = max([os for os in OS if os.startswith("8.")])
-CENTOS = "8.4.2105"
+CENTOS = "8.5.2111"
 ARCH = "x86_64"
 
 DOCKER = "docker"
