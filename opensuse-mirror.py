@@ -30,6 +30,7 @@ if sys.version[0] == '3':
 
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
+REPODIR = os.environ.get("REPODIR", ".")
 
 DATADIRS = [REPODATADIR,
             "/srv/docker-mirror-packages",
@@ -70,7 +71,8 @@ def opensuse_sync() -> None:
 
 def opensuse_dir(suffix: str = "") -> str:
     leap = LEAP
-    dirname = "opensuse.{leap}{suffix}".format(**locals())
+    repodir = REPODIR
+    dirname = "{repodir}/opensuse.{leap}{suffix}".format(**locals())
     if path.isdir(dirname):
         if path.islink(dirname):
             os.unlink(dirname)
@@ -96,7 +98,8 @@ def opensuse_dir(suffix: str = "") -> str:
 def opensuse_save() -> None:
     yymmdd = datetime.date.today().strftime("%Y.%m%d")
     leap = LEAP
-    src = "opensuse.{leap}/.".format(**locals())
+    repodir = REPODIR
+    src = "{repodir}/opensuse.{leap}/.".format(**locals())
     dst = opensuse_dir("." + yymmdd) + "/."
     logg.info("src = %s", src)
     logg.info("dst = %s", dst)
@@ -122,44 +125,48 @@ skipdirs = [
 
 def opensuse_sync_1() -> None:
     leap = LEAP
+    repodir = REPODIR
     mirror = RSYNC_SUSE
     rsync = RSYNC
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += """ --size-only --filter="exclude *.src.rpm" """
-    leaprepo = "opensuse.{leap}/distribution/leap/{leap}/repo".format(**locals())
+    leaprepo = "{repodir}/opensuse.{leap}/distribution/leap/{leap}/repo".format(**locals())
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     sh___("{rsync} -rv {mirror}/distribution/leap/{leap}/repo/oss {leaprepo}/ {excludes}".format(**locals()))
 
 def opensuse_sync_2() -> None:
     leap = LEAP
+    repodir = REPODIR
     mirror = RSYNC_SUSE
     rsync = RSYNC
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += """  --filter="exclude x86_64" --filter="exclude noarch"  """
     excludes += """ --size-only --filter="exclude *.src.rpm" """
-    leaprepo = "opensuse.{leap}/distribution/leap/{leap}/repo".format(**locals())
+    leaprepo = "{repodir}/opensuse.{leap}/distribution/leap/{leap}/repo".format(**locals())
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     sh___("{rsync} -rv {mirror}/distribution/leap/{leap}/repo/non-oss {leaprepo}/ {excludes}".format(**locals()))
 
 def opensuse_sync_3() -> None:
     leap = LEAP
+    repodir = REPODIR
     mirror = RSYNC_SUSE
     rsync = RSYNC
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += """ --size-only --filter="exclude *.src.rpm" """
-    leaprepo = "opensuse.{leap}/update/leap/{leap}".format(**locals())
+    leaprepo = "{repodir}/opensuse.{leap}/update/leap/{leap}".format(**locals())
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     sh___("{rsync} -rv {mirror}/update/leap/{leap}/oss {leaprepo}/ {excludes}".format(**locals()))
 
 def opensuse_sync_4() -> None:
     leap = LEAP
+    repodir = REPODIR
     mirror = RSYNC_SUSE
     rsync = RSYNC
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += """  --filter="exclude x86_64" --filter="exclude noarch"  """
     excludes += """  --filter="exclude strc" --filter="exclude nosrc"  """
     excludes += """ --size-only --filter="exclude *.src.rpm" """
-    leaprepo = "opensuse.{leap}/update/leap/{leap}".format(**locals())
+    leaprepo = "{repodir}/opensuse.{leap}/update/leap/{leap}".format(**locals())
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     sh___("{rsync} -rv {mirror}/update/leap/{leap}/non-oss {leaprepo}/ {excludes}".format(**locals()))
 
@@ -172,7 +179,8 @@ def opensuse_sync_4() -> None:
 def opensuse_games(suffix: str = "") -> None:
     games: Dict[str, str] = {}
     leap = LEAP
-    dirname = "opensuse.{leap}{suffix}".format(**locals())
+    repodir = REPODIR
+    dirname = "{repodir}/opensuse.{leap}{suffix}".format(**locals())
     basedir = dirname + "/."
     logg.info("check %s", basedir)
     if path.isdir(basedir):
@@ -196,11 +204,12 @@ opensuserepo_PORT = "80"
 def opensuse_repo() -> None:
     docker = DOCKER
     leap = LEAP
+    repodir = REPODIR
     cname = "opensuse-repo-" + leap
     image = BASE[LEAP]
     imagesrepo = IMAGESREPO
     bind_repo = ""
-    base_repo = "opensuse.{leap}/distribution/leap/{leap}/repo/oss".format(**locals())
+    base_repo = "{repodir}/opensuse.{leap}/distribution/leap/{leap}/repo/oss".format(**locals())
     logg.info("/base-repo -> %s", base_repo)
     if path.isdir(base_repo):
         base_repo_path = path.abspath(base_repo)
@@ -234,10 +243,10 @@ def opensuse_repo() -> None:
         sh___("{docker} run --name={cname} --detach {imagesrepo}/opensuse-repo/{base}:{leap} sleep 9999".format(**locals()))
         clean: Dict[str, str] = {}
         for subdir in dists[dist]:
-            basedir = "opensuse.{leap}/.".format(**locals())
-            pooldir = "opensuse.{leap}/{subdir}".format(**locals())
+            basedir = "{repodir}/opensuse.{leap}/.".format(**locals())
+            pooldir = "{repodir}/opensuse.{leap}/{subdir}".format(**locals())
             if subdir.startswith("-"):
-                gamesfile = "opensuse.{leap}{subdir}.json".format(**locals())
+                gamesfile = "{repodir}/opensuse.{leap}{subdir}.json".format(**locals())
                 clean = json.load(open(gamesfile))
                 if not clean:
                     continue
