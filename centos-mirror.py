@@ -75,6 +75,29 @@ CENTOS_MIRROR = "rsync://rsync.hrz.tu-chemnitz.de/ftp/pub/linux/centos"
 # rsync://fedora.tu-chemnitz.de/ftp/pub/linux/fedora-epel/7/x86_64/debug/repodata/repomd.xml
 EPEL_MIRROR = "rsync://fedora.tu-chemnitz.de/ftp/pub/linux/fedora-epel"
 
+_SUBDIRS: Dict[str, List[str]] = {}
+_SUBDIRS["7.9"] = ["os", "updates", "extras", "sclo", "centosplus", "atomic",
+                   "cloud", "configmanagement", "cr", "dotnet", "fasttrack",
+                   "infra", "messages", "nfv", "opstools", "paas", "rt", "storage", "virt", ]
+_SUBDIRS["8.5"] = ["AppStream", "BaseOS", "Devel", "extras", "PowerTools", "centosplus",
+                   "cloud", "configmanagement", "cr", "fasttrack", "HighAvailibility",
+                   "infra", "messages", "nfv", "opstools", "storage", "virt", ]
+
+# docker-mirror.py can select from "main" to "sclo" which however is the default.
+
+SUBDIRS6: Dict[str, List[str]] = OrderedDict()
+SUBDIRS6["main"] = ["os", "updates"]
+SUBDIRS6["sclo"] = ["sclo"]
+
+SUBDIRS7: Dict[str, List[str]] = OrderedDict()
+SUBDIRS7["main"] = ["os", "extras", "updates"]
+SUBDIRS7["plus"] = ["centosplus"]
+SUBDIRS7["sclo"] = ["sclo"]
+
+SUBDIRS8: Dict[str, List[str]] = OrderedDict()
+SUBDIRS8["main"] = ["BaseOS", "AppStream", "extras"]
+SUBDIRS8["plus"] = ["PowerTools", "centosplus"]
+#SUBDIRS8["dev"] = ["Devel", "HighAvailibility"]
 
 #############################################################################
 
@@ -108,18 +131,18 @@ def centos_pull() -> None:
 def centos_sync() -> None:
     centos = CENTOS
     centos_dir()
+    subdirs: Dict[str, List[str]] = OrderedDict()
+    if centos.startswith("6"):
+        subdirs = SUBDIRS6
     if centos.startswith("7"):
-        centos_sync_os()
-        centos_sync_extras()
-        centos_sync_updates()
-        centos_sync_sclo()
+        subdirs = SUBDIRS7
     if centos.startswith("8"):
-        centos_sync_BaseOS()
-        centos_sync_AppStream()
-        centos_sync_extras()
-        centos_sync_PowerTools()
-        centos_sync_centosplus()
-        centos_sync_sclo()
+        subdirs = SUBDIRS8
+    for base in subdirs:
+        for subdir in subdirs[base]:
+            logg.info("#### [{base}] /{subdir}".format(**locals()))
+            sync_subdir(subdir)
+            logg.info("DONE [{base}] /{subdir}".format(**locals()))
 
 def centos_dir() -> None:
     centos = CENTOS
@@ -367,9 +390,7 @@ def centos_repo7() -> None:
     repo = IMAGESREPO
     cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}"
     sh___(cmd.format(**locals()))
-    dists: Dict[str, List[str]] = OrderedDict()
-    dists["main"] = ["os", "extras", "updates"]  # "extras" was not in 'main' for CentOS 6
-    dists["sclo"] = ["sclo"]
+    dists = SUBDIRS7
     for dist in dists:
         sx___("{docker} rm --force {cname}".format(**locals()))
         sh___("{docker} run --name={cname} --detach {repo}/centos-repo/{base}:{centos} sleep 9999".format(**locals()))
@@ -403,10 +424,7 @@ def centos_repo8() -> None:
     repo = IMAGESREPO
     cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}"
     sh___(cmd.format(**locals()))
-    dists: Dict[str, List[str]] = OrderedDict()
-    dists["main"] = ["BaseOS", "AppStream", "extras"]  # "extras" was not in 'main' for CentOS 6
-    dists["plus"] = ["PowerTools", "centosplus"]
-    dists["sclo"] = ["sclo"]
+    dists = SUBDIRS8
     for dist in dists:
         sx___("{docker} rm --force {cname}".format(**locals()))
         sh___("{docker} run --name={cname} --detach {repo}/centos-repo/{base}:{centos} sleep 9999".format(**locals()))
