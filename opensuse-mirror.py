@@ -57,6 +57,9 @@ RSYNC = "rsync"
 DOCKER = "docker"
 LAYER = "base"
 
+BASEVERSION: Dict[str, str] = {}
+BASEVERSION["15.4"] = "15.3"  # image:opensuse/base
+
 def opensuse_make() -> None:
     opensuse_sync()
     opensuse_repo()
@@ -205,6 +208,9 @@ def opensuse_repo() -> None:
     docker = DOCKER
     leap = LEAP
     repodir = REPODIR
+    baseversion = leap
+    if baseversion in BASEVERSION:
+        baseversion = BASEVERSION[baseversion]
     cname = "opensuse-repo-" + leap
     image = BASE[LEAP]
     imagesrepo = IMAGESREPO
@@ -215,7 +221,7 @@ def opensuse_repo() -> None:
         base_repo_path = path.abspath(base_repo)
         bind_repo = "-v {base_repo_path}:/base-repo".format(**locals())
     sx___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} run --name={cname} {bind_repo} --detach {image}:{leap} sleep 9999".format(**locals()))
+    sh___("{docker} run --name={cname} {bind_repo} --detach {image}:{baseversion} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/".format(**locals()))
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
     oss = "repo-oss"  # Opensuse 15.x main repo
