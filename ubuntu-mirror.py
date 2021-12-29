@@ -73,6 +73,16 @@ REPOS = UPDATES_REPOS
 DOCKER = "docker"
 RSYNC = "rsync"
 
+BASEVERSION: Dict[str, str] = {}  # image:ubuntu/base
+BASEVERSION["22.04"] = "20.04"  # previous LTS
+BASEVERSION["21.10"] = "20.04"
+BASEVERSION["21.04"] = "20.04"
+BASEVERSION["20.10"] = "20.04"
+BASEVERSION["19.10"] = "18.04"
+BASEVERSION["19.04"] = "18.04"
+BASEVERSION["18.10"] = "18.04"
+BASEVERSION["16.10"] = "16.04"
+
 ######################################################################
 
 # the Ubuntu package repository has the deb packages of all version and all repos
@@ -237,9 +247,12 @@ def ubuntu_repo() -> None:
     repodir = REPODIR
     image = UBUNTU_OS
     imagesrepo = IMAGESREPO
+    baseversion = ubuntu
+    if baseversion in BASEVERSION:
+        baseversion = BASEVERSION[baseversion]
     cname = "ubuntu-repo-" + ubuntu  # container name
     sx___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} run --name={cname} --detach {image}:{ubuntu} sleep 9999".format(**locals()))
+    sh___("{docker} run --name={cname} --detach {image}:{baseversion} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/ubuntu".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/ubuntu".format(**locals()))
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
