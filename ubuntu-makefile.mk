@@ -21,3 +21,42 @@ ubuntubash:
 	docker run -d --rm=true --name ubuntu-bash-$(UBUNTU)  --add-host archive.ubuntu.com:$$IP \
                                                              --add-host security.ubuntu.com:$$IP ubuntu:$(UBUNTU) sleep 9999
 	docker exec -it ubuntu-bash-$(UBUNTU) bash
+
+### ubuntu versions
+
+ubuntu.21.10: ;	$(MAKE) ubuntudir UBUNTU=21.10
+ubuntu.21.04: ;	$(MAKE) ubuntudir UBUNTU=21.04
+ubuntu.20.10: ;	$(MAKE) ubuntudir UBUNTU=20.10
+ubuntu.20.04: ;	$(MAKE) ubuntudir UBUNTU=20.04
+ubuntu.19.10: ;	$(MAKE) ubuntudir UBUNTU=19.10
+ubuntu.18.04: ;	$(MAKE) ubuntudir UBUNTU=18.04
+ubuntu.16.04: ; $(MAKE) ubuntudir UBUNTU=16.04
+ubuntusync.21.10: ; $(MAKE) ubuntusync UBUNTU=21.10 REPOS=updates
+ubuntusync.21.04: ; $(MAKE) ubuntusync UBUNTU=21.04 REPOS=updates
+ubuntusync.20.10: ; $(MAKE) ubuntusync UBUNTU=20.10 REPOS=updates
+ubuntusync.20.04: ; $(MAKE) ubuntusync UBUNTU=20.04 REPOS=updates
+ubuntusync.19.10: ; $(MAKE) ubuntusync UBUNTU=19.10 REPOS=updates
+ubuntusync.18.04: ; $(MAKE) ubuntusync UBUNTU=18.04 REPOS=updates
+ubuntusync.16.04: ; $(MAKE) ubuntusync UBUNTU=16.04 REPOS=updates
+ubunturepo.19.10: ; $(MAKE) ubunturepo UBUNTU=19.10 REPOS=updates
+ubunturepo.18.04: ; $(MAKE) ubunturepo UBUNTU=18.04 REPOS=updates
+ubunturepo.16.04: ; $(MAKE) ubunturepo UBUNTU=16.04 REPOS=updates
+ubuntu-21.10: ; $(MAKE) ubuntu UBUNTU=21.10
+ubuntu-21.04: ; $(MAKE) ubuntu UBUNTU=21.04
+ubuntu-20.10: ; $(MAKE) ubuntu UBUNTU=20.10
+ubuntu-20.04: ; $(MAKE) ubuntu UBUNTU=20.04
+ubuntu-19.10: ; $(MAKE) ubuntu UBUNTU=19.10
+ubuntu-18.04: ; $(MAKE) ubuntu UBUNTU=18.04
+ubuntu-16.04: ; $(MAKE) ubuntu UBUNTU=16.04
+
+universesync: ; $(MAKE) REPOS=universe
+universesync.21.10: ; $(MAKE) ubuntusync UBUNTU=21.10 REPOS=universe
+universesync.21.04: ; $(MAKE) ubuntusync UBUNTU=21.04 REPOS=universe
+universesync.20.10: ; $(MAKE) ubuntusync UBUNTU=20.10 REPOS=universe
+universesync.20.04: ; $(MAKE) ubuntusync UBUNTU=20.04 REPOS=universe
+universesync.19.10: ; $(MAKE) ubuntusync UBUNTU=19.10 REPOS=universe
+universesync.18.04: ; $(MAKE) ubuntusync UBUNTU=18.04 REPOS=universe
+universesync.16.04: ; $(MAKE) ubuntusync UBUNTU=16.04 REPOS=universe
+universerepo.19.10: ; $(MAKE) ubunturepo UBUNTU=19.10 REPOS=universe
+universerepo.18.04: ; $(MAKE) ubunturepo UBUNTU=18.04 REPOS=universe
+universerepo.16.04: ; $(MAKE) ubunturepo UBUNTU=16.04 REPOS=universe
