@@ -27,6 +27,7 @@ if sys.version[0] == '3':
 
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
+REPODIR = "."
 
 DATADIRS = [REPODATADIR,
             "/srv/docker-mirror-packages",
@@ -111,12 +112,15 @@ def ubuntu_sync() -> None:
 
 def ubuntu_dir() -> None:
     ubuntu = UBUNTU
-    dirname = "ubuntu.{ubuntu}".format(**locals())
+    repodir = REPODIR
+    dirname = "{repodir}/ubuntu.{ubuntu}".format(**locals())
     if path.isdir(dirname):
         if path.islink(dirname):
             os.unlink(dirname)
         else:
             shutil.rmtree(dirname)  # local dir
+    if not path.isdir(repodir):
+        os.makedirs(repodir)
     # we want to put the mirror data on an external disk
     for data in reversed(DATADIRS):
         logg.debug(".. check %s", data)
@@ -142,7 +146,8 @@ def ubuntu_sync_base(dist: str) -> None:
     logg.info("dist = %s", dist)
     tmpdir = UBUNTU_TMP
     ubuntu = UBUNTU
-    distdir = "ubuntu.{ubuntu}/dists/{dist}".format(**locals())
+    repodir = REPODIR
+    distdir = "{repodir}/ubuntu.{ubuntu}/dists/{dist}".format(**locals())
     if not path.isdir(distdir):
         os.makedirs(distdir)
     if not path.isdir(tmpdir):
@@ -154,7 +159,7 @@ def ubuntu_sync_base(dist: str) -> None:
     rsync = RSYNC
     mirror = RSYNC_UBUNTU
     options = "--ignore-times --files-from=" + tmpfile
-    sh___("{rsync} -v {mirror}/dists/{dist} ubuntu.{ubuntu}/dists/{dist} {options}".format(**locals()))
+    sh___("{rsync} -v {mirror}/dists/{dist} {repodir}/ubuntu.{ubuntu}/dists/{dist} {options}".format(**locals()))
 
 def when(levels: str, repos: List[str]) -> List[str]: return [item for item in levels.split(",") if item and item in repos]
 def ubuntu_sync_main_1() -> None: ubuntu_sync_main(dist=DIST[UBUNTU], main="main", when=when("updates,restricted,universe,multiverse", REPOS))
@@ -180,7 +185,8 @@ def ubuntu_check() -> None:
 
 def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
     ubuntu = UBUNTU
-    maindir = "ubuntu.{ubuntu}/dists/{dist}/{main}".format(**locals())
+    repodir = REPODIR
+    maindir = "{repodir}/ubuntu.{ubuntu}/dists/{dist}/{main}".format(**locals())
     if not path.isdir(maindir): os.makedirs(maindir)
     rsync = RSYNC
     mirror = RSYNC_UBUNTU
@@ -198,35 +204,30 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
                 continue
             filename = re.sub("Filename: *pool/", "", line)
             print(filename, file=f)
-    pooldir = "ubuntu.{ubuntu}/pools/{dist}/{main}/pool".format(**locals())
+    pooldir = "{repodir}/ubuntu.{ubuntu}/pools/{dist}/{main}/pool".format(**locals())
     if not path.isdir(pooldir): os.makedirs(pooldir)
     if when:
         sh___("{rsync} -rv {mirror}/pool {pooldir} --size-only --files-from={tmpfile}".format(**locals()))
 
 def ubuntu_pool() -> None:
     ubuntu = UBUNTU
-    pooldir = "ubuntu.{UBUNTU}/pool".format(**locals())
-    if path.isdir(pooldir): shutil.rmtree(pooldir)
+    repodir = REPODIR
+    pooldir = "{repodir}/ubuntu.{UBUNTU}/pool".format(**locals())
+    if path.isdir(pooldir): 
+        shutil.rmtree(pooldir)
     os.makedirs(pooldir)
-   # find ubuntu.$(UBUNTU)/pools/$(dist) -name pool -type d \
-   # | { while read pool; do (cd $$pool && find . -type f) \
-   #    | { while read f; do b=`dirname "$$f"` \
-   #      ; test -d ubuntu.$(UBUNTU)/pool/$$f || \
-   #       mkdir -p ubuntu.$(UBUNTU)/pool/$$b \
-   #      ; ln $$pool/$$f ubuntu.$(UBUNTU)/pool/$$b/ \
-   #      ; done ; } \
-   #   ; done ; } \
-   # ; echo `find ubuntu.$(UBUNTU)/pool -type f | wc -l` pool files
 
 def ubuntu_poolcount() -> None:
     ubuntu = UBUNTU
-    sh___("echo `find ubuntu.{ubuntu}/pool -type f | wc -l` pool files".format(**locals()))
+    repodir = REPODIR
+    sh___("echo `find {repodir}/ubuntu.{ubuntu}/pool -type f | wc -l` pool files".format(**locals()))
 
 ubunturepo_CMD = ["python", "/srv/scripts/filelist.py", "--data", "/srv/repo"]
 ubunturepo_PORT = "80"
 def ubuntu_repo() -> None:
     docker = DOCKER
     ubuntu = UBUNTU
+    repodir = REPODIR
     image = UBUNTU_OS
     imagesrepo = IMAGESREPO
     cname = "ubuntu-repo-" + ubuntu  # container name
@@ -235,7 +236,7 @@ def ubuntu_repo() -> None:
     sh___("{docker} exec {cname} mkdir -p /srv/repo/ubuntu".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/ubuntu".format(**locals()))
     sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
-    sh___("{docker} cp ubuntu.{ubuntu}/dists {cname}:/srv/repo/ubuntu".format(**locals()))
+    sh___("{docker} cp {repodir}/ubuntu.{ubuntu}/dists {cname}:/srv/repo/ubuntu".format(**locals()))
     sh___("{docker} exec {cname} apt-get update".format(**locals()))
     sh___("{docker} exec {cname} apt-get install -y python".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/ubuntu/pool".format(**locals()))
@@ -248,7 +249,7 @@ def ubuntu_repo() -> None:
         sh___("{docker} rm --force {cname}".format(**locals()))
         sh___("{docker} run --name={cname} --detach {imagesrepo}/ubuntu-repo/{base}:{ubuntu} sleep 9999".format(**locals()))
         for dist in [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]:
-            pooldir = "ubuntu.{ubuntu}/pools/{dist}/{main}/pool".format(**locals())
+            pooldir = "{repodir}/ubuntu.{ubuntu}/pools/{dist}/{main}/pool".format(**locals())
             if path.isdir(pooldir):
                 sh___("{docker} cp {pooldir}  {cname}:/srv/repo/ubuntu/pool".format(**locals()))
                 base = main
