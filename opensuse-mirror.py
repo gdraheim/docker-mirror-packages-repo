@@ -116,7 +116,7 @@ def opensuse_save() -> None:
                 else:
                     shutil.copy(srcfile, dstfile)
 
-skipdirs =  [
+skipdirs = [
     "boot", "EFI", "160.3-boot", "20.8-boot", "24.5-boot",
     "aarch64", "s390x", "ppc", "ppc64le", ]
 
@@ -124,7 +124,7 @@ def opensuse_sync_1() -> None:
     leap = LEAP
     mirror = RSYNC_SUSE
     rsync = RSYNC
-    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs ])
+    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += """ --size-only --filter="exclude *.src.rpm" """
     leaprepo = "opensuse.{leap}/distribution/leap/{leap}/repo".format(**locals())
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
@@ -134,7 +134,7 @@ def opensuse_sync_2() -> None:
     leap = LEAP
     mirror = RSYNC_SUSE
     rsync = RSYNC
-    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs ])
+    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += """  --filter="exclude x86_64" --filter="exclude noarch"  """
     excludes += """ --size-only --filter="exclude *.src.rpm" """
     leaprepo = "opensuse.{leap}/distribution/leap/{leap}/repo".format(**locals())
@@ -145,7 +145,7 @@ def opensuse_sync_3() -> None:
     leap = LEAP
     mirror = RSYNC_SUSE
     rsync = RSYNC
-    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs ])
+    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += """ --size-only --filter="exclude *.src.rpm" """
     leaprepo = "opensuse.{leap}/update/leap/{leap}".format(**locals())
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
@@ -155,7 +155,7 @@ def opensuse_sync_4() -> None:
     leap = LEAP
     mirror = RSYNC_SUSE
     rsync = RSYNC
-    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs ])
+    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += """  --filter="exclude x86_64" --filter="exclude noarch"  """
     excludes += """  --filter="exclude strc" --filter="exclude nosrc"  """
     excludes += """ --size-only --filter="exclude *.src.rpm" """
