@@ -362,7 +362,7 @@ def UBUNTU_set(ubuntu: str) -> str:
         UBUNTU = ubuntu
     return UBUNTU
 
-def config_globals(settings):
+def config_globals(settings: List[str]) -> None:
     for setting in settings:
         nam, val = setting, "1"
         if "=" in setting:
