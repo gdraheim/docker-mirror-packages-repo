@@ -216,10 +216,10 @@ def centos_epelsync8() -> None:
     arch = ARCH
     excludes = """ --exclude "*.iso" """
     for subdir in ["Everything", "Modular"]:
-        repodir = "epel.{epel}/{epel}/{subdir}".format(**locals())
-        if not path.isdir(repodir):
-            os.makedirs(repodir)
-        sh___("{rsync} -rv {mirror}/{epel}/{subdir}/{arch} {repodir}/ {excludes}".format(**locals()))
+        basedir = "epel.{epel}/{epel}/{subdir}".format(**locals())
+        if not path.isdir(basedir):
+            os.makedirs(basedir)
+        sh___("{rsync} -rv {mirror}/{epel}/{subdir}/{arch} {basedir}/ {excludes}".format(**locals()))
 
 def centos_unpack() -> None:
     docker = DOCKER
