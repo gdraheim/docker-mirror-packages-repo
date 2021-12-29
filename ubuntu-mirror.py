@@ -332,11 +332,14 @@ def path_find(base: str, name: str) -> Optional[str]:
             return path.join(dirpath, name)
     return None
 
+def ubuntu_commands_() -> None:
+    print(commands())
 def commands() -> str:
     cmds: List[str] = []
     for name in sorted(globals()):
         if name.startswith("ubuntu_"):
             if "_sync_" in name: continue
+            if name.endswith("_"): continue
             func = globals()[name]
             if callable(func):
                 cmd = name.replace("ubuntu_", "")
@@ -391,8 +394,6 @@ if __name__ == "__main__":
                       epilog=re.sub("\\s+", " ", __doc__).strip())
     _o.add_option("-v", "--verbose", action="count", default=0,
                   help="increase logging level [%default]")
-    _o.add_option("-c", "--config", metavar="NAME=VAL", action="append", default=[],
-                  help="override globals (REPODIR, REPODATADIRS, IMAGESREPO) {%default}")
     _o.add_option("-D", "--docker", metavar="EXE", default=DOCKER,
                   help="use other docker exe or podman [%default]")
     _o.add_option("-V", "--ver", metavar="NUM", default=UBUNTU,
@@ -401,6 +402,8 @@ if __name__ == "__main__":
                   help="include universe packages [%default]")
     _o.add_option("-m", "--multiverse", action="store_true", default=False,
                   help="include all packages [%default]")
+    _o.add_option("-c", "--config", metavar="NAME=VAL", action="append", default=[],
+                  help="override globals (REPODIR, REPODATADIRS, IMAGESREPO)")
     opt, args = _o.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
     config_globals(opt.config)
