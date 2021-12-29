@@ -371,19 +371,48 @@ def LEAP_set(leap: str) -> str:
     LEAP = leap
     return LEAP
 
+def config_globals(settings):
+    for setting in settings:
+        nam, val = setting, "1"
+        if "=" in setting:
+            nam, val = setting.split("=", 1)
+        elif nam.startswith("no-") or nam.startswith("NO-"):
+            nam, val = nam[3:], "0"
+        elif nam.startswith("No") or nam.startswith("NO"):
+            nam, val = nam[2:], "0"
+        if nam in globals():
+            old = globals()[nam]
+            if old is False or old is True:
+                globals()[nam] = (val in ("true", "True", "TRUE", "yes", "y", "Y", "YES", "1"))
+            elif isinstance(old, float):
+                globals()[nam] = float(val)
+            elif isinstance(old, int):
+                globals()[nam] = int(val)
+            elif isinstance(old, basestring):
+                globals()[nam] = val.strip()
+            elif isinstance(old, list):
+                globals()[nam] = val.strip().split(",")
+            else:
+                nam_type = type(old)
+                logg.warning("(ignored) unknown target type -c '{nam}' : {nam_type}".format(**locals()))
+        else:
+            logg.warning("(ignored) unknown target config -c '{nam}' : no such variable".format(**locals()))
+
 if __name__ == "__main__":
     from optparse import OptionParser
     _o = OptionParser("%%prog [-options] [%s]" % commands(),
                       epilog=re.sub("\\s+", " ", __doc__).strip())
     _o.add_option("-v", "--verbose", action="count", default=0,
                   help="increase logging level [%default]")
+    _o.add_option("-c", "--config", metavar="NAME=VAL", action="append", default=[],
+                  help="override globals (REPODIR, REPODATADIRS, IMAGESREPO) {%default}")
     _o.add_option("-D", "--docker", metavar="EXE", default=DOCKER,
                   help="use other docker exe or podman [%default]")
     _o.add_option("-V", "--ver", metavar="NUM", default=LEAP,
                   help="use other opensuse/leap version [%default]")
     opt, args = _o.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
-    #
+    config_globals(opt.config)
     DOCKER = opt.docker
     LEAP_set(opt.ver)
     #
