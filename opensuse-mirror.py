@@ -350,7 +350,7 @@ def path_find(base: str, name: str) -> Optional[str]:
             return path.join(dirpath, name)
     return None
 
-def opensuse_commands_() -> str:
+def opensuse_commands_() -> None:
     print(commands())
 def commands() -> str:
     cmds: List[str] = []
@@ -374,7 +374,7 @@ def LEAP_set(leap: str) -> str:
     LEAP = leap
     return LEAP
 
-def config_globals(settings):
+def config_globals(settings: List[str]) -> None:
     for setting in settings:
         nam, val = setting, "1"
         if "=" in setting:
