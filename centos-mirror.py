@@ -31,6 +31,7 @@ if sys.version[0] == '3':
 
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
+REPODIR = os.environ.get("REPODIR", ".")
 
 DATADIRS = [REPODATADIR,
             "/srv/docker-mirror-packages",
@@ -122,7 +123,8 @@ def centos_sync() -> None:
 
 def centos_dir() -> None:
     centos = CENTOS
-    dirname = "centos.{centos}".format(**locals())
+    repodir = REPODIR
+    dirname = "{repodir}/centos.{centos}".format(**locals())
     if path.isdir(dirname):
         if path.islink(dirname):
             os.unlink(dirname)
@@ -183,7 +185,8 @@ def sync_subdir(subdir: str) -> None:
     mirror = CENTOS_MIRROR
     centos = CENTOS
     excludes = CENTOS_XXX
-    sh___("{rsync} -rv {mirror}/{centos}/{subdir}   centos.{centos}/ {excludes}".format(**locals()))
+    repodir = REPODIR
+    sh___("{rsync} -rv {mirror}/{centos}/{subdir}   {repodir}/centos.{centos}/ {excludes}".format(**locals()))
 
 def centos_sync_AppStream() -> None: sync_subdir("AppStream")
 def centos_sync_BaseOS() -> None: sync_subdir("BaseOS")
@@ -224,21 +227,23 @@ def centos_epelsync8() -> None:
 def centos_unpack() -> None:
     docker = DOCKER
     centos = CENTOS
+    repodir = REPODIR
     cname = "centos-unpack-" + centos  # container name
     image = "localhost:5000/centos-repo"
     sx___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} run --name={cname} --detach {image}:{centos} sleep 9999".format(**locals()))
-    sh___("{docker} cp {cname}:/srv/repo/7/os centos.{centos}/".format(**locals()))
-    sh___("{docker} cp {cname}:/srv/repo/7/extras centos.{centos}/".format(**locals()))
-    sh___("{docker} cp {cname}:/srv/repo/7/updates centos.{centos}/".format(**locals()))
-    sh___("{docker} cp {cname}:/srv/repo/7/sclo centos.{centos}/".format(**locals()))
+    sh___("{docker} cp {cname}:/srv/repo/7/os {repodir}/centos.{centos}/".format(**locals()))
+    sh___("{docker} cp {cname}:/srv/repo/7/extras {repodir}/centos.{centos}/".format(**locals()))
+    sh___("{docker} cp {cname}:/srv/repo/7/updates {repodir}/centos.{centos}/".format(**locals()))
+    sh___("{docker} cp {cname}:/srv/repo/7/sclo {repodir}/centos.{centos}/".format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
-    sh___("du -sh centos.{centos}/.".format(**locals()))
+    sh___("du -sh {repodir}/centos.{centos}/.".format(**locals()))
 
 def centos_clean() -> None:
     centos = CENTOS
+    repodir = REPODIR
     for subdir in ["os", "extras", "updates", "sclo"]:
-        sh___("rm -rf centos.{centos}/{subdir}".format(**locals()))
+        sh___("rm -rf {repodir}/centos.{centos}/{subdir}".format(**locals()))
 
 def centos_epelrepo() -> None:
     if CENTOS.startswith("7"):
@@ -348,6 +353,7 @@ def centos_repo() -> None:
 def centos_repo7() -> None:
     docker = DOCKER
     centos = CENTOS
+    repodir = REPODIR
     centos_restore()
     centos_cleaner()
     cname = "centos-repo-" + centos  # container name
@@ -368,7 +374,7 @@ def centos_repo7() -> None:
         sx___("{docker} rm --force {cname}".format(**locals()))
         sh___("{docker} run --name={cname} --detach {repo}/centos-repo/{base}:{centos} sleep 9999".format(**locals()))
         for subdir in dists[dist]:
-            pooldir = "centos.{centos}/{subdir}".format(**locals())
+            pooldir = "{repodir}/centos.{centos}/{subdir}".format(**locals())
             if path.isdir(pooldir):
                 sh___("{docker} cp {pooldir} {cname}:/srv/repo/7/".format(**locals()))
                 base = dist
@@ -383,6 +389,7 @@ def centos_repo7() -> None:
 def centos_repo8() -> None:
     docker = DOCKER
     centos = CENTOS
+    repodir = REPODIR
     centos_restore()
     centos_cleaner()
     cname = "centos-repo-" + centos  # container name
@@ -404,7 +411,7 @@ def centos_repo8() -> None:
         sx___("{docker} rm --force {cname}".format(**locals()))
         sh___("{docker} run --name={cname} --detach {repo}/centos-repo/{base}:{centos} sleep 9999".format(**locals()))
         for subdir in dists[dist]:
-            pooldir = "centos.{centos}/{subdir}".format(**locals())
+            pooldir = "{repodir}/centos.{centos}/{subdir}".format(**locals())
             if path.isdir(pooldir):
                 sh___("{docker} cp {pooldir} {cname}:/srv/repo/8/".format(**locals()))
                 base = dist
@@ -432,19 +439,21 @@ def centos_tags() -> None:
 
 def centos_cleaner() -> None:
     centos = CENTOS
+    repodir = REPODIR
     arch = "x86_64"
     for subdir in ["updates", "extras"]:
-        orig = "centos.{centos}/{subdir}/{arch}/drpms"
-        save = "centos.{centos}/{subdir}.{arch}.drpms"
+        orig = "{repodir}/centos.{centos}/{subdir}/{arch}/drpms"
+        save = "{repodir}/centos.{centos}/{subdir}.{arch}.drpms"
         if path.isdir(orig):
             shutil.move(orig, save)
 
 def centos_restore() -> None:
     centos = CENTOS
+    repodir = REPODIR
     arch = "x86_64"
     for subdir in ["updates", "extras"]:
-        orig = "centos.{centos}/{subdir}/{arch}/drpms"
-        save = "centos.{centos}/{subdir}.{arch}.drpms"
+        orig = "{repodir}/centos.{centos}/{subdir}/{arch}/drpms"
+        save = "{repodir}/centos.{centos}/{subdir}.{arch}.drpms"
         if path.isdir(save):
             shutil.move(save, orig)
 
@@ -461,10 +470,11 @@ def centos_test() -> None:
 def centos_check() -> None:
     docker = DOCKER
     centos = CENTOS
+    repodir = REPODIR
     cname = "centos-check-" + centos  # container name
     sx___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} run --name={cname} --detach centos:{centos} sleep 9999".format(**locals()))
-    centosdir = "centos.{centos}".format(**locals())
+    centosdir = "{repodir}/centos.{centos}".format(**locals())
     out, end = output2("{docker} exec {cname} rpm -qa".format(**locals()))
     for f in out.split("\n"):
         found = path_find(centosdir, f + ".rpm")
