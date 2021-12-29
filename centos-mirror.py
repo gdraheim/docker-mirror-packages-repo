@@ -563,7 +563,7 @@ def CENTOS_set(centos: str) -> str:
     CENTOS = centos
     return CENTOS
 
-def config_globals(settings):
+def config_globals(settings: List[str]) -> None:
     for setting in settings:
         nam, val = setting, "1"
         if "=" in setting:
