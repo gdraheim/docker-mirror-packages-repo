@@ -44,22 +44,22 @@ UBUNTU_TMP = "ubuntu.tmp"
 
 LTS = ["14.04", "16.04", "18.04", "20.04", "22.04"]
 DIST: Dict[str, str] = {}
-DIST["22.04"] = "jammy"   # Jammy Jellyfish    (April 2027)
-DIST["21.10"] = "impish"  # Impish Indri
-DIST["21.04"] = "hirsute" # Hirsute Hippo
-DIST["20.10"] = "groovy"  # Groovy Gorilla
-DIST["20.04"] = "focal"   # Focal Fossa LTS    (April 2030)
-DIST["19.10"] = "eoan"    # Eoan Ermine
-DIST["19.04"] = "disco"   # Disco Dingo
-DIST["18.10"] = "cosmic"  # Cosmic Cuttlefish  (x)
-DIST["18.04"] = "bionic"  # Bionic Beaver LTS  (April 2028)
-DIST["17.10"] = "artful"  # Artful Aardvark
-DIST["16.10"] = "yaketty" # Yaketty Yak
-DIST["16.04"] = "xenial"  # Xenial Xerus LTS   (April 2024)
-DIST["14.10"] = "utopic"  # Utopic Unicorn
-DIST["14.04"] = "trusty"  # Trusty Tahr LTS    (April 2022)
-DIST["12.10"] = "quantal" # Quntal Quetzal
-DIST["12.04"] = "precise" # Precise Pangolin
+DIST["22.04"] = "jammy"    # Jammy Jellyfish    (April 2027)
+DIST["21.10"] = "impish"   # Impish Indri
+DIST["21.04"] = "hirsute"  # Hirsute Hippo
+DIST["20.10"] = "groovy"   # Groovy Gorilla
+DIST["20.04"] = "focal"    # Focal Fossa LTS    (April 2030)
+DIST["19.10"] = "eoan"     # Eoan Ermine
+DIST["19.04"] = "disco"    # Disco Dingo
+DIST["18.10"] = "cosmic"   # Cosmic Cuttlefish  (x)
+DIST["18.04"] = "bionic"   # Bionic Beaver LTS  (April 2028)
+DIST["17.10"] = "artful"   # Artful Aardvark
+DIST["16.10"] = "yaketty"  # Yaketty Yak
+DIST["16.04"] = "xenial"   # Xenial Xerus LTS   (April 2024)
+DIST["14.10"] = "utopic"   # Utopic Unicorn
+DIST["14.04"] = "trusty"   # Trusty Tahr LTS    (April 2022)
+DIST["12.10"] = "quantal"  # Quntal Quetzal
+DIST["12.04"] = "precise"  # Precise Pangolin
 # only 18.10 was tested from the non-LTS versions
 # in 2020 all projects had moved to 16.04/18.04 (dropped 14.04)
 
@@ -213,7 +213,7 @@ def ubuntu_pool() -> None:
     ubuntu = UBUNTU
     repodir = REPODIR
     pooldir = "{repodir}/ubuntu.{UBUNTU}/pool".format(**locals())
-    if path.isdir(pooldir): 
+    if path.isdir(pooldir):
         shutil.rmtree(pooldir)
     os.makedirs(pooldir)
 
