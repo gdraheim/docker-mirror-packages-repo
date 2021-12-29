@@ -44,6 +44,7 @@ BASE["15.0"] = "opensuse/leap"
 BASE["15.1"] = "opensuse/leap"
 BASE["15.2"] = "opensuse/leap"
 BASE["15.3"] = "opensuse/leap"
+BASE["15.4"] = "opensuse/leap"
 XXLEAP: List[str] = []  # ["15.2"] # obsolete, using repodata-fix.py now
 LEAP: str = "15.3"
 
@@ -115,11 +116,15 @@ def opensuse_save() -> None:
                 else:
                     shutil.copy(srcfile, dstfile)
 
+skipdirs =  [
+    "boot", "EFI", "160.3-boot", "20.8-boot", "24.5-boot",
+    "aarch64", "s390x", "ppc", "ppc64le", ]
+
 def opensuse_sync_1() -> None:
     leap = LEAP
     mirror = RSYNC_SUSE
     rsync = RSYNC
-    excludes = """  --filter="exclude boot" --filter="exclude EFI"  """
+    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs ])
     excludes += """ --size-only --filter="exclude *.src.rpm" """
     leaprepo = "opensuse.{leap}/distribution/leap/{leap}/repo".format(**locals())
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
@@ -129,7 +134,7 @@ def opensuse_sync_2() -> None:
     leap = LEAP
     mirror = RSYNC_SUSE
     rsync = RSYNC
-    excludes = """  --filter="exclude boot" --filter="exclude EFI"  """
+    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs ])
     excludes += """  --filter="exclude x86_64" --filter="exclude noarch"  """
     excludes += """ --size-only --filter="exclude *.src.rpm" """
     leaprepo = "opensuse.{leap}/distribution/leap/{leap}/repo".format(**locals())
@@ -140,7 +145,7 @@ def opensuse_sync_3() -> None:
     leap = LEAP
     mirror = RSYNC_SUSE
     rsync = RSYNC
-    excludes = """  --filter="exclude boot" --filter="exclude *.drpm"  """
+    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs ])
     excludes += """ --size-only --filter="exclude *.src.rpm" """
     leaprepo = "opensuse.{leap}/update/leap/{leap}".format(**locals())
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
@@ -150,7 +155,7 @@ def opensuse_sync_4() -> None:
     leap = LEAP
     mirror = RSYNC_SUSE
     rsync = RSYNC
-    excludes = """  --filter="exclude boot" --filter="exclude EFI"  """
+    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs ])
     excludes += """  --filter="exclude x86_64" --filter="exclude noarch"  """
     excludes += """  --filter="exclude strc" --filter="exclude nosrc"  """
     excludes += """ --size-only --filter="exclude *.src.rpm" """
