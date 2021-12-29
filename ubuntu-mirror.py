@@ -41,9 +41,11 @@ RSYNC_UBUNTU = "rsync://ftp5.gwdg.de/pub/linux/debian/ubuntu"
 
 UBUNTU_TMP = "ubuntu.tmp"
 
-LTS = ["14.04", "16.04", "18.04", "20.04", "12.04"]
+LTS = ["14.04", "16.04", "18.04", "20.04", "22.04"]
 DIST: Dict[str, str] = {}
-DIST["21.10"] = "hirsute" # Hirsute Hippo
+DIST["22.04"] = "jammy"   # Jammy Jellyfish    (April 2027)
+DIST["21.10"] = "impish"  # Impish Indri
+DIST["21.04"] = "hirsute" # Hirsute Hippo
 DIST["20.10"] = "groovy"  # Groovy Gorilla
 DIST["20.04"] = "focal"   # Focal Fossa LTS    (April 2030)
 DIST["19.10"] = "eoan"    # Eoan Ermine
