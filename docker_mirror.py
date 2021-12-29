@@ -4,7 +4,7 @@
 __copyright__ = "(C) 2021 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.6.3007"
+__version__ = "1.6.3523"
 
 from collections import OrderedDict, namedtuple
 import os.path

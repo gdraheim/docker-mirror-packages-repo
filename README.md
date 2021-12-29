@@ -24,6 +24,8 @@ Tested repos are
  * localhost:5000/mirror-packages/**opensuse-repo:15.1**         _(54.6GB)_
  * localhost:5000/mirror-packages/**opensuse-repo/main:15.2**    _(93.1GB)_
  * localhost:5000/mirror-packages/**opensuse-repo/update:15.2**   _(118GB)_
+ * localhost:5000/mirror-packages/**opensuse-repo/main:15.3**    _(69.9GB)_
+ * localhost:5000/mirror-packages/**opensuse-repo/update:15.3**   _(70.1GB)_
  * localhost:5000/mirror-packages/**ubuntu-repo:16.04**          _(74.7GB)_
  * localhost:5000/mirror-packages/**ubuntu-repo:18.04**          _(19.5GB)_
  * localhost:5000/mirror-packages/**ubuntu-repo/main:16.04**     _(74.7GB)_
