@@ -63,11 +63,13 @@ DIST["12.04"] = "precise"  # Precise Pangolin
 # only 18.10 was tested from the non-LTS versions
 # in 2020 all projects had moved to 16.04/18.04 (dropped 14.04)
 
-REPOS = ["main", "updates"]
-UNI_REPOS = ["main", "updates", "restricted", "universe"]
-ALL_REPOS = ["main", "updates", "restricted", "universe", "multiverse"]
+MAIN_REPOS = ["main"]
+UPDATES_REPOS = ["main", "updates"]
+UNIVERSE_REPOS = ["main", "updates", "restricted", "universe"]
+MULTIVERSE_REPOS = ["main", "updates", "restricted", "universe", "multiverse"]
 AREAS = {"1": "", "2": "-updates", "3": "-backports", "4": "-security"}
 
+REPOS = UPDATES_REPOS
 DOCKER = "docker"
 RSYNC = "rsync"
 
@@ -89,22 +91,27 @@ def ubuntu_make() -> None:
 
 def ubuntu_sync() -> None:
     ubuntu_dir()
+    # release files:
     ubuntu_sync_base_1()
     ubuntu_sync_base_2()
     ubuntu_sync_base_3()
     ubuntu_sync_base_4()
+    # main:
     ubuntu_sync_main_1()
     ubuntu_sync_restricted_1()
     ubuntu_sync_universe_1()
     ubuntu_sync_multiverse_1()
+    # updates:
     ubuntu_sync_main_2()
     ubuntu_sync_restricted_2()
     ubuntu_sync_universe_2()
     ubuntu_sync_multiverse_2()
+    # backports:
     ubuntu_sync_main_3()
     ubuntu_sync_restricted_3()
     ubuntu_sync_universe_3()
     ubuntu_sync_multiverse_3()
+    # security:
     ubuntu_sync_main_4()
     ubuntu_sync_restricted_4()
     ubuntu_sync_universe_4()
@@ -245,7 +252,7 @@ def ubuntu_repo() -> None:
     PORT = ubunturepo_PORT
     cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/ubuntu-repo/{base}:{ubuntu}"
     sh___(cmd.format(**locals()))
-    for main in ["main", "restricted", "universe", "multivers"]:
+    for main in REPOS:
         sh___("{docker} rm --force {cname}".format(**locals()))
         sh___("{docker} run --name={cname} --detach {imagesrepo}/ubuntu-repo/{base}:{ubuntu} sleep 9999".format(**locals()))
         for dist in [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]:
@@ -399,9 +406,13 @@ if __name__ == "__main__":
                   help="use other docker exe or podman [%default]")
     _o.add_option("-V", "--ver", metavar="NUM", default=UBUNTU,
                   help="use other ubuntu version [%default]")
-    _o.add_option("-u", "--universe", action="store_true", default=False,
+    _o.add_option("-m", "--main", action="store_true", default=False,
+                  help="only sync main packages [%default]")
+    _o.add_option("-u", "--updates", action="store_true", default=False,
+                  help="only main and updates packages [%default]")
+    _o.add_option("-U", "--universe", action="store_true", default=False,
                   help="include universe packages [%default]")
-    _o.add_option("-m", "--multiverse", action="store_true", default=False,
+    _o.add_option("-M", "--multiverse", action="store_true", default=False,
                   help="include all packages [%default]")
     _o.add_option("-c", "--config", metavar="NAME=VAL", action="append", default=[],
                   help="override globals (REPODIR, REPODATADIRS, IMAGESREPO)")
@@ -410,10 +421,14 @@ if __name__ == "__main__":
     config_globals(opt.config)
     DOCKER = opt.docker
     UBUNTU_set(opt.ver)
+    if opt.main:
+        REPOS = MAIN_REPOS
+    if opt.updates:
+        REPOS = UPDATES_REPOS  # this is the default
     if opt.universe:
-        REPOS = UNI_REPOS
+        REPOS = UNIVERSE_REPOS  # includes restricted-repos
     if opt.multiverse:
-        REPOS = ALL_REPOS
+        REPOS = MULTIVERSE_REPOS
     #
     if not args: args = ["make"]
     for arg in args:
