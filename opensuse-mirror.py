@@ -173,10 +173,10 @@ def opensuse_games(suffix: str = "") -> None:
     games: Dict[str, str] = {}
     leap = LEAP
     dirname = "opensuse.{leap}{suffix}".format(**locals())
-    repodir = dirname + "/."
-    logg.info("check %s", repodir)
-    if path.isdir(repodir):
-        for dirpath, dirnames, filenames in os.walk(repodir):
+    basedir = dirname + "/."
+    logg.info("check %s", basedir)
+    if path.isdir(basedir):
+        for dirpath, dirnames, filenames in os.walk(basedir):
             for filename in filenames:
                 if filename.endswith(".rpm"):
                     rpm = path.join(dirpath, filename)
@@ -234,7 +234,7 @@ def opensuse_repo() -> None:
         sh___("{docker} run --name={cname} --detach {imagesrepo}/opensuse-repo/{base}:{leap} sleep 9999".format(**locals()))
         clean: Dict[str, str] = {}
         for subdir in dists[dist]:
-            repodir = "opensuse.{leap}/.".format(**locals())
+            basedir = "opensuse.{leap}/.".format(**locals())
             pooldir = "opensuse.{leap}/{subdir}".format(**locals())
             if subdir.startswith("-"):
                 gamesfile = "opensuse.{leap}{subdir}.json".format(**locals())
@@ -243,10 +243,10 @@ def opensuse_repo() -> None:
                     continue
                 logg.info("loaded %s files from %s", len(clean), gamesfile)
                 remove: Dict[str, str] = {}
-                for dirpath, dirfiles, filenames in os.walk(repodir):
+                for dirpath, dirfiles, filenames in os.walk(basedir):
                     for filename in filenames:
                         if filename in clean:
-                            repopath = dirpath.replace(repodir, "/srv/repo")
+                            repopath = dirpath.replace(basedir, "/srv/repo")
                             filepath = path.join(repopath, filename)
                             remove[filepath] = filename
                 logg.info("removing %s files from %s", len(remove), subdir)
