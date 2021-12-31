@@ -27,7 +27,7 @@ if sys.version[0] == '3':
 
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
-REPODIR = os.environ.get("REPODIR", ".")
+REPODIR = os.environ.get("REPODIR", "repo.d")
 
 DATADIRS = [REPODATADIR,
             "/srv/docker-mirror-packages",
@@ -127,33 +127,34 @@ def ubuntu_sync() -> None:
     ubuntu_sync_universe_4()
     ubuntu_sync_multiverse_4()
 
-def ubuntu_dir() -> None:
+def ubuntu_dir(suffix: str = "") -> str:
     ubuntu = UBUNTU
     repodir = REPODIR
-    dirname = "{repodir}/ubuntu.{ubuntu}".format(**locals())
-    if path.isdir(dirname):
-        if path.islink(dirname):
-            os.unlink(dirname)
-        else:
-            shutil.rmtree(dirname)  # local dir
+    dirname = "ubuntu.{ubuntu}{suffix}".format(**locals())
+    dirlink = path.join(repodir, dirname)
     if not path.isdir(repodir):
-        os.makedirs(repodir)
-    # we want to put the mirror data on an external disk
-    for data in reversed(DATADIRS):
-        logg.debug(".. check %s", data)
-        if path.isdir(data):
-            dirpath = path.join(data, dirname)
-            if not path.isdir(dirpath):
-                os.makedirs(dirpath)
-            os.symlink(dirpath, dirname)
-            break
-    dircheck = path.join(dirname, ".")
+        os.mkdir(repodir)
+    if path.islink(dirlink) and not path.isdir(dirlink):
+        os.unlink(dirlink)
+    if not path.islink(dirlink):
+        if path.isdir(dirlink):
+            shutil.rmtree(dirlink)  # local dir
+        # we want to put the mirror data on an external disk
+        for data in reversed(DATADIRS):
+            logg.debug(".. check %s", data)
+            if path.isdir(data):
+                dirpath = path.join(data, dirname)
+                if not path.isdir(dirpath):
+                    os.makedirs(dirpath)
+                os.symlink(dirpath, dirlink)
+                break
+    dircheck = path.join(dirlink, ".")
     if path.isdir(dircheck):
-        logg.info("%s -> %s", dirname, dirpath)
+        logg.info("%s -> %s", dirlink, os.readlink(dirlink))
     else:
         os.mkdir(dirname)  # local dir
-        logg.warning("%s/. local dir", dirname)
-
+        logg.warning("%s/. local dir", dirlink)
+    return dirlink
 
 def ubuntu_sync_base_1() -> None: ubuntu_sync_base(dist=DIST[UBUNTU])
 def ubuntu_sync_base_2() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-updates")
