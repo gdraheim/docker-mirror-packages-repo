@@ -30,7 +30,7 @@ if sys.version[0] == '3':
 
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
-REPODIR = os.environ.get("REPODIR", ".")
+REPODIR = os.environ.get("REPODIR", "repo.d")
 
 DATADIRS = [REPODATADIR,
             "/srv/docker-mirror-packages",
@@ -56,6 +56,7 @@ RSYNC_SUSE3 = "rsync://mirror.cs.upb.de/opensuse"
 RSYNC = "rsync"
 DOCKER = "docker"
 LAYER = "base"
+RETRY = 3
 
 BASEVERSION: Dict[str, str] = {}
 BASEVERSION["15.4"] = "15.3"  # image:opensuse/base
@@ -75,28 +76,31 @@ def opensuse_sync() -> None:
 def opensuse_dir(suffix: str = "") -> str:
     leap = LEAP
     repodir = REPODIR
-    dirname = "{repodir}/opensuse.{leap}{suffix}".format(**locals())
-    if path.isdir(dirname):
-        if path.islink(dirname):
-            os.unlink(dirname)
-        else:
-            shutil.rmtree(dirname)  # local dir
-    # we want to put the mirror data on an external disk
-    for data in reversed(DATADIRS):
-        logg.debug(".. check %s", data)
-        if path.isdir(data):
-            dirpath = path.join(data, dirname)
-            if not path.isdir(dirpath):
-                os.makedirs(dirpath)
-            os.symlink(dirpath, dirname)
-            break
-    dircheck = path.join(dirname, ".")
+    dirname = "opensuse.{leap}{suffix}".format(**locals())
+    dirlink = path.join(repodir, dirname)
+    if not path.isdir(repodir):
+        os.mkdir(repodir)
+    if path.islink(dirlink) and not path.isdir(dirlink):
+        os.unlink(dirlink)
+    if not path.islink(dirlink):
+        if path.isdir(dirlink):
+            shutil.rmtree(dirlink)  # local dir
+        # we want to put the mirror data on an external disk
+        for data in reversed(DATADIRS):
+            logg.debug(".. check %s", data)
+            if path.isdir(data):
+                dirpath = path.join(data, dirname)
+                if not path.isdir(dirpath):
+                    os.makedirs(dirpath)
+                os.symlink(dirpath, dirlink)
+                break
+    dircheck = path.join(dirlink, ".")
     if path.isdir(dircheck):
-        logg.info("%s -> %s", dirname, dirpath)
+        logg.info("%s -> %s", dirlink, os.readlink(dirlink))
     else:
         os.mkdir(dirname)  # local dir
-        logg.warning("%s/. local dir", dirname)
-    return dirname
+        logg.warning("%s/. local dir", dirlink)
+    return dirlink
 
 def opensuse_save() -> None:
     yymmdd = datetime.date.today().strftime("%Y.%m%d")
@@ -127,51 +131,57 @@ skipdirs = [
     "aarch64", "s390x", "ppc", "ppc64le", ]
 
 def opensuse_sync_1() -> None:
-    leap = LEAP
-    repodir = REPODIR
-    mirror = RSYNC_SUSE
-    rsync = RSYNC
-    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
-    excludes += """ --size-only --filter="exclude *.src.rpm" """
-    leaprepo = "{repodir}/opensuse.{leap}/distribution/leap/{leap}/repo".format(**locals())
-    if not path.isdir(leaprepo): os.makedirs(leaprepo)
-    sh___("{rsync} -rv {mirror}/distribution/leap/{leap}/repo/oss {leaprepo}/ {excludes}".format(**locals()))
-
+    opensuse_sync_repo_("distribution", "oss")
 def opensuse_sync_2() -> None:
-    leap = LEAP
-    repodir = REPODIR
-    mirror = RSYNC_SUSE
-    rsync = RSYNC
-    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
-    excludes += """  --filter="exclude x86_64" --filter="exclude noarch"  """
-    excludes += """ --size-only --filter="exclude *.src.rpm" """
-    leaprepo = "{repodir}/opensuse.{leap}/distribution/leap/{leap}/repo".format(**locals())
-    if not path.isdir(leaprepo): os.makedirs(leaprepo)
-    sh___("{rsync} -rv {mirror}/distribution/leap/{leap}/repo/non-oss {leaprepo}/ {excludes}".format(**locals()))
-
+    opensuse_sync_repo_("distribution", "non-oss")
 def opensuse_sync_3() -> None:
-    leap = LEAP
-    repodir = REPODIR
-    mirror = RSYNC_SUSE
-    rsync = RSYNC
-    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
-    excludes += """ --size-only --filter="exclude *.src.rpm" """
-    leaprepo = "{repodir}/opensuse.{leap}/update/leap/{leap}".format(**locals())
-    if not path.isdir(leaprepo): os.makedirs(leaprepo)
-    sh___("{rsync} -rv {mirror}/update/leap/{leap}/oss {leaprepo}/ {excludes}".format(**locals()))
-
+    opensuse_sync_pack_("update", "non-oss")
 def opensuse_sync_4() -> None:
+    opensuse_sync_pack_("update", "non-oss", ["x86_64", "noarch", "strc", "nosrc"])
+
+def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
     leap = LEAP
     repodir = REPODIR
     mirror = RSYNC_SUSE
     rsync = RSYNC
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
-    excludes += """  --filter="exclude x86_64" --filter="exclude noarch"  """
-    excludes += """  --filter="exclude strc" --filter="exclude nosrc"  """
+    excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
     excludes += """ --size-only --filter="exclude *.src.rpm" """
-    leaprepo = "{repodir}/opensuse.{leap}/update/leap/{leap}".format(**locals())
+    leaprepo = "{repodir}/opensuse.{leap}/{dist}/leap/{leap}/repo".format(**locals())
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
-    sh___("{rsync} -rv {mirror}/update/leap/{leap}/non-oss {leaprepo}/ {excludes}".format(**locals()))
+    cmd = "{rsync} -rv {mirror}/{dist}/leap/{leap}/repo/{repo} {leaprepo}/ {excludes}".format(**locals())
+    ## sh___(cmd):
+    logfile = "{repodir}/opensuse.{leap}.log".format(**locals())
+    for attempt in xrange(RETRY):
+        try:
+            sh___("set -o pipefail ; {cmd} |& tee {logfile}".format(**locals()))
+        except subprocess.CalledProcessError as e:
+            logg.warning("[%s] %s", e.retcode, cmd)
+            raise
+
+def opensuse_sync_pack_(dist: str, repo: str, filters: List[str] = []) -> None:
+    leap = LEAP
+    repodir = REPODIR
+    mirror = RSYNC_SUSE
+    rsync = RSYNC
+    excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
+    excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
+    excludes += """ --size-only --filter="exclude *.src.rpm" """
+    leaprepo = "{repodir}/opensuse.{leap}/{dist}/leap/{leap}".format(**locals())
+    if not path.isdir(leaprepo): os.makedirs(leaprepo)
+    cmd = "{rsync} -rv {mirror}/{dist}/leap/{leap}/{repo} {leaprepo}/ {excludes}".format(**locals())
+    ## sh___(cmd):
+    logfile = "{repodir}/opensuse.{leap}.log".format(**locals())
+    for attempt in xrange(RETRY):
+        try:
+            sh___("set -o pipefail ; {cmd} |& tee {logfile}".format(**locals()))
+        except subprocess.CalledProcessError as e:
+            logg.warning("[%s] %s", e.returncode, cmd)
+            log = open(logfile).read()
+            if "No such file or directory" in log:
+                logg.info("OK - no updates yet")
+                break
+            raise
 
 # /etc/zypp/repos.d/oss-update.repo:baseurl=http://download.opensuse.org/update/42.2/
 # /etc/zypp/repos.d/update-non-oss.repo:baseurl=http://download.opensuse.org/update/leap/42.2/non-oss/
