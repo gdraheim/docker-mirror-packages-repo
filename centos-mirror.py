@@ -31,7 +31,7 @@ if sys.version[0] == '3':
 
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
-REPODIR = os.environ.get("REPODIR", ".")
+REPODIR = os.environ.get("REPODIR", "repo.d")
 
 DATADIRS = [REPODATADIR,
             "/srv/docker-mirror-packages",
@@ -147,55 +147,63 @@ def centos_sync() -> None:
             sync_subdir(subdir)
             logg.info("DONE [{base}] /{subdir}".format(**locals()))
 
-def centos_dir() -> None:
+def centos_dir(suffix: str = "") -> None:
     centos = CENTOS
     repodir = REPODIR
-    dirname = "{repodir}/centos.{centos}".format(**locals())
-    if path.isdir(dirname):
-        if path.islink(dirname):
-            os.unlink(dirname)
-        else:
-            shutil.rmtree(dirname)  # local dir
-    # we want to put the mirror data on an external disk
-    for data in reversed(DATADIRS):
-        logg.debug(".. check %s", data)
-        if path.isdir(data):
-            dirpath = path.join(data, dirname)
-            if not path.isdir(dirpath):
-                os.makedirs(dirpath)
-            os.symlink(dirpath, dirname)
-            break
-    dircheck = path.join(dirname, ".")
+    dirname = "centos.{centos}{suffix}".format(**locals())
+    dirlink = path.join(repodir, dirname)
+    if not path.isdir(repodir):
+        os.mkdir(repodir)
+    if path.islink(dirlink) and not path.isdir(dirlink):
+        os.unlink(dirlink)
+    if not path.islink(dirlink):
+        if path.isdir(dirlink):
+            shutil.rmtree(dirlink)  # local dir
+        # we want to put the mirror data on an external disk
+        for data in reversed(DATADIRS):
+            logg.debug(".. check %s", data)
+            if path.isdir(data):
+                dirpath = path.join(data, dirname)
+                if not path.isdir(dirpath):
+                    os.makedirs(dirpath)
+                os.symlink(dirpath, dirlink)
+                break
+    dircheck = path.join(dirlink, ".")
     if path.isdir(dircheck):
-        logg.info("%s -> %s", dirname, dirpath)
+        logg.info("%s -> %s", dirlink, os.readlink(dirlink))
     else:
         os.mkdir(dirname)  # local dir
-        logg.warning("%s/. local dir", dirname)
+        logg.warning("%s/. local dir", dirlink)
+    return dirlink
 
-def centos_epeldir() -> None:
+def centos_epeldir(suffix: str = "") -> str:
     centos = CENTOS
     epel = major(centos)
-    dirname = "epel.{epel}".format(**locals())
-    if path.isdir(dirname):
-        if path.islink(dirname):
-            os.unlink(dirname)
-        else:
-            shutil.rmtree(dirname)  # local dir
-    # we want to put the mirror data on an external disk
-    for data in reversed(DATADIRS):
-        logg.debug(".. check %s", data)
-        if path.isdir(data):
-            dirpath = path.join(data, dirname)
-            if not path.isdir(dirpath):
-                os.makedirs(dirpath)
-            os.symlink(dirpath, dirname)
-            break
-    dircheck = path.join(dirname, ".")
+    dirname = "epel.{epel}{suffix}".format(**locals())
+    dirlink = path.join(repodir, dirname)
+    if not path.isdir(repodir):
+        os.mkdir(repodir)
+    if path.islink(dirlink) and not path.isdir(dirlink):
+        os.unlink(dirlink)
+    if not path.islink(dirlink):
+        if path.isdir(dirlink):
+            shutil.rmtree(dirlink)  # local dir
+        # we want to put the mirror data on an external disk
+        for data in reversed(DATADIRS):
+            logg.debug(".. check %s", data)
+            if path.isdir(data):
+                dirpath = path.join(data, dirname)
+                if not path.isdir(dirpath):
+                    os.makedirs(dirpath)
+                os.symlink(dirpath, dirlink)
+                break
+    dircheck = path.join(dirlink, ".")
     if path.isdir(dircheck):
-        logg.info("%s -> %s", dirname, dirpath)
+        logg.info("%s -> %s", dirlink, os.readlink(dirlink))
     else:
         os.mkdir(dirname)  # local dir
-        logg.warning("%s/. local dir", dirname)
+        logg.warning("%s/. local dir", dirlink)
+    return dirlink
 
 CENTOS_XXX = " ".join([
     "--exclude ppc64le",
