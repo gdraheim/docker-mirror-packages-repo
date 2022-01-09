@@ -156,7 +156,7 @@ def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
         try:
             sh___("set -o pipefail ; {cmd} |& tee {logfile}".format(**locals()))
         except subprocess.CalledProcessError as e:
-            logg.warning("[%s] %s", e.retcode, cmd)
+            logg.warning("[%s] %s", e.returncode, cmd)
             raise
 
 def opensuse_sync_pack_(dist: str, repo: str, filters: List[str] = []) -> None:
