@@ -660,7 +660,7 @@ if __name__ == "__main__":
     command = "detect"
     repo = DockerMirrorPackagesRepo()
     if not opt.image and opt.file:
-       opt.image = repo.from_dockerfile(opt.file)
+        opt.image = repo.from_dockerfile(opt.file)
     if opt.command in ["?", "help"]:
         print(repo.helps())
     elif opt.command in ["detect", "image"]:
