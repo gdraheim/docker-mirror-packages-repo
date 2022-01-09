@@ -626,6 +626,14 @@ class DockerMirrorPackagesRepo:
             return " ".join(self.add_hosts(image, done))
         else:
             return json.dumps(done, indent=2)
+    def from_dockerfile(self, dockerfile, defaults=None):
+        if os.path.isdir(dockerfile):
+            dockerfile = os.path.join(dockerfile, "Dockerfile")
+        for line in open(dockerfile):
+            found = re.match(r"(?:FROM|from)\s+(\w\S+)(.*)", line)
+            if found:
+                return found.group(1)
+        return defaults
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
@@ -639,6 +647,8 @@ if __name__ == "__main__":
                     help="addhosts for epel as well [%(default)s]")
     _o.add_argument("--universe", action="store_true", default=UNIVERSE,
                     help="addhosts using universe variant [%(default)s]")
+    _o.add_argument("-f", "--file", metavar="DOCKERFILE", default=None,
+                    help="default to image FROM the dockerfile [%(default)s]")
     commands = ["help", "detect", "image", "repo", "info", "facts", "start", "stop"]
     _o.add_argument("command", nargs="?", default="detect", help="|".join(commands))
     _o.add_argument("image", nargs="?", default=None, help="defaults to image name of the local host system")
@@ -649,6 +659,8 @@ if __name__ == "__main__":
     UNIVERSE = opt.universe  # ubuntu universe repo
     command = "detect"
     repo = DockerMirrorPackagesRepo()
+    if not opt.image and opt.file:
+       opt.image = repo.from_dockerfile(opt.file)
     if opt.command in ["?", "help"]:
         print(repo.helps())
     elif opt.command in ["detect", "image"]:
