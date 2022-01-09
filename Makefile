@@ -71,7 +71,7 @@ type.e:
 
 AUTOPEP8=autopep8
 pep style: 
-	$(MAKE) pep.di pep.si pep.d pep.r pep.s 
+	$(MAKE) pep.d pep.di pep.dd pep.r pep.s pep.si
 pep.d style.d pep.d.apply style.d.apply:
 	$(AUTOPEP8) docker_mirror.py --in-place
 	git --no-pager diff docker_mirror.py
@@ -87,3 +87,6 @@ pep.s style.s pep.s.apply style.s.apply:
 pep.si style.si pep.si.apply style.si.apply:
 	$(AUTOPEP8) scripts/*.pyi --in-place
 	git --no-pager diff scripts/*.pyi
+pep.dd style.dd pep.dd.apply style.dd.apply:
+	$(AUTOPEP8) docker_mirror.py --in-place
+	git --no-pager diff dockerdir.py
