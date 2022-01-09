@@ -64,9 +64,9 @@ DIST["12.04"] = "precise"  # Precise Pangolin
 # in 2020 all projects had moved to 16.04/18.04 (dropped 14.04)
 
 MAIN_REPOS = ["main"]
-UPDATES_REPOS = ["main", "updates"]
-UNIVERSE_REPOS = ["main", "updates", "restricted", "universe"]
-MULTIVERSE_REPOS = ["main", "updates", "restricted", "universe", "multiverse"]
+UPDATES_REPOS = ["main", "restricted"]
+UNIVERSE_REPOS = ["main", "restricted", "universe"]
+MULTIVERSE_REPOS = ["main", "restricted", "universe", "multiverse"]
 AREAS = {"1": "", "2": "-updates", "3": "-backports", "4": "-security"}
 
 REPOS = UPDATES_REPOS
@@ -272,7 +272,7 @@ def ubuntu_repo() -> None:
         for dist in [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]:
             pooldir = "{repodir}/ubuntu.{ubuntu}/pools/{dist}/{main}/pool".format(**locals())
             if path.isdir(pooldir):
-                sh___("{docker} cp {pooldir}  {cname}:/srv/repo/ubuntu/pool".format(**locals()))
+                sh___("{docker} cp {pooldir}  {cname}:/srv/repo/ubuntu/".format(**locals()))
                 base = main
         if base == main:
             cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/ubuntu-repo/{base}:{ubuntu}"
