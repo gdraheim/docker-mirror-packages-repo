@@ -147,7 +147,7 @@ def centos_sync() -> None:
             sync_subdir(subdir)
             logg.info("DONE [{base}] /{subdir}".format(**locals()))
 
-def centos_dir(suffix: str = "") -> None:
+def centos_dir(suffix: str = "") -> str:
     centos = CENTOS
     repodir = REPODIR
     dirname = "centos.{centos}{suffix}".format(**locals())
@@ -178,6 +178,7 @@ def centos_dir(suffix: str = "") -> None:
 
 def centos_epeldir(suffix: str = "") -> str:
     centos = CENTOS
+    repodir = REPODIR
     epel = major(centos)
     dirname = "epel.{epel}{suffix}".format(**locals())
     dirlink = path.join(repodir, dirname)
