@@ -56,6 +56,10 @@ type.d:
 	$(PYTHON3) $(PY_RETYPE)/retype.py docker_mirror.py -t docker_mirror.tmp -p .
 	$(MYPY) $(MYPY_STRICT) docker_mirror.tmp/docker_mirror.py
 	- rm -rf .mypy_cache
+type.dd:
+	$(PYTHON3) $(PY_RETYPE)/retype.py dockerdir.py -t docker_mirror.tmp -p .
+	$(MYPY) $(MYPY_STRICT) docker_mirror.tmp/dockerdir.py
+	- rm -rf .mypy_cache
 type.f:
 	$(PYTHON3) $(PY_RETYPE)/retype.py scripts/filelist.py -t scripts.tmp -p scripts
 	$(MYPY) $(MYPY_STRICT) scripts.tmp/filelist.py
