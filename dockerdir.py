@@ -1,5 +1,4 @@
 #! /usr/bin/python3
-from optparse import OptionParser
 from __future__ import print_function
 from __future__ import division
 
@@ -50,6 +49,7 @@ import os
 from os import path
 import subprocess
 import shutil
+from optparse import OptionParser
 import logging
 logg = logging.getLogger("dockerdir")
 HINT = (logging.INFO + logging.DEBUG) // 2

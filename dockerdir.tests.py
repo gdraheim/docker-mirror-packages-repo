@@ -4,6 +4,7 @@
    (so that "./testsuite.py -v test_107" will run the tests from test_1070 to test_1079).
 """
 
+from typing import Union, Optional, List, cast
 import unittest
 import sys, os
 import subprocess
@@ -16,21 +17,17 @@ logg = logging.getLogger("TEST")
 PYTHON = "python3"
 SCRIPT = "dockerdir.py"
 
-if sys.version[0] == '2':
-    string_types = basestring
-    BlockingIOError = IOError
-else:
-    string_types = str
-    xrange = range
+string_types = str
+xrange = range
 
-def make_file(name, content):
+def make_file(name: str, content: str) -> None:
     with open(name, "w") as f:
         f.write(content)
-def drop_file(name):
+def drop_file(name: str) -> None:
     if os.path.exists(name):
         os.remove(name)
 
-def decodes(text):
+def decodes(text: Union[str, bytes]) -> str:
     if text is None: return None
     if isinstance(text, bytes):
         encoded = sys.getdefaultencoding()
@@ -41,19 +38,19 @@ def decodes(text):
         except:
             return text.decode("latin-1")
     return text
-def sh____(cmd, shell=True):
+def sh____(cmd: Union[str, List[str]], shell:bool=True) -> int:
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
     else:    
         logg.debug(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.check_call(cmd, shell=shell)
-def sx____(cmd, shell=True):
+def sx____(cmd: Union[str, List[str]], shell:bool=True) -> int:
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
     else:    
         logg.debug(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.call(cmd, shell=shell)
-def output(cmd, shell=True):
+def output(cmd: Union[str, List[str]], shell:bool=True) -> str:
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
     else:    
@@ -96,15 +93,15 @@ class DockerDirScriptsTest(unittest.TestCase):
         x2 = name.find("_", x1+1)
         if x2 < 0: return name
         return name[:x2]
-    def testname(self, suffix = None) -> str:
+    def testname(self, suffix: Optional[str] = None) -> str:
         name = self.caller_testname()
         if suffix:
             return name + "_" + suffix
         return name
-    def test_001_hello(self):
+    def test_001_hello(self) -> None:
         print("... starting the testsuite ...")
         logg.info("starting the testsuite ...")
-    def test_100(self):
+    def test_100(self) -> None:
         python = PYTHON
         script = SCRIPT
         testname = self.testname()

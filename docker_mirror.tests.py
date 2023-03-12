@@ -9,6 +9,7 @@ __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.6.5107"
 
+from typing import Union, Optional, List, cast
 import sys
 import subprocess
 import collections
@@ -20,12 +21,8 @@ from fnmatch import fnmatchcase as fnmatch
 import logging
 logg = logging.getLogger("TESTSUITE")
 
-if sys.version[0] == '2':
-    string_types = basestring
-    BlockingIOError = IOError
-else:
-    string_types = str
-    xrange = range
+string_types = str
+xrange = range
 
 KEEP=False
 PREFIX="localhost:5000/mirror-packages"
@@ -36,7 +33,7 @@ MR151 = True # modify repos of opensuse/leap:15.1
 
 _docker_mirror = "./docker_mirror.py"
 
-def decodes(text):
+def decodes(text: Union[str, bytes]) -> str:
     if text is None: return None
     if isinstance(text, bytes):
         encoded = sys.getdefaultencoding()
@@ -47,19 +44,19 @@ def decodes(text):
         except:
             return text.decode("latin-1")
     return text
-def sh____(cmd, shell=True):
+def sh____(cmd: Union[str, List[str]], shell:bool=True) -> int:
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
     else:    
         logg.debug(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.check_call(cmd, shell=shell)
-def sx____(cmd, shell=True):
+def sx____(cmd: Union[str, List[str]], shell:bool=True) -> int:
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
     else:    
         logg.debug(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.call(cmd, shell=shell)
-def output(cmd, shell=True):
+def output(cmd: Union[str, List[str]], shell:bool=True) -> str:
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
     else:    
@@ -67,32 +64,33 @@ def output(cmd, shell=True):
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
     return decodes(out)
-def runs(cmd, shell=True):
+
+_subprocess = collections.namedtuple("_subprocess", ["out", "err", "rc"])
+def runs(cmd: Union[str, List[str]], shell:bool=True) -> _subprocess:
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
     else:    
         logg.debug(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = run.communicate()
-    _subprocess = collections.namedtuple("_subprocess", ["out", "err", "rc"])
     return _subprocess(decodes(out), decodes(err), run.returncode)
     # return _subprocess(decodes(out.read()), decodes(err.read()), run.returncode)
 
-def ip_container(name):
+def ip_container(name: str) -> Optional[str]:
     docker = DOCKER
     cmd = "{docker} inspect {name}"
     proc = runs(cmd.format(**locals()))
     if proc.rc: 
         logg.debug("%s not found: rc=%i\n\t%s", name, proc.rc, proc.err)
-        return 0
+        return None
     values = json.loads(proc.out)
     if not values or "NetworkSettings" not in values[0]:
         cmd_run = cmd.format(**locals())
         logg.critical(" %s => %s ", cmd, values)
-    return values[0]["NetworkSettings"]["IPAddress"]
-def image_exist(name):
+    return cast(str, values[0]["NetworkSettings"]["IPAddress"])
+def image_exist(name: str) -> Optional[str]:
     return image_exists("", name)
-def image_exists(prefix, name):
+def image_exists(prefix: Optional[str], name: str) -> Optional[str]:
     docker = DOCKER
     name = name.strip()
     if prefix:
@@ -105,20 +103,20 @@ def image_exists(prefix, name):
     values = json.loads(proc.out)
     if not values or "Container" not in values[0]:
         return None
-    return values[0]["Container"]
-def make_file(name, content):
+    return cast(str, values[0]["Container"])
+def make_file(name: str, content: str) -> None:
     with open(name, "w") as f:
         f.write(content)
-def drop_file(name):
+def drop_file(name: str) -> None:
     if os.path.exists(name):
         os.remove(name)
     
 
 class DockerMirrorPackagesTest(unittest.TestCase):
-    def test_0001_hello(self):
+    def test_0001_hello(self) -> None:
         print("... starting the testsuite ...")
         logg.info("starting the testsuite ...")
-    def test_1073_centos(self):
+    def test_1073_centos(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "centos-repo:7.3.1611"
@@ -134,7 +132,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1074_centos(self):
+    def test_1074_centos(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "centos-repo:7.4.1708"
@@ -150,7 +148,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1075_centos(self):
+    def test_1075_centos(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "centos-repo:7.5.1804"
@@ -166,7 +164,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1076_centos(self):
+    def test_1076_centos(self) -> None:
         prefix = PREFIX
         repo_image = "centos-repo:7.6.1810"
         box1_image = "centos:7.6.1810"
@@ -181,7 +179,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1077_centos(self):
+    def test_1077_centos(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "centos-repo:7.7.1908"
@@ -197,7 +195,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1079_centos(self):
+    def test_1079_centos(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "centos-repo:7.9.2009"
@@ -213,7 +211,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1080_centos(self):
+    def test_1080_centos(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "centos-repo:8.0.1905"
@@ -230,7 +228,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1081_centos(self):
+    def test_1081_centos(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "centos-repo:8.1.1911"
@@ -247,7 +245,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1083_centos(self):
+    def test_1083_centos(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "centos-repo:8.3.2011"
@@ -268,7 +266,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1142_opensuse(self):
+    def test_1142_opensuse(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "opensuse-repo:42.2"
@@ -284,7 +282,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 zypper install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1143_opensuse(self):
+    def test_1143_opensuse(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "opensuse-repo:42.3"
@@ -303,7 +301,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 zypper install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1150_opensuse(self):
+    def test_1150_opensuse(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "opensuse-repo:15.0"
@@ -319,7 +317,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 zypper install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1151_opensuse(self):
+    def test_1151_opensuse(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "opensuse-repo:15.1"
@@ -339,7 +337,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 zypper install -y python python-xml".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1152_opensuse(self):
+    def test_1152_opensuse(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "opensuse-repo:15.2"
@@ -357,7 +355,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1252_opensuse(self):
+    def test_1252_opensuse(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "opensuse-repo:15.2"
@@ -376,7 +374,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1404_ubuntu(self):
+    def test_1404_ubuntu(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "ubuntu-repo:14.04"
@@ -394,7 +392,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 apt-get install -y apache2".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1604_ubuntu(self):
+    def test_1604_ubuntu(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "ubuntu-repo:16.04"
@@ -412,7 +410,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 apt-get install -y apache2".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_1804_ubuntu(self):
+    def test_1804_ubuntu(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "ubuntu-repo:18.04"
@@ -430,7 +428,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 apt-get install -y apache2".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-    def test_2000_centos(self):
+    def test_2000_centos(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         mirrors = _docker_mirror
@@ -441,7 +439,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{mirrors} facts {base_image}".format(**locals()))
         sh____("{mirrors} start {base_image} --add-hosts".format(**locals()))
         sh____("{mirrors} stop {base_image}".format(**locals()))
-    def test_2073_centos(self):
+    def test_2073_centos(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "centos:7.3.1611"
@@ -455,7 +453,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_2074_centos(self):
+    def test_2074_centos(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "centos:7.4.1708"
@@ -469,7 +467,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_2075_centos(self):
+    def test_2075_centos(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "centos:7.5.1804"
@@ -483,7 +481,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_2076_centos(self):
+    def test_2076_centos(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "centos:7.6.1810"
@@ -497,7 +495,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_2077_centos(self):
+    def test_2077_centos(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "centos:7.7.1908"
@@ -511,7 +509,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_2080_centos(self):
+    def test_2080_centos(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "centos:8.0.1905"
@@ -526,7 +524,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_2081_centos(self):
+    def test_2081_centos(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "centos:8.1.1911"
@@ -541,7 +539,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_2083_centos(self):
+    def test_2083_centos(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "centos:8.3.2011"
@@ -557,7 +555,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         if not KEEP:
             sx____("{docker} rm -f test-box1".format(**locals()))
             sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_2142_opensuse(self):
+    def test_2142_opensuse(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "opensuse:42.2"
@@ -571,7 +569,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 zypper install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_2143_opensuse(self):
+    def test_2143_opensuse(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "opensuse:42.3"
@@ -588,7 +586,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 zypper install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_2150_opensuse(self):
+    def test_2150_opensuse(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "opensuse/leap:15.0"
@@ -602,7 +600,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 zypper install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_2151_opensuse(self):
+    def test_2151_opensuse(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "opensuse/leap:15.1"
@@ -620,7 +618,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 zypper install -y python python-xml".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_2152_opensuse(self):
+    def test_2152_opensuse(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "opensuse/leap:15.2"
@@ -636,7 +634,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 zypper install -y python python-xml".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_2404_ubuntu(self):
+    def test_2404_ubuntu(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "ubuntu:14.04"
@@ -652,7 +650,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 apt-get install -y apache2".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_2604_ubuntu(self):
+    def test_2604_ubuntu(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "ubuntu:16.04"
@@ -668,7 +666,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 apt-get install -y apache2".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_2804_ubuntu(self):
+    def test_2804_ubuntu(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "ubuntu:18.04"
@@ -685,7 +683,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
 
-    def test_3007_centos(self):
+    def test_3007_centos(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         mirrors = _docker_mirror
@@ -696,7 +694,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{mirrors} repos {base_image} --epel".format(**locals()))
         sh____("{mirrors} start {base_image} --add-hosts --epel".format(**locals()))
         sh____("{mirrors} stop {base_image} --epel".format(**locals()))
-    def test_3008_centos(self):
+    def test_3008_centos(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         mirrors = _docker_mirror
@@ -708,7 +706,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{mirrors} start {base_image} --add-hosts --epel".format(**locals()))
         sh____("{mirrors} stop {base_image} --epel".format(**locals()))
     @unittest.expectedFailure
-    def test_3077_centos_epel(self):
+    def test_3077_centos_epel(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "centos:7.7.1908"
@@ -725,7 +723,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python36-flask".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_3079_centos_epel(self):
+    def test_3079_centos_epel(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "centos:7.9.2009"
@@ -742,7 +740,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python36-flask".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_3081_centos_epel(self):
+    def test_3081_centos_epel(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "centos:8.1.1911"
@@ -759,7 +757,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         if not KEEP:
             sx____("{docker} rm -f test-box1".format(**locals()))
             sh____("{mirror} stop {image} --add-host".format(**locals()))
-    def test_3083_centos_epel(self):
+    def test_3083_centos_epel(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "centos:8.3.2011"
@@ -777,7 +775,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
             sx____("{docker} rm -f test-box1".format(**locals()))
             sh____("{mirror} stop {image} --add-host".format(**locals()))
 ##
-    def test_9999_hello(self):
+    def test_9999_hello(self) -> None:
         print("... finished the testsuite ...")
         logg.info("finished the testsuite ...")
 
