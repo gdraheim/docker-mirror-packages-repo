@@ -10,7 +10,7 @@ version1:
 version:
 	@ grep -l __version__ $(VERSIONFILES) | { while read f; do : \
 	; Y=`date +%Y -d "$(FOR)"` ; X=$$(expr $$Y - $B); D=`date +%W%u -d "$(FOR)"` ; sed -i \
-	-e "/^version *=/s/[.]-*[0123456789][0123456789][0123456789]*\$$/.$$X$$D\"/" \
+	-e "/^version *=/s/[.]-*[0123456789][0123456789][0123456789]*\$$/.$$X$$D/" \
 	-e "/^version *=/s/[.]\\([0123456789]\\)\$$/.\\1.$$X$$D/" \
 	-e "/^ *__version__/s/[.]-*[0123456789][0123456789][0123456789]*\"/.$$X$$D\"/" \
 	-e "/^ *__version__/s/[.]\\([0123456789]\\)\"/.\\1.$$X$$D\"/" \
@@ -21,6 +21,7 @@ version:
 
 PYTHON2=python
 PYTHON3=python3
+TWINE=twine
 
 include centos-makefile.mk
 include opensuse-makefile.mk
@@ -30,6 +31,26 @@ include epel-makefile.mk
 K=
 test_%: ; ./testsuite.py $@ -v $K
 check: ; ./testsuite.py -vv $K
+
+####### pip setuptools
+setup.py: Makefile
+	{ echo '#!/usr/bin/env python3' \
+	; echo 'import setuptools' \
+	; echo 'setuptools.setup()' ; } > setup.py
+	chmod +x setup.py
+setup.py.tmp: Makefile
+	echo "import setuptools ; setuptools.setup()" > setup.py
+
+.PHONY: build
+build:
+	rm -rf build dist *.egg-info
+	$(MAKE) $(PARALLEL) setup.py 
+	# pip install --root=~/local . -v
+	$(PYTHON3) setup.py sdist
+	- rm -v setup.py 
+	$(TWINE) check dist/*
+	: $(TWINE) upload dist/*
+
 
 ####### retype + stubgen
 PY_RETYPE = ../retype

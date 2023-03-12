@@ -291,13 +291,14 @@ def centos_epelrepo7() -> None:
     centos = CENTOS
     epel = major(centos)
     arch = ARCH
+    scripts = repo_scripts()
     cname = "epel-repo-" + epel  # container name
     sx___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} run --name={cname} --detach centos:{centos} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/epel".format(**locals()))
     sh___("{docker} exec {cname} yum install -y openssl".format(**locals()))
-    sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
-    for script in os.listdir("scripts/."):
+    sh___("{docker} cp {scripts} {cname}:/srv/scripts".format(**locals()))
+    for script in os.listdir(f"{scripts}/."):
         sh___("{docker} exec {cname} chmod +x /srv/scripts/{script}".format(**locals()))
     #
     CMD = str(epelrepo7_CMD).replace("'", '"')
@@ -318,6 +319,7 @@ def centos_epelrepo8() -> None:
     centos = CENTOS
     epel = major(centos)
     arch = ARCH
+    scripts = repo_scripts()
     cname = "epel-repo-" + epel  # container name
     out, end = output2("./docker_mirror.py start centos:{centos} -a".format(**locals()))
     addhosts = out.strip()
@@ -325,8 +327,8 @@ def centos_epelrepo8() -> None:
     sh___("{docker} run --name={cname} {addhosts} --detach centos:{centos} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/epel/{epel}".format(**locals()))
     sh___("{docker} exec {cname} yum install -y openssl".format(**locals()))
-    sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
-    # for script in os.listdir("scripts/."):
+    sh___("{docker} cp {scripts} {cname}:/srv/scripts".format(**locals()))
+    # for script in os.listdir(f"{scripts}/."):
     #    sh___("{docker} exec {cname} sed -i s:/usr/bin/python:/usr/libexec/platform-python: /srv/scripts/{script}".format(**locals()))
     #    sh___("{docker} exec {cname} chmod +x /srv/scripts/{script}".format(**locals()))
     base = "base"
@@ -394,11 +396,12 @@ def centos_repo7() -> None:
     baseversion = centos
     if baseversion in BASEVERSION:
         baseversion = BASEVERSION[baseversion]
+    scripts = repo_scripts()
     cname = "centos-repo-" + centos  # container name
     sx___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} run --name={cname} --detach centos:{baseversion} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/7".format(**locals()))
-    sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
+    sh___("{docker} cp {scripts} {cname}:/srv/scripts".format(**locals()))
     base = "base"
     CMD = str(centosrepo7_CMD).replace("'", '"')
     PORT = centosrepo7_PORT
@@ -431,11 +434,12 @@ def centos_repo8() -> None:
     version = centos
     if centos in BASEVERSION:
         version = BASEVERSION[centos]
+    scripts = repo_scripts()
     cname = "centos-repo-" + centos  # container name
     sx___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} run --name={cname} --detach centos:{version} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/8".format(**locals()))
-    sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
+    sh___("{docker} cp {scripts} {cname}:/srv/scripts".format(**locals()))
     base = "base"
     CMD = str(centosrepo8_CMD).replace("'", '"')
     PORT = centosrepo8_PORT
@@ -521,6 +525,20 @@ def centos_check() -> None:
         if not found:
             print("?? {f}.rpm".format(**locals()))
     sh___("{docker} rm --force {cname}".format(**locals()))
+
+def centos_scripts() -> None:
+    print(repo_scripts())
+def repo_scripts() -> str:
+    me = os.path.dirname(sys.argv[0])
+    dn = os.path.join(me, "scripts")
+    if os.path.isdir(dn): return dn
+    dn = os.path.join(me, "docker_mirror/scripts")
+    if os.path.isdir(dn): return dn
+    dn = os.path.join(me, "../docker_mirror/scripts")
+    if os.path.isdir(dn): return dn
+    dn = os.path.join(me, "../share/docker_mirror/scripts")
+    if os.path.isdir(dn): return dn
+    return "scripts"
 
 #############################################################################
 
@@ -635,7 +653,6 @@ def config_globals(settings: List[str]) -> None:
                 logg.warning("(ignored) unknown target type -c '{nam}' : {nam_type}".format(**locals()))
         else:
             logg.warning("(ignored) unknown target config -c '{nam}' : no such variable".format(**locals()))
-
 
 if __name__ == "__main__":
     from optparse import OptionParser

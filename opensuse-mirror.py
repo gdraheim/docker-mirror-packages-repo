@@ -221,6 +221,7 @@ def opensuse_repo() -> None:
     baseversion = leap
     if baseversion in BASEVERSION:
         baseversion = BASEVERSION[baseversion]
+    scripts = repo_scripts()
     cname = "opensuse-repo-" + leap
     image = BASE[LEAP]
     imagesrepo = IMAGESREPO
@@ -233,7 +234,7 @@ def opensuse_repo() -> None:
     sx___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} run --name={cname} {bind_repo} --detach {image}:{baseversion} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/".format(**locals()))
-    sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
+    sh___("{docker} cp {scripts} {cname}:/srv/scripts".format(**locals()))
     oss = "repo-oss"  # Opensuse 15.x main repo
     if bind_repo:
         oss = "local-repo"
@@ -304,6 +305,20 @@ def opensuse_test() -> None:
     # docker-compose -p $@ -f opensuse-compose.yml.tmp up -d
     # docker exec $@_host_1 zypper install -y firefox
     # docker-compose -p $@ -f opensuse-compose.yml.tmp down
+
+def opensuse_scripts() -> None:
+    print(repo_scripts())
+def repo_scripts() -> str:
+    me = os.path.dirname(sys.argv[0])
+    dn = os.path.join(me, "scripts")
+    if os.path.isdir(dn): return dn
+    dn = os.path.join(me, "docker_mirror/scripts")
+    if os.path.isdir(dn): return dn
+    dn = os.path.join(me, "../docker_mirror/scripts")
+    if os.path.isdir(dn): return dn
+    dn = os.path.join(me, "../share/docker_mirror/scripts")
+    if os.path.isdir(dn): return dn
+    return "scripts"
 
 #############################################################################
 

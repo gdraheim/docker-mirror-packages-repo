@@ -251,12 +251,13 @@ def ubuntu_repo() -> None:
     baseversion = ubuntu
     if baseversion in BASEVERSION:
         baseversion = BASEVERSION[baseversion]
+    scripts = repo_scripts()
     cname = "ubuntu-repo-" + ubuntu  # container name
     sx___("{docker} rm --force {cname}".format(**locals()))
     sh___("{docker} run --name={cname} --detach {image}:{baseversion} sleep 9999".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/ubuntu".format(**locals()))
     sh___("{docker} exec {cname} mkdir -p /srv/repo/ubuntu".format(**locals()))
-    sh___("{docker} cp scripts {cname}:/srv/scripts".format(**locals()))
+    sh___("{docker} cp {scripts} {cname}:/srv/scripts".format(**locals()))
     sh___("{docker} cp {repodir}/ubuntu.{ubuntu}/dists {cname}:/srv/repo/ubuntu".format(**locals()))
     sh___("{docker} exec {cname} apt-get update".format(**locals()))
     sh___("{docker} exec {cname} apt-get install -y python".format(**locals()))
@@ -293,6 +294,20 @@ def ubuntu_test() -> None:
     # docker-compose -p $@ -f ubuntu-compose.yml.tmp up -d
     # docker exec $@_host_1 apt-get install -y firefox
     # docker-compose -p $@ -f ubuntu-compose.yml.tmp down
+
+def ubuntu_scripts() -> None:
+    print(repo_scripts())
+def repo_scripts() -> str:
+    me = os.path.dirname(sys.argv[0])
+    dn = os.path.join(me, "scripts")
+    if os.path.isdir(dn): return dn
+    dn = os.path.join(me, "docker_mirror/scripts")
+    if os.path.isdir(dn): return dn
+    dn = os.path.join(me, "../docker_mirror/scripts")
+    if os.path.isdir(dn): return dn
+    dn = os.path.join(me, "../share/docker_mirror/scripts")
+    if os.path.isdir(dn): return dn
+    return "scripts"
 
 #############################################################################
 
