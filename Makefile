@@ -32,6 +32,8 @@ K=
 test_%: ; ./testsuite.py $@ -v $K
 check: ; ./testsuite.py -vv $K
 
+tests: ; $(PYTHON3) dockerdir-tests.py $K
+
 ####### pip setuptools
 setup.py: Makefile
 	{ echo '#!/usr/bin/env python3' \
@@ -76,14 +78,16 @@ AUTOPEP8=autopep8
 AUTOPEP8_INPLACE= --in-place
 AUTOPEP8_ASDIFF= --diff
 
-PY1 = centos-mirror.py
-PY2 = opensuse-mirror.py
-PY3 = ubuntu-mirror.py
-PY4 = docker_mirror.py
-PY5 = dockerdir.py
+PY1 = docker_mirror.py
+PY2 = dockerdir.py
+PY3 = centos-docker-mirror.py
+PY4 = opensuse-docker-mirror.py
+PY5 = ubuntu-docker-mirror.py
 PY6 = scripts/filelist.py
 PY7 = scripts/mirrorlist.py
 PY8 = scripts/mirrors.fedoraproject.org.py
+P11 = docker_mirror.tests.py
+P12 = dockerdir.tests.py
 
 %.type:
 	test -f $(@:.type=i) || $(MYPY) $(MYPY_STRICT) $(MYPY_OPTIONS) $(@:.type=)
@@ -112,7 +116,10 @@ ty5: ; $(MAKE) $(PY5).type
 ty6: ; $(MAKE) $(PY6).type
 ty7: ; $(MAKE) $(PY7).type
 ty8: ; $(MAKE) $(PY8).type
+t11: ; $(MAKE) $(P11).type
+t12: ; $(MAKE) $(P12).type
 
-type: ;	 $(MAKE) $(PY1).type $(PY2).type $(PY3).type $(PY4).type $(PY5).type $(PY6).type $(PY7).type $(PY8).type
-style: ; $(MAKE) $(PY1).pep8 $(PY2).pep8 $(PY3).pep8 $(PY4).pep8 $(PY5).pep8 $(PY6).pep8 $(PY7).pep8 $(PY8).pep8
-
+type: ;	 $(MAKE) $(PY1).type $(PY2).type $(PY3).type $(PY4).type $(PY5).type $(PY6).type $(PY7).type $(PY8).type \
+                 $(P11).type $(P12).type
+style: ; $(MAKE) $(PY1).pep8 $(PY2).pep8 $(PY3).pep8 $(PY4).pep8 $(PY5).pep8 $(PY6).pep8 $(PY7).pep8 $(PY8).pep8 \
+                 $(P11).pep8 $(P12).pep8
