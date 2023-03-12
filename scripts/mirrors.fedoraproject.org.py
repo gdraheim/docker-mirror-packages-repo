@@ -176,7 +176,7 @@ else:
     import subprocess
     hostname = server.hostname
     if not hostname:
-       hostname = "localhost"
+        hostname = "localhost"
     cc = hostname.split(".")[-1]
     og = hostname.split(".")[-2]
     if len(cc) > 2: cc = "US"
