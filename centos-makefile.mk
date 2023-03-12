@@ -15,14 +15,14 @@ centos:
 	$(MAKE) centoscheck
 	$(MAKE) centostags
 
-centoshelp: ; ./centos-mirror.py $(CENTOS) --help
-centospull: ; ./centos-mirror.py $(CENTOS) pull -v
-centossync: ; ./centos-mirror.py $(CENTOS) sync -v
-centosrepo: ; ./centos-mirror.py $(CENTOS) repo -v
-centostest: ; ./centos-mirror.py $(CENTOS) test -v
-centoscheck: ; ./centos-mirror.py $(CENTOS) check -v
-centostags: ; ./centos-mirror.py $(CENTOS) tags -v
-centos-clean: ; ./centos-mirror.py $(CENTOS) clean -v
+centoshelp: ; ./centos-docker-mirror.py $(CENTOS) --help
+centospull: ; ./centos-docker-mirror.py $(CENTOS) pull -v
+centossync: ; ./centos-docker-mirror.py $(CENTOS) sync -v
+centosrepo: ; ./centos-docker-mirror.py $(CENTOS) repo -v
+centostest: ; ./centos-docker-mirror.py $(CENTOS) test -v
+centoscheck: ; ./centos-docker-mirror.py $(CENTOS) check -v
+centostags: ; ./centos-docker-mirror.py $(CENTOS) tags -v
+centos-clean: ; ./centos-docker-mirror.py $(CENTOS) clean -v
 
 centosbash:
 	- docker rm -f centos-bash-$(CENTOS)

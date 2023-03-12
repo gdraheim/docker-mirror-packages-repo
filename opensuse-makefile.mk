@@ -7,9 +7,9 @@ opensuse:
 	$(MAKE) opensuserepo
 	$(MAKE) opensusetest
 
-opensusesync: ; ./opensuse-mirror.py $(LEAP) sync -v
-opensuserepo: ; ./opensuse-mirror.py $(LEAP) repo -v
-opensusetest: ; ./opensuse-mirror.py $(LEAP) test -v
+opensusesync: ; ./opensuse-docker-mirror.py $(LEAP) sync -v
+opensuserepo: ; ./opensuse-docker-mirror.py $(LEAP) repo -v
+opensusetest: ; ./opensuse-docker-mirror.py $(LEAP) test -v
 
 opensusebash:
 	- docker rm -f opensuse-bash-$(LEAP)

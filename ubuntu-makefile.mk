@@ -11,10 +11,10 @@ ubuntu:
 	$(MAKE) ubuntutest
 	$(MAKE) ubuntutags
 
-ubuntusync: ; ./ubuntu-mirror.py $(UBUNTU) sync -v $(UBUNTU_REPOS)
-ubunturepo: ; ./ubuntu-mirror.py $(UBUNTU) repo -v $(UBUNTU_REPOS)
-ubuntutest: ; ./ubuntu-mirror.py $(UBUNTU) test -v $(UBUNTU_REPOS)
-ubuntutags: ; ./ubuntu-mirror.py $(UBUNTU) tags -v $(UBUNTU_REPOS)
+ubuntusync: ; ./ubuntu-docker-mirror.py $(UBUNTU) sync -v $(UBUNTU_REPOS)
+ubunturepo: ; ./ubuntu-docker-mirror.py $(UBUNTU) repo -v $(UBUNTU_REPOS)
+ubuntutest: ; ./ubuntu-docker-mirror.py $(UBUNTU) test -v $(UBUNTU_REPOS)
+ubuntutags: ; ./ubuntu-docker-mirror.py $(UBUNTU) tags -v $(UBUNTU_REPOS)
 
 ubuntubash:
 	- docker rm -f ubuntu-bash-$(UBUNTU)

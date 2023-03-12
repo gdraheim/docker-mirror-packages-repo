@@ -25,9 +25,9 @@ The makefiles were later replaced by a python script which does run the "rsync" 
 subshell processes. It does make it easier to cover the quirks that are needed the different versions of
 the opensuse-repo need. Simply provide the intended version as the first argument and you are good to go.
 
-    ./centos-mirror.py 8.3 sync
-    ./centos-mirror.py 8.3 repo
-    ./centos-mirror.py 8.3 test
+    ./centos-docker-mirror.py 8.3 sync
+    ./centos-docker-mirror.py 8.3 repo
+    ./centos-docker-mirror.py 8.3 test
 
 The original makefiles targets have been switched to do that with a default version. The old makefiles
 implementation may be checked on the github 'makefiles' branch.

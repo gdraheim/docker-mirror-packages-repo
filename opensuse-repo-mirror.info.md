@@ -20,9 +20,9 @@ The makefiles were later replaced by a python script which does run the "rsync" 
 subshell processes. It does make it easier to cover the quirks that are needed the different versions of
 the opensuse-repo need. Simply provide the intended version as the first argument and you are good to go.
 
-    ./opensuse-mirror.py 15.2 sync
-    ./opensuse-mirror.py 15.2 repo
-    ./opensuse-mirror.py 15.2 test
+    ./opensuse-docker-mirror.py 15.2 sync
+    ./opensuse-docker-mirror.py 15.2 repo
+    ./opensuse-docker-mirror.py 15.2 test
 
 The original makefiles targets have been switched to do that with a default version. The old makefiles
 implementation may be checked on the github 'makefiles' branch.
