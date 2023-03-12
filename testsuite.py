@@ -795,6 +795,8 @@ if __name__ == "__main__":
        help="choose another docker daemon [%default]")
     _o.add_option("-k","--keep", action="store_true", default=KEEP,
        help="do not clean up containers [%default]")
+    _o.add_option("--failfast", action="store_true", default=False,
+       help="Stop the test run on the first error or failure. [%default]")
     opt, args = _o.parse_args()
     logging.basicConfig(level = logging.WARNING - opt.verbose * 5)
     KEEP = opt.keep
@@ -814,6 +816,6 @@ if __name__ == "__main__":
                 if fnmatch(method, arg):
                     suite.addTest(testclass(method))
     Runner = unittest.TextTestRunner
-    result = Runner(verbosity=opt.verbose).run(suite)
+    result = Runner(verbosity=opt.verbose, failfast=opt.failfast).run(suite)
     if not result.wasSuccessful():
         sys.exit(1)

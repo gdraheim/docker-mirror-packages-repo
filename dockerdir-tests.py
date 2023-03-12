@@ -121,6 +121,8 @@ if __name__ == "__main__":
     from optparse import OptionParser
     _o = OptionParser("%prog [options] test*",
        epilog=__doc__.strip().split("\n")[0])
+    _o.add_option("--failfast", action="store_true", default=False,
+                  help="Stop the test run on the first error or failure. [%default]")
     _o.add_option("-v","--verbose", action="count", default=0,
        help="increase logging level [%default]")
     opt, args = _o.parse_args()
@@ -138,6 +140,6 @@ if __name__ == "__main__":
                 if fnmatch(method, arg):
                     suite.addTest(testclass(method))
     Runner = unittest.TextTestRunner
-    result = Runner(verbosity=opt.verbose).run(suite)
+    result = Runner(verbosity=opt.verbose, failfast=opt.failfast).run(suite)
     if not result.wasSuccessful():
         sys.exit(1)
