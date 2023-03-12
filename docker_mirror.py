@@ -637,6 +637,18 @@ class DockerMirrorPackagesRepo:
                 return found.group(1)
         return defaults
 
+def repo_scripts():
+    me = os.path.dirname(sys.argv[0])
+    dn = os.path.join(me, "scripts")
+    if os.path.isdir(dn): return dn
+    dn = os.path.join(me, "docker_mirror/scripts")
+    if os.path.isdir(dn): return dn
+    dn = os.path.join(me, "../docker_mirror/scripts")
+    if os.path.isdir(dn): return dn
+    dn = os.path.join(me, "../share/docker_mirror/scripts")
+    if os.path.isdir(dn): return dn
+    return "scripts"
+
 if __name__ == "__main__":
     from argparse import ArgumentParser
     _o = ArgumentParser(description="""starts local containers representing mirrors of package repo repositories 
@@ -662,37 +674,39 @@ if __name__ == "__main__":
     ADDEPEL = opt.epel  # centos epel-repo
     UPDATES = opt.updates
     UNIVERSE = opt.universe  # ubuntu universe repo
-    command = "detect"
+    command = opt.command or "detect"
     repo = DockerMirrorPackagesRepo()
     if not opt.image and opt.file:
         opt.image = repo.from_dockerfile(opt.file)
-    if opt.command in ["?", "help"]:
+    if command in ["?", "help"]:
         print(repo.helps())
-    elif opt.command in ["detect", "image"]:
+    elif command in ["detect", "image"]:
         print(repo.detect(opt.image))
-    elif opt.command in ["repo", "from"]:
+    elif command in ["repo", "from"]:
         print(repo.repo(opt.image))
-    elif opt.command in ["repos", "for"]:
+    elif command in ["repos", "for"]:
         print(repo.repos(opt.image))
-    elif opt.command in ["latest"]:
+    elif command in ["latest"]:
         print(repo.get_docker_latest_version(opt.image))
-    elif opt.command in ["epel"]:
+    elif command in ["epel"]:
         print(repo.epel(opt.image))
-    elif opt.command in ["facts"]:
+    elif command in ["facts"]:
         print(repo.facts(opt.image))
-    elif opt.command in ["start", "starts"]:
+    elif command in ["start", "starts"]:
         print(repo.starts(opt.image))
-    elif opt.command in ["stop", "stops"]:
+    elif command in ["stop", "stops"]:
         print(repo.stops(opt.image))
-    elif opt.command in ["show", "shows", "info", "infos"]:
+    elif command in ["show", "shows", "info", "infos"]:
         print(repo.infos(opt.image))
-    elif opt.command in ["addhost", "add-host", "addhosts", "add-hosts"]:
+    elif command in ["addhost", "add-host", "addhosts", "add-hosts"]:
         ADDHOSTS = True
         print(repo.infos(opt.image))
-    elif opt.command in ["inspect"]:
+    elif command in ["inspect"]:
         print(repo.inspects(opt.image))
-    elif opt.command in ["containers"]:
+    elif command in ["containers"]:
         print(repo.containers(opt.image))
+    elif command in ["scripts"]:
+        print(repo_scripts())
     else:
         print("unknown command", opt.command)
         sys.exit(1)
