@@ -72,9 +72,14 @@ _docker_mirror = "docker_mirror.py"
 class DockerScripts:
     def __init__(self, dockerdir=None):
         self.dockerdir=dockerdir
+    def run(self, targetfile):
+        builddir = os.path.dirname(targetfile)
+        logg.info("running %s: %s", builddir, "build.sh")
+        done = subprocess.run(["sh", "build.sh", "--rm=true"], cwd=builddir)
+        return done.returncode
     def create(self, dockerfile=None):
         # configure .......................................................
-        dockerdir = self.dockerdir
+        dockerdir = self.dockerdir or ""
         if not dockerfile:
             dockerfile = path.join(dockerdir, "Dockerfile")
         else:
@@ -171,13 +176,14 @@ class DockerScripts:
             os.chmod(scriptpath, 0o775)
 
 class DockerDir:
-    def __init__(self, topdir="."):
-        self.topdir=topdir
+    def __init__(self, topdir=None):
+        self.topdir=topdir or "."
     def run(self, dockerfile=None, targetdir=None):
         targetfile = self.create(dockerfile)
-        DockerScripts().run(targetfile)
+        return DockerScripts().run(targetfile)
     def create(self, dockerfile=None, targetdir=None):
         targetdir = targetdir or self.topdir
+        dockerfile = dockerfile or "Dockerfile"
         errors = 0
         dockerfile_dir = path.dirname(dockerfile)
         dockerfile_name = path.basename(dockerfile)
@@ -248,7 +254,7 @@ if __name__ == "__main__":
     opt, args = _o.parse_args()
     logging.basicConfig(level = max(0, logging.WARNING - 5 * opt.verbose))
     logg.setLevel(level = max(0, logging.WARNING - 5 - 5 * opt.verbose))
-    logging.addLevelName("HINT", HINT)
+    logging.addLevelName(HINT, "HINT")
     dockerfile=None
     targetdir=None
     if len(args) > 0: dockerfile=args[0]
