@@ -43,7 +43,7 @@ from __future__ import division
  """
 
 __copyright__ = """ (c) 2015-2022 Guido Draheim """
-__version__ = "1.6.3016"
+__version__ = "1.6.5107"
 import sys
 import re
 import os
