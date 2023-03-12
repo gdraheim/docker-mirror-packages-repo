@@ -24,12 +24,12 @@ logg = logging.getLogger("TESTSUITE")
 string_types = str
 xrange = range
 
-KEEP=False
-PREFIX="localhost:5000/mirror-packages"
+KEEP = False
+PREFIX = "localhost:5000/mirror-packages"
 DOCKER = "docker"
-DOCKER_SOCKET="/var/run/docker.sock"
-MR143 = True # modify repos of opensuse/leap:14.3
-MR151 = True # modify repos of opensuse/leap:15.1
+DOCKER_SOCKET = "/var/run/docker.sock"
+MR143 = True  # modify repos of opensuse/leap:14.3
+MR151 = True  # modify repos of opensuse/leap:15.1
 
 _docker_mirror = "./docker_mirror.py"
 
@@ -39,37 +39,37 @@ def decodes(text: Union[str, bytes]) -> str:
         encoded = sys.getdefaultencoding()
         if encoded in ["ascii"]:
             encoded = "utf-8"
-        try: 
+        try:
             return text.decode(encoded)
         except:
             return text.decode("latin-1")
     return text
-def sh____(cmd: Union[str, List[str]], shell:bool=True) -> int:
+def sh____(cmd: Union[str, List[str]], shell: bool = True) -> int:
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
-    else:    
+    else:
         logg.debug(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.check_call(cmd, shell=shell)
-def sx____(cmd: Union[str, List[str]], shell:bool=True) -> int:
+def sx____(cmd: Union[str, List[str]], shell: bool = True) -> int:
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
-    else:    
+    else:
         logg.debug(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.call(cmd, shell=shell)
-def output(cmd: Union[str, List[str]], shell:bool=True) -> str:
+def output(cmd: Union[str, List[str]], shell: bool = True) -> str:
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
-    else:    
+    else:
         logg.debug(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
     return decodes(out)
 
 _subprocess = collections.namedtuple("_subprocess", ["out", "err", "rc"])
-def runs(cmd: Union[str, List[str]], shell:bool=True) -> _subprocess:
+def runs(cmd: Union[str, List[str]], shell: bool = True) -> _subprocess:
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
-    else:    
+    else:
         logg.debug(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = run.communicate()
@@ -80,7 +80,7 @@ def ip_container(name: str) -> Optional[str]:
     docker = DOCKER
     cmd = "{docker} inspect {name}"
     proc = runs(cmd.format(**locals()))
-    if proc.rc: 
+    if proc.rc:
         logg.debug("%s not found: rc=%i\n\t%s", name, proc.rc, proc.err)
         return None
     values = json.loads(proc.out)
@@ -110,7 +110,7 @@ def make_file(name: str, content: str) -> None:
 def drop_file(name: str) -> None:
     if os.path.exists(name):
         os.remove(name)
-    
+
 
 class DockerMirrorPackagesTest(unittest.TestCase):
     def test_0001_hello(self) -> None:
@@ -296,8 +296,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         add_host = "--add-host download.opensuse.org:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         if MR143:
-           # "zypper refresh repo-oss repo-update"
-           sh____("{docker} exec test-box1 zypper mr --no-gpgcheck oss-update".format(**locals()))
+            # "zypper refresh repo-oss repo-update"
+            sh____("{docker} exec test-box1 zypper mr --no-gpgcheck oss-update".format(**locals()))
         sh____("{docker} exec test-box1 zypper install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
@@ -581,8 +581,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
         sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         if MR143:
-           # "zypper refresh repo-oss repo-update"
-           sh____("{docker} exec test-box1 zypper mr --no-gpgcheck oss-update".format(**locals()))
+            # "zypper refresh repo-oss repo-update"
+            sh____("{docker} exec test-box1 zypper mr --no-gpgcheck oss-update".format(**locals()))
         sh____("{docker} exec test-box1 zypper install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
@@ -782,28 +782,28 @@ class DockerMirrorPackagesTest(unittest.TestCase):
 if __name__ == "__main__":
     from optparse import OptionParser
     _o = OptionParser("%prog [options] test*",
-       epilog=__doc__.strip().split("\n")[0])
-    _o.add_option("-v","--verbose", action="count", default=0,
-       help="increase logging level [%default]")
-    _o.add_option("-p","--prefix", metavar="HOST", default=PREFIX,
-       help="storage site for images [%default]")
-    _o.add_option("-D","--docker", metavar="EXE", default=DOCKER,
-       help="use another docker container tool [%default]")
-    _o.add_option("-H","--host", metavar="DOCKER_HOST", default=DOCKER_SOCKET,
-       help="choose another docker daemon [%default]")
-    _o.add_option("-k","--keep", action="store_true", default=KEEP,
-       help="do not clean up containers [%default]")
+                      epilog=__doc__.strip().split("\n")[0])
+    _o.add_option("-v", "--verbose", action="count", default=0,
+                  help="increase logging level [%default]")
+    _o.add_option("-p", "--prefix", metavar="HOST", default=PREFIX,
+                  help="storage site for images [%default]")
+    _o.add_option("-D", "--docker", metavar="EXE", default=DOCKER,
+                  help="use another docker container tool [%default]")
+    _o.add_option("-H", "--host", metavar="DOCKER_HOST", default=DOCKER_SOCKET,
+                  help="choose another docker daemon [%default]")
+    _o.add_option("-k", "--keep", action="store_true", default=KEEP,
+                  help="do not clean up containers [%default]")
     _o.add_option("--failfast", action="store_true", default=False,
-       help="Stop the test run on the first error or failure. [%default]")
+                  help="Stop the test run on the first error or failure. [%default]")
     opt, args = _o.parse_args()
-    logging.basicConfig(level = logging.WARNING - opt.verbose * 5)
+    logging.basicConfig(level=logging.WARNING - opt.verbose * 5)
     KEEP = opt.keep
     PREFIX = opt.prefix
     DOCKER = opt.docker
     DOCKER_SOCKET = opt.host
     # unittest.main()
     suite = unittest.TestSuite()
-    if not args: args = [ "test_*" ]
+    if not args: args = ["test_*"]
     for arg in args:
         for classname in sorted(globals()):
             if not classname.endswith("Test"):

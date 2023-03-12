@@ -6,7 +6,8 @@
 
 from typing import Union, Optional, List, cast
 import unittest
-import sys, os
+import sys
+import os
 import subprocess
 import inspect
 from fnmatch import fnmatchcase as fnmatch
@@ -33,27 +34,27 @@ def decodes(text: Union[str, bytes]) -> str:
         encoded = sys.getdefaultencoding()
         if encoded in ["ascii"]:
             encoded = "utf-8"
-        try: 
+        try:
             return text.decode(encoded)
         except:
             return text.decode("latin-1")
     return text
-def sh____(cmd: Union[str, List[str]], shell:bool=True) -> int:
+def sh____(cmd: Union[str, List[str]], shell: bool = True) -> int:
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
-    else:    
+    else:
         logg.debug(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.check_call(cmd, shell=shell)
-def sx____(cmd: Union[str, List[str]], shell:bool=True) -> int:
+def sx____(cmd: Union[str, List[str]], shell: bool = True) -> int:
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
-    else:    
+    else:
         logg.debug(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.call(cmd, shell=shell)
-def output(cmd: Union[str, List[str]], shell:bool=True) -> str:
+def output(cmd: Union[str, List[str]], shell: bool = True) -> str:
     if isinstance(cmd, string_types):
         logg.debug(": %s", cmd)
-    else:    
+    else:
         logg.debug(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
@@ -90,7 +91,7 @@ class DockerDirScriptsTest(unittest.TestCase):
         name = get_caller_caller_name()
         x1 = name.find("_")
         if x1 < 0: return name
-        x2 = name.find("_", x1+1)
+        x2 = name.find("_", x1 + 1)
         if x2 < 0: return name
         return name[:x2]
     def testname(self, suffix: Optional[str] = None) -> str:
@@ -107,7 +108,7 @@ class DockerDirScriptsTest(unittest.TestCase):
         testname = self.testname()
         filename = testname + ".tmp"
         make_file(filename,
-        """FROM centos:8.3.2011
+                  """FROM centos:8.3.2011
         ENV foo=1
         ENV _commit test_100""")
         sh____("{python} {script} {filename}".format(**locals()))
@@ -117,16 +118,16 @@ class DockerDirScriptsTest(unittest.TestCase):
 if __name__ == "__main__":
     from optparse import OptionParser
     _o = OptionParser("%prog [options] test*",
-       epilog=__doc__.strip().split("\n")[0])
+                      epilog=__doc__.strip().split("\n")[0])
     _o.add_option("--failfast", action="store_true", default=False,
                   help="Stop the test run on the first error or failure. [%default]")
-    _o.add_option("-v","--verbose", action="count", default=0,
-       help="increase logging level [%default]")
+    _o.add_option("-v", "--verbose", action="count", default=0,
+                  help="increase logging level [%default]")
     opt, args = _o.parse_args()
-    logging.basicConfig(level = logging.WARNING - opt.verbose * 5)
+    logging.basicConfig(level=logging.WARNING - opt.verbose * 5)
     # unittest.main()
     suite = unittest.TestSuite()
-    if not args: args = [ "test_*" ]
+    if not args: args = ["test_*"]
     for arg in args:
         for classname in sorted(globals()):
             if not classname.endswith("Test"):
