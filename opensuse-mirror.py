@@ -150,7 +150,7 @@ def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
     leaprepo = "{repodir}/opensuse.{leap}/{dist}/leap/{leap}/repo".format(**locals())
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     cmd = "{rsync} -rv {mirror}/{dist}/leap/{leap}/repo/{repo} {leaprepo}/ {excludes}".format(**locals())
-    ## sh___(cmd):
+    # sh___(cmd):
     logfile = "{repodir}/opensuse.{leap}.log".format(**locals())
     for attempt in xrange(RETRY):
         try:
@@ -170,7 +170,7 @@ def opensuse_sync_pack_(dist: str, repo: str, filters: List[str] = []) -> None:
     leaprepo = "{repodir}/opensuse.{leap}/{dist}/leap/{leap}".format(**locals())
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     cmd = "{rsync} -rv {mirror}/{dist}/leap/{leap}/{repo} {leaprepo}/ {excludes}".format(**locals())
-    ## sh___(cmd):
+    # sh___(cmd):
     logfile = "{repodir}/opensuse.{leap}.log".format(**locals())
     for attempt in xrange(RETRY):
         try:
