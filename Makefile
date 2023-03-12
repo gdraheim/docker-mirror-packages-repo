@@ -123,3 +123,11 @@ type: ;	 $(MAKE) $(PY1).type $(PY2).type $(PY3).type $(PY4).type $(PY5).type $(P
                  $(P11).type $(P12).type
 style: ; $(MAKE) $(PY1).pep8 $(PY2).pep8 $(PY3).pep8 $(PY4).pep8 $(PY5).pep8 $(PY6).pep8 $(PY7).pep8 $(PY8).pep8 \
                  $(P11).pep8 $(P12).pep8
+
+# .................................
+clean:
+	- rm -rf dist
+	- rm -rf tmp.scripts
+	- rm -rf docker.tmp
+	- rm -rf .mypy_cache
+
