@@ -3,9 +3,30 @@
 
 # docker mirror packages repo
 
-These docker images can be started as a container
-and it can serve as a replacement for the standard
-packages repo of the operating system.
+Allows to simulate upstream centos / ubuntu / opensuse
+package repository servers by using a docker container
+which contains a local package mirror.
+
+The scripts in this project allow to build a local package
+mirror using rsync. When ready the rpm/deb packages get
+copied into a docker image which has a small web script
+that mimics the mirrorlist function of the original
+upstream package repository servers.
+
+There is a helper script docker_mirror which can start
+a mirror docker image as container. The --add-hosts
+option prints the line for "docker run" so that calls
+to the original upstream package server get diverted
+to the ip address locally running docker container.
+
+Effectively all `"yum install"` or `"zypper install"` or
+`"apt-get install"` commands run locally in the docker 
+network. No internet access required. Without changing 
+repo files. Without special proxy host setups. This is
+faster, allows for reproducible install tests, and it
+can be used in a disconnected environment.
+
+----
 
 Tested repos are
 
@@ -150,3 +171,4 @@ serving the rsync'ed files back (except epel-repo since the
 usual Fedora URL is shown running on 443/https).
 
 For tips and tricks please see [PROBLEMS FAQ](./PROBLEMS.md).
+

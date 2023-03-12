@@ -35,6 +35,8 @@ check: ; ./testsuite.py -vv $K
 tests: ; $(PYTHON3) dockerdir-tests.py $K
 
 ####### pip setuptools
+README: README.md
+	cat README.md | sed -e "/\\/badge/d" -e /^---/q > $@
 setup.py: Makefile
 	{ echo '#!/usr/bin/env python3' \
 	; echo 'import setuptools' \
@@ -46,10 +48,10 @@ setup.py.tmp: Makefile
 .PHONY: build
 build:
 	rm -rf build dist *.egg-info
-	$(MAKE) $(PARALLEL) setup.py 
+	$(MAKE) $(PARALLEL) setup.py README
 	# pip install --root=~/local . -v
 	$(PYTHON3) setup.py sdist
-	- rm -v setup.py 
+	- rm -v setup.py README
 	$(TWINE) check dist/*
 	: $(TWINE) upload dist/*
 
