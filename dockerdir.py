@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+from optparse import OptionParser
 from __future__ import print_function
 from __future__ import division
 
@@ -51,16 +52,15 @@ import subprocess
 import shutil
 import logging
 logg = logging.getLogger("dockerdir")
-HINT = (logging.INFO + logging.DEBUG)//2
+HINT = (logging.INFO + logging.DEBUG) // 2
 
-from optparse import OptionParser
 _o = OptionParser("%prog [options] dockerfile [targetdir]")
 _o.add_option("-t", "--topdir", metavar="DIR", default="docker.tmp",
-    help="target top directory for docker subdirs (%default)")
+              help="target top directory for docker subdirs (%default)")
 _o.add_option("-b", "--build", action="store_true", default=False,
-    help="run the build.sh after creating the subproject (%default)")
+              help="run the build.sh after creating the subproject (%default)")
 _o.add_option("-v", "--verbose", action="count", default=0,
-    help="increase logging level (%default)")
+              help="increase logging level (%default)")
 
 docker_mirror = "docker_mirror.py"
 
@@ -71,7 +71,7 @@ _docker_mirror = "docker_mirror.py"
 
 class DockerScripts:
     def __init__(self, dockerdir=None):
-        self.dockerdir=dockerdir
+        self.dockerdir = dockerdir
     def run(self, targetfile):
         builddir = os.path.dirname(targetfile)
         logg.info("running %s: %s", builddir, "build.sh")
@@ -91,20 +91,20 @@ class DockerScripts:
                 if m:
                     ENV[m.group(1)] = m.group(2).strip()
         # docker-mirror-package-repo .....................................
-        mirror_start=""
-        mirror_stop=""
+        mirror_start = ""
+        mirror_stop = ""
         docker_mirror = _docker_mirror
         if path.exists(path.join(dockerdir, docker_mirror)):
             dockerfilename = path.basename(dockerfile)
             mirror_start = "./{docker_mirror} -f {dockerfilename} -a start".format(**locals())
             mirror_stop = "./{docker_mirror} -f {dockerfilename} -a stop".format(**locals())
         # generate ........................................................
-        _taglist = [ tag for tag in ENV if tag.startswith("_tag") ]
+        _taglist = [tag for tag in ENV if tag.startswith("_tag")]
         if _commit in ENV:
             commit = ENV[_commit]
             optbuild = ""
             if _build in ENV:
-               optbuild = ENV[_build]
+                optbuild = ENV[_build]
             script = ["#! /bin/sh", "set -ex"]
             if mirror_start:
                 script.append('addhosts=`{mirror_start}`'.format(**locals()))
@@ -115,7 +115,7 @@ class DockerScripts:
             for _tag in _taglist:
                 tag = ENV[_tag]
                 if "{}" not in tag:
-                    tag = "{}"+tag
+                    tag = "{}" + tag
                 opttag, newtag = tag.split("{}", 1)
                 # script.append("docker tag -f {opttag} {commit} {newtag}".format(**locals()))
                 script.append("docker tag {opttag} {commit} {newtag}".format(**locals()))
@@ -127,10 +127,10 @@ class DockerScripts:
         else:
             optbuild = ""
             if _build in ENV:
-               optbuild = ENV[_build]
+                optbuild = ENV[_build]
             tagbuild = ""
             if "_tag" in ENV:
-               tagbuild = "-t " + ENV["_tag"]
+                tagbuild = "-t " + ENV["_tag"]
             script = ["#! /bin/sh", "set -ex"]
             if mirror_start:
                 script.append('addhosts=`{mirror_start}`'.format(**locals()))
@@ -139,7 +139,7 @@ class DockerScripts:
                 script.append('{mirror_stop}'.format(**locals()))
             script.append("echo 'done {tagbuild}'".format(**locals()))
         runscripts = {}
-        _runlist = [ tag for tag in ENV if tag.startswith("_run") ]
+        _runlist = [tag for tag in ENV if tag.startswith("_run")]
         for _run in _runlist:
             runopt = ENV[_run]
             target = ""
@@ -155,20 +155,20 @@ class DockerScripts:
             scriptname = _run[1:] + ".sh"
             runscripts[scriptname] = runscript
         if runscripts and script:
-           scriptname = sorted(runscripts.keys())[0] # first script
-           script.append('echo "ready to `dirname $0`/{scriptname}"'.format(**locals()))
+            scriptname = sorted(runscripts.keys())[0]  # first script
+            script.append('echo "ready to `dirname $0`/{scriptname}"'.format(**locals()))
         # output ...................................................
         if script:
             scriptpath = path.join(dockerdir, "build.sh")
-            scripttext = "\n".join(script)+"\n"
+            scripttext = "\n".join(script) + "\n"
             with open(scriptpath, "w") as f:
-               f.write(scripttext)
+                f.write(scripttext)
             logg.info("=== written %s", scriptpath)
-            logg.log(HINT, "\n%s", scripttext) 
+            logg.log(HINT, "\n%s", scripttext)
         os.chmod(scriptpath, 0o775)
         for scriptname, runscript in runscripts.items():
             scriptpath = path.join(dockerdir, scriptname)
-            scripttext = "\n".join(runscript)+"\n"
+            scripttext = "\n".join(runscript) + "\n"
             with open(scriptpath, "w") as f:
                 f.write(scripttext)
             logg.info("=== written %s", scriptpath)
@@ -177,7 +177,7 @@ class DockerScripts:
 
 class DockerDir:
     def __init__(self, topdir=None):
-        self.topdir=topdir or "."
+        self.topdir = topdir or "."
     def run(self, dockerfile=None, targetdir=None):
         targetfile = self.create(dockerfile)
         return DockerScripts().run(targetfile)
@@ -200,8 +200,8 @@ class DockerDir:
         logg.info("cp %s %s", dockerfile, targetfile)
         shutil.copyfile(dockerfile, targetfile)
         #
-        optional = [ docker_mirror ]
-        sources = [ ]
+        optional = [docker_mirror]
+        sources = []
         for line in open(dockerfile):
             add = re.match(r"(?:ADD|add)\s+(\w\S+)\s+(.*)", line)
             if add:
@@ -210,7 +210,7 @@ class DockerDir:
         for mount in optional + sources:
             # check in the usual places for the source data
             found = None
-            for srcdir in [ dockerfile_dir, "files", "Software", "../../Software" ]:
+            for srcdir in [dockerfile_dir, "files", "Software", "../../Software"]:
                 srctree = path.join(srcdir, mount)
                 if path.isfile(srctree):
                     newtree = path.join(dockerdir, mount)
@@ -252,11 +252,11 @@ def run(dockerfile, targetdir, build=False):
 
 if __name__ == "__main__":
     opt, args = _o.parse_args()
-    logging.basicConfig(level = max(0, logging.WARNING - 5 * opt.verbose))
-    logg.setLevel(level = max(0, logging.WARNING - 5 - 5 * opt.verbose))
+    logging.basicConfig(level=max(0, logging.WARNING - 5 * opt.verbose))
+    logg.setLevel(level=max(0, logging.WARNING - 5 - 5 * opt.verbose))
     logging.addLevelName(HINT, "HINT")
-    dockerfile=None
-    targetdir=None
-    if len(args) > 0: dockerfile=args[0]
-    if len(args) > 1: targetdir=args[1]
+    dockerfile = None
+    targetdir = None
+    if len(args) > 0: dockerfile = args[0]
+    if len(args) > 1: targetdir = args[1]
     sys.exit(run(dockerfile, targetdir or opt.topdir, opt.build))
