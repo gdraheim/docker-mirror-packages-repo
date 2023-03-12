@@ -2,7 +2,7 @@ version: "2"
 
 services:
   repo:
-     image: "localhost:5000/centos-repo:7"
+     image: "localhost:5000/mirror-packages/centos-repo:7"
      expose: 
       - "80"
      hostname: "centos_repo"

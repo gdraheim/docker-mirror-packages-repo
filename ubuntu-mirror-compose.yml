@@ -2,7 +2,7 @@ version: "2"
 
 services:
   repo:
-     image: "localhost:5000/pkg/ubuntu-repo:16.04"
+     image: "localhost:5000/mirror-packages/ubuntu-repo:16.04"
      expose: 
       - "80"
      hostname: "ubunut_repo"
