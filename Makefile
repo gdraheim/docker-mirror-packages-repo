@@ -51,6 +51,10 @@ build:
 	$(TWINE) check dist/*
 	: $(TWINE) upload dist/*
 
+re reinstall:
+	- pip3 uninstall docker-mirror-packages-repo
+	pip3 install dist/docker-mirror-packages-repo-*.tar.gz
+	pip3 show docker-mirror-packages-repo --files
 
 ####### retype + stubgen
 PY_RETYPE = ../retype
