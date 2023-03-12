@@ -23,10 +23,10 @@ PYTHON2=python
 PYTHON3=python3
 TWINE=twine
 
-include centos-makefile.mk
-include opensuse-makefile.mk
-include ubuntu-makefile.mk
-include epel-makefile.mk
+include centos-main-makefile.mk
+include centos-epel-makefile.mk
+include ubuntu-main-makefile.mk
+include opensuse-main-makefile.mk
 
 K=
 test_%: ; ./testsuite.py $@ -v $K
