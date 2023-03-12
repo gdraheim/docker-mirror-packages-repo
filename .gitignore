@@ -31,3 +31,4 @@ tmp
 *.tmp
 tmp.*
 .mypy_cache/
+dist
