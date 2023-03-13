@@ -40,6 +40,9 @@ DISTRO = "ubuntu"
 UBUNTU = "22.04"
 RSYNC_UBUNTU = "rsync://ftp5.gwdg.de/pub/linux/debian/ubuntu"
 
+MIRRORS: Dict[str, List[str]] = {}
+MIRRORS["ubuntu"] = [RSYNC_UBUNTU]
+
 UBUNTU_TMP = "ubuntu.tmp"
 
 LTS = ["14.04", "16.04", "18.04", "20.04", "22.04"]
@@ -167,6 +170,7 @@ def ubuntu_sync_base_4() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-securit
 def ubuntu_sync_base(dist: str) -> None:
     logg.info("dist = %s", dist)
     tmpdir = UBUNTU_TMP
+    distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
     distdir = "{repodir}/ubuntu.{ubuntu}/dists/{dist}".format(**locals())
@@ -179,7 +183,8 @@ def ubuntu_sync_base(dist: str) -> None:
         print("Release", file=f)
         print("InRelease", file=f)
     rsync = RSYNC
-    mirror = RSYNC_UBUNTU
+    distro = DISTRO
+    mirror = MIRRORS[distro][0]
     options = "--ignore-times --files-from=" + tmpfile
     sh___("{rsync} -v {mirror}/dists/{dist} {repodir}/ubuntu.{ubuntu}/dists/{dist} {options}".format(**locals()))
 
@@ -206,12 +211,13 @@ def ubuntu_check() -> None:
     print(": %s" % when("update,universe", downloads))
 
 def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
+    distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
     maindir = "{repodir}/ubuntu.{ubuntu}/dists/{dist}/{main}".format(**locals())
     if not path.isdir(maindir): os.makedirs(maindir)
     rsync = RSYNC
-    mirror = RSYNC_UBUNTU
+    mirror = MIRRORS[distro][0]
     sh___("{rsync} -rv {mirror}/dists/{dist}/{main}/binary-amd64 {maindir} --ignore-times".format(**locals()))
     sh___("{rsync} -rv {mirror}/dists/{dist}/{main}/binary-i386  {maindir} --ignore-times".format(**locals()))
     sh___("{rsync} -rv {mirror}/dists/{dist}/{main}/source       {maindir} --ignore-times".format(**locals()))
@@ -232,6 +238,7 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
         sh___("{rsync} -rv {mirror}/pool {pooldir} --size-only --files-from={tmpfile}".format(**locals()))
 
 def ubuntu_pool() -> None:
+    distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
     pooldir = "{repodir}/ubuntu.{UBUNTU}/pool".format(**locals())
@@ -240,6 +247,7 @@ def ubuntu_pool() -> None:
     os.makedirs(pooldir)
 
 def ubuntu_poolcount() -> None:
+    distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
     sh___("echo `find {repodir}/ubuntu.{ubuntu}/pool -type f | wc -l` pool files".format(**locals()))
@@ -248,9 +256,10 @@ ubunturepo_CMD = ["python", "/srv/scripts/filelist.py", "--data", "/srv/repo"]
 ubunturepo_PORT = "80"
 def ubuntu_repo() -> None:
     docker = DOCKER
+    distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    image = DISTRO
+    image = distro
     imagesrepo = IMAGESREPO
     baseversion = ubuntu
     if baseversion in BASEVERSION:
@@ -289,6 +298,7 @@ def ubuntu_repo() -> None:
     sh___(cmd.format(**locals()))
 
 def ubuntu_test() -> None:
+    distro = DISTRO
     ubuntu = UBUNTU
     # cat ubuntu-compose.yml | sed \
     #    -e 's|ubuntu-repo:.*"|ubuntu/repo:$(UBUNTU)"|' \
