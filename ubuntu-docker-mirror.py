@@ -137,7 +137,7 @@ def ubuntu_sync() -> None:
 def ubuntu_dir(suffix: str = "") -> str:
     ubuntu = UBUNTU
     repodir = REPODIR
-    dirname = "ubuntu.{ubuntu}{suffix}".format(**locals())
+    dirname = F"ubuntu.{ubuntu}{suffix}"
     dirlink = path.join(repodir, dirname)
     if not path.isdir(repodir):
         os.mkdir(repodir)
@@ -173,12 +173,12 @@ def ubuntu_sync_base(dist: str) -> None:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    distdir = "{repodir}/ubuntu.{ubuntu}/dists/{dist}".format(**locals())
+    distdir = F"{repodir}/ubuntu.{ubuntu}/dists/{dist}"
     if not path.isdir(distdir):
         os.makedirs(distdir)
     if not path.isdir(tmpdir):
         os.makedirs(tmpdir)
-    tmpfile = "{tmpdir}/Release.{dist}.base.tmp".format(**locals())
+    tmpfile = F"{tmpdir}/Release.{dist}.base.tmp"
     with open(tmpfile, "w") as f:
         print("Release", file=f)
         print("InRelease", file=f)
@@ -186,7 +186,7 @@ def ubuntu_sync_base(dist: str) -> None:
     distro = DISTRO
     mirror = MIRRORS[distro][0]
     options = "--ignore-times --files-from=" + tmpfile
-    sh___("{rsync} -v {mirror}/dists/{dist} {repodir}/ubuntu.{ubuntu}/dists/{dist} {options}".format(**locals()))
+    sh___(F"{rsync} -v {mirror}/dists/{dist} {repodir}/ubuntu.{ubuntu}/dists/{dist} {options}")
 
 def when(levels: str, repos: List[str]) -> List[str]: return [item for item in levels.split(",") if item and item in repos]
 def ubuntu_sync_main_1() -> None: ubuntu_sync_main(dist=DIST[UBUNTU], main="main", when=when("updates,restricted,universe,multiverse", REPOS))
@@ -214,34 +214,34 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    maindir = "{repodir}/ubuntu.{ubuntu}/dists/{dist}/{main}".format(**locals())
+    maindir = F"{repodir}/ubuntu.{ubuntu}/dists/{dist}/{main}"
     if not path.isdir(maindir): os.makedirs(maindir)
     rsync = RSYNC
     mirror = MIRRORS[distro][0]
-    sh___("{rsync} -rv {mirror}/dists/{dist}/{main}/binary-amd64 {maindir} --ignore-times".format(**locals()))
-    sh___("{rsync} -rv {mirror}/dists/{dist}/{main}/binary-i386  {maindir} --ignore-times".format(**locals()))
-    sh___("{rsync} -rv {mirror}/dists/{dist}/{main}/source       {maindir} --ignore-times".format(**locals()))
-    gz1 = "{maindir}/binary-amd64/Packages.gz".format
-    packages = output("zcat {maindir}/binary-amd64/Packages.gz {maindir}/binary-i386/Packages.gz".format(**locals()))
+    sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-amd64 {maindir} --ignore-times")
+    sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-i386  {maindir} --ignore-times")
+    sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/source       {maindir} --ignore-times")
+    gz1 = F"{maindir}/binary-amd64/Packages.gz"
+    packages = output(F"zcat {maindir}/binary-amd64/Packages.gz {maindir}/binary-i386/Packages.gz")
     tmpdir = UBUNTU_TMP
     if not path.isdir(tmpdir): os.makedirs(tmpdir)
-    tmpfile = "{tmpdir}/Packages.{dist}.{main}.tmp".format(**locals())
+    tmpfile = F"{tmpdir}/Packages.{dist}.{main}.tmp"
     with open(tmpfile, "w") as f:
         for line in packages.split("\n"):
             if not line.startswith("Filename:"):
                 continue
             filename = re.sub("Filename: *pool/", "", line)
             print(filename, file=f)
-    pooldir = "{repodir}/ubuntu.{ubuntu}/pools/{dist}/{main}/pool".format(**locals())
+    pooldir = F"{repodir}/ubuntu.{ubuntu}/pools/{dist}/{main}/pool"
     if not path.isdir(pooldir): os.makedirs(pooldir)
     if when:
-        sh___("{rsync} -rv {mirror}/pool {pooldir} --size-only --files-from={tmpfile}".format(**locals()))
+        sh___(F"{rsync} -rv {mirror}/pool {pooldir} --size-only --files-from={tmpfile}")
 
 def ubuntu_pool() -> None:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    pooldir = "{repodir}/ubuntu.{UBUNTU}/pool".format(**locals())
+    pooldir = F"{repodir}/ubuntu.{UBUNTU}/pool"
     if path.isdir(pooldir):
         shutil.rmtree(pooldir)
     os.makedirs(pooldir)
@@ -250,7 +250,7 @@ def ubuntu_poolcount() -> None:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    sh___("echo `find {repodir}/ubuntu.{ubuntu}/pool -type f | wc -l` pool files".format(**locals()))
+    sh___(F"echo `find {repodir}/ubuntu.{ubuntu}/pool -type f | wc -l` pool files")
 
 ubunturepo_CMD = ["python", "/srv/scripts/filelist.py", "--data", "/srv/repo"]
 ubunturepo_PORT = "80"
@@ -266,36 +266,32 @@ def ubuntu_repo() -> None:
         baseversion = BASEVERSION[baseversion]
     scripts = repo_scripts()
     cname = "ubuntu-repo-" + ubuntu  # container name
-    sx___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} run --name={cname} --detach {image}:{baseversion} sleep 9999".format(**locals()))
-    sh___("{docker} exec {cname} mkdir -p /srv/repo/ubuntu".format(**locals()))
-    sh___("{docker} exec {cname} mkdir -p /srv/repo/ubuntu".format(**locals()))
-    sh___("{docker} cp {scripts} {cname}:/srv/scripts".format(**locals()))
-    sh___("{docker} cp {repodir}/ubuntu.{ubuntu}/dists {cname}:/srv/repo/ubuntu".format(**locals()))
-    sh___("{docker} exec {cname} apt-get update".format(**locals()))
-    sh___("{docker} exec {cname} apt-get install -y python".format(**locals()))
-    sh___("{docker} exec {cname} mkdir -p /srv/repo/ubuntu/pool".format(**locals()))
+    sx___(F"{docker} rm --force {cname}")
+    sh___(F"{docker} run --name={cname} --detach {image}:{baseversion} sleep 9999")
+    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu")
+    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu")
+    sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
+    sh___(F"{docker} cp {repodir}/ubuntu.{ubuntu}/dists {cname}:/srv/repo/ubuntu")
+    sh___(F"{docker} exec {cname} apt-get update")
+    sh___(F"{docker} exec {cname} apt-get install -y python")
+    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu/pool")
     base = "base"
     CMD = str(ubunturepo_CMD).replace("'", '"')
     PORT = ubunturepo_PORT
-    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/ubuntu-repo/{base}:{ubuntu}"
-    sh___(cmd.format(**locals()))
+    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/ubuntu-repo/{base}:{ubuntu}")
     for main in REPOS:
-        sh___("{docker} rm --force {cname}".format(**locals()))
-        sh___("{docker} run --name={cname} --detach {imagesrepo}/ubuntu-repo/{base}:{ubuntu} sleep 9999".format(**locals()))
+        sh___(F"{docker} rm --force {cname}")
+        sh___(F"{docker} run --name={cname} --detach {imagesrepo}/ubuntu-repo/{base}:{ubuntu} sleep 9999")
         for dist in [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]:
-            pooldir = "{repodir}/ubuntu.{ubuntu}/pools/{dist}/{main}/pool".format(**locals())
+            pooldir = F"{repodir}/ubuntu.{ubuntu}/pools/{dist}/{main}/pool"
             if path.isdir(pooldir):
-                sh___("{docker} cp {pooldir}  {cname}:/srv/repo/ubuntu/".format(**locals()))
+                sh___(F"{docker} cp {pooldir}  {cname}:/srv/repo/ubuntu/")
                 base = main
         if base == main:
-            cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/ubuntu-repo/{base}:{ubuntu}"
-            sh___(cmd.format(**locals()))
-    cmd = "{docker} tag {imagesrepo}/ubuntu-repo/{base}:{ubuntu} {imagesrepo}/ubuntu-repo:{ubuntu}"
-    sh___(cmd.format(**locals()))
-    sh___("{docker} rm --force {cname}".format(**locals()))
-    cmd = "{docker} rmi {imagesrepo}/ubuntu-repo/base:{ubuntu}"  # untag base image
-    sh___(cmd.format(**locals()))
+            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/ubuntu-repo/{base}:{ubuntu}")
+    sh___(F"{docker} tag {imagesrepo}/ubuntu-repo/{base}:{ubuntu} {imagesrepo}/ubuntu-repo:{ubuntu}")
+    sh___(F"{docker} rm --force {cname}")
+    sx___(F"{docker} rmi {imagesrepo}/ubuntu-repo/base:{ubuntu}")  # untag base image
 
 def ubuntu_test() -> None:
     distro = DISTRO
@@ -435,9 +431,9 @@ def config_globals(settings: List[str]) -> None:
                 globals()[nam] = val.strip().split(",")
             else:
                 nam_type = type(old)
-                logg.warning("(ignored) unknown target type -c '{nam}' : {nam_type}".format(**locals()))
+                logg.warning(F"(ignored) unknown target type -c '{nam}' : {nam_type}")
         else:
-            logg.warning("(ignored) unknown target config -c '{nam}' : no such variable".format(**locals()))
+            logg.warning(F"(ignored) unknown target config -c '{nam}' : no such variable")
 
 if __name__ == "__main__":
     from optparse import OptionParser
