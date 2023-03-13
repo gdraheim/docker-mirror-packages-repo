@@ -57,8 +57,17 @@ OS["7.2"] = "7.2.1511"
 OS["7.1"] = "7.1.1503"
 OS["7.0"] = "7.0.1406"
 
+ALMA: Dict[str, str] = {}
+ALMA["9.0-20220706"] = "9.0"
+ALMA["9.0-20220901"] = "9.0"
+ALMA["9.0-20221001"] = "9.0"
+ALMA["9.1-20221117"] = "9.1"
+ALMA["9.1-20221201"] = "9.1"
+ALMA["9.1-20230222"] = "9.1"
+
 X7CENTOS = max([os for os in OS if os.startswith("7.")])
 X8CENTOS = max([os for os in OS if os.startswith("8.")])
+X9ALMA = max([os for os in ALMA if os.startswith("9.")])
 CENTOS = "8.5.2111"
 ARCH = "x86_64"
 
@@ -75,11 +84,16 @@ CENTOS_MIRROR = "rsync://rsync.hrz.tu-chemnitz.de/ftp/pub/linux/centos"
 # rsync://fedora.tu-chemnitz.de/ftp/pub/linux/fedora-epel/7/x86_64/debug/repodata/repomd.xml
 EPEL_MIRROR = "rsync://fedora.tu-chemnitz.de/ftp/pub/linux/fedora-epel"
 
+# https://mirrors.almalinux.org/isos/x86_64/9.0.html
+ALMALINUX_MIRROR = "rsync://ftp.gwdg.de/almalinux"
+
 MIRRORS: Dict[str, List[str]] = {}
 MIRRORS["centos"] = [CENTOS_MIRROR]
 MIRRORS["epel"] = [EPEL_MIRROR]
+MIRRORS["almalinux"] = [ALMALINUX_MIRROR]
 DISTRO = "centos"
 EPEL = "epel"
+ALMALINUX = "almalinux"
 
 _SUBDIRS: Dict[str, List[str]] = {}
 _SUBDIRS["7.9"] = ["os", "updates", "extras", "sclo", "centosplus", "atomic",
@@ -104,6 +118,11 @@ SUBDIRS8: Dict[str, List[str]] = OrderedDict()
 SUBDIRS8["main"] = ["BaseOS", "AppStream", "extras"]
 SUBDIRS8["plus"] = ["PowerTools", "centosplus"]
 #SUBDIRS8["dev"] = ["Devel", "HighAvailibility"]
+
+SUBDIRS9: Dict[str, List[str]] = OrderedDict()
+SUBDIRS9["main"] = ["BaseOS", "AppStream", "extras"]
+SUBDIRS9["plus"] = ["plus"] # ALMALINUX
+#SUBDIRS9["dev"] = ["devel", "HighAvailibility"]
 
 BASEVERSION: Dict[str, str] = {}
 BASEVERSION["8.5.2111"] = "8.3.2011"  # image:centos/base
