@@ -78,6 +78,7 @@ def opensuse_sync() -> None:
     opensuse_sync_4()
 
 def opensuse_dir(suffix: str = "") -> str:
+    distro = DISTRO
     leap = LEAP
     repodir = REPODIR
     dirname = "opensuse.{leap}{suffix}".format(**locals())
@@ -108,6 +109,7 @@ def opensuse_dir(suffix: str = "") -> str:
 
 def opensuse_save() -> None:
     yymmdd = datetime.date.today().strftime("%Y.%m%d")
+    distro = DISTRO
     leap = LEAP
     repodir = REPODIR
     src = "{repodir}/opensuse.{leap}/.".format(**locals())
@@ -144,9 +146,9 @@ def opensuse_sync_4() -> None:
     opensuse_sync_pack_("update", "non-oss", ["x86_64", "noarch", "strc", "nosrc"])
 
 def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
+    distro = DISTRO
     leap = LEAP
     repodir = REPODIR
-    distro = DISTRO
     mirror = MIRRORS[distro][0]
     rsync = RSYNC
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
@@ -165,9 +167,9 @@ def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
             raise
 
 def opensuse_sync_pack_(dist: str, repo: str, filters: List[str] = []) -> None:
+    distro = DISTRO
     leap = LEAP
     repodir = REPODIR
-    distro = DISTRO
     mirror = MIRRORS[distro][0]
     rsync = RSYNC
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
@@ -197,6 +199,7 @@ def opensuse_sync_pack_(dist: str, repo: str, filters: List[str] = []) -> None:
 # noarch/supertuxkart-data-1.1-lp152.1.2.noarch.rpm: Group       : Amusements/Games/3D/Race
 def opensuse_games(suffix: str = "") -> None:
     games: Dict[str, str] = {}
+    distro = DISTRO
     leap = LEAP
     repodir = REPODIR
     dirname = "{repodir}/opensuse.{leap}{suffix}".format(**locals())
@@ -222,6 +225,7 @@ opensuserepo_CMD = ["/usr/bin/python", "/srv/scripts/filelist.py", "--data", "/s
 opensuserepo_PORT = "80"
 def opensuse_repo() -> None:
     docker = DOCKER
+    distro = DISTRO
     leap = LEAP
     repodir = REPODIR
     baseversion = leap
@@ -302,6 +306,7 @@ def opensuse_repo() -> None:
     sh___("{docker} rmi {imagesrepo}/opensuse-repo/base:{leap}".format(**locals()))  # untag non-packages base
 
 def opensuse_test() -> None:
+    distro = DISTRO
     leap = LEAP
     # cat opensuse-compose.yml | sed \
     #    -e 's|opensuse-repo:.*"|opensuse/repo:$(LEAP)"|' \
