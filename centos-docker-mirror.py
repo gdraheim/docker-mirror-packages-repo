@@ -281,19 +281,20 @@ def centos_epelsync7() -> None:
     sh___(F"{rsync} -rv {mirror}/{epel}/{arch} epel.{epel}/{epel}/ {excludes}")
 
 def centos_unpack() -> None:
-    """ used while testing if centos:7 had all packages """
+    """ used while testing if centos had all packages """
     docker = DOCKER
     distro = DISTRO
     centos = CENTOS
+    R = major(centos)
     repodir = REPODIR
     cname = "centos-unpack-" + centos  # container name
     image = "localhost:5000/centos-repo"
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} run --name={cname} --detach {image}:{centos} sleep 9999")
-    sh___(F"{docker} cp {cname}:/srv/repo/7/os {repodir}/{distro}.{centos}/")
-    sh___(F"{docker} cp {cname}:/srv/repo/7/extras {repodir}/{distro}.{centos}/")
-    sh___(F"{docker} cp {cname}:/srv/repo/7/updates {repodir}/{distro}.{centos}/")
-    sh___(F"{docker} cp {cname}:/srv/repo/7/sclo {repodir}/{distro}.{centos}/")
+    sh___(F"{docker} cp {cname}:/srv/repo/{R}/os {repodir}/{distro}.{centos}/")
+    sh___(F"{docker} cp {cname}:/srv/repo/{R}/extras {repodir}/{distro}.{centos}/")
+    sh___(F"{docker} cp {cname}:/srv/repo/{R}/updates {repodir}/{distro}.{centos}/")
+    sh___(F"{docker} cp {cname}:/srv/repo/{R}/sclo {repodir}/{distro}.{centos}/")
     sh___(F"{docker} rm --force {cname}")
     sh___(F"du -sh {repodir}/{distro}.{centos}/.")
 
@@ -431,9 +432,11 @@ def centos_repo8() -> None:
     docker = DOCKER
     distro = DISTRO
     centos = CENTOS
+    R = major(centos)
     repodir = REPODIR
     centos_restore()
     centos_cleaner()
+    # image version
     version = centos
     if centos in BASEVERSION:
         version = BASEVERSION[centos]
@@ -441,7 +444,7 @@ def centos_repo8() -> None:
     cname = "centos-repo-" + centos  # container name
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} run --name={cname} --detach centos:{version} sleep 9999")
-    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/8")
+    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{R}")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
     base = "base"
     CMD = str(centosrepo8_CMD).replace("'", '"')
@@ -455,7 +458,7 @@ def centos_repo8() -> None:
         for subdir in dists[dist]:
             pooldir = F"{repodir}/{distro}.{centos}/{subdir}"
             if path.isdir(pooldir):
-                sh___(F"{docker} cp {pooldir} {cname}:/srv/repo/8/")
+                sh___(F"{docker} cp {pooldir} {cname}:/srv/repo/{R}/")
                 base = dist
         if base == dist:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}")
@@ -467,9 +470,11 @@ def centos_repo7() -> None:
     docker = DOCKER
     distro = DISTRO
     centos = CENTOS
+    R = major(centos)
     repodir = REPODIR
     centos_restore()
     centos_cleaner()
+    # image version
     baseversion = centos
     if baseversion in BASEVERSION:
         baseversion = BASEVERSION[baseversion]
@@ -477,7 +482,7 @@ def centos_repo7() -> None:
     cname = "centos-repo-" + centos  # container name
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} run --name={cname} --detach centos:{baseversion} sleep 9999")
-    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/7")
+    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{R}")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
     base = "base"
     CMD = str(centosrepo7_CMD).replace("'", '"')
@@ -491,7 +496,7 @@ def centos_repo7() -> None:
         for subdir in dists[dist]:
             pooldir = F"{repodir}/{distro}.{centos}/{subdir}"
             if path.isdir(pooldir):
-                sh___(F"{docker} cp {pooldir} {cname}:/srv/repo/7/")
+                sh___(F"{docker} cp {pooldir} {cname}:/srv/repo/{R}/")
                 base = dist
         if base == dist:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}")
