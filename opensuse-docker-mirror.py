@@ -53,6 +53,10 @@ RSYNC_SUSE = "rsync://suse.uni-leipzig.de/opensuse-full/opensuse"
 RSYNC_SUSE2 = "rsync://ftp.tu-chemnitz.de/pub/linux/opensuse"
 RSYNC_SUSE3 = "rsync://mirror.cs.upb.de/opensuse"
 
+DISTRO = "opensuse"
+MIRRORS: Dict[str, List[str]] = {}
+MIRRORS["opensuse"] = [RSYNC_SUSE, RSYNC_SUSE2, RSYNC_SUSE3]
+
 RSYNC = "rsync"
 DOCKER = "docker"
 LAYER = "base"
@@ -142,7 +146,8 @@ def opensuse_sync_4() -> None:
 def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
     leap = LEAP
     repodir = REPODIR
-    mirror = RSYNC_SUSE
+    distro = DISTRO
+    mirror = MIRRORS[distro][0]
     rsync = RSYNC
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
@@ -162,7 +167,8 @@ def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
 def opensuse_sync_pack_(dist: str, repo: str, filters: List[str] = []) -> None:
     leap = LEAP
     repodir = REPODIR
-    mirror = RSYNC_SUSE
+    distro = DISTRO
+    mirror = MIRRORS[distro][0]
     rsync = RSYNC
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
