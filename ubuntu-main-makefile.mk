@@ -1,6 +1,6 @@
 #! /usr/bin/make -f
 
-UBUNTU = 20.04
+UBUNTU = 22.04
 UBUNTU_REPOS ?= --updates
 # UNTU_REPOS ?= --universe
 # UNTU_REPOS ?= --multiverse
@@ -27,6 +27,9 @@ ubuntubash:
 
 ### ubuntu versions
 
+ubuntu.23.04: ;	$(MAKE) ubuntudir UBUNTU=23.04
+ubuntu.22.10: ;	$(MAKE) ubuntudir UBUNTU=22.10
+ubuntu.22.04: ;	$(MAKE) ubuntudir UBUNTU=22.04
 ubuntu.21.10: ;	$(MAKE) ubuntudir UBUNTU=21.10
 ubuntu.21.04: ;	$(MAKE) ubuntudir UBUNTU=21.04
 ubuntu.20.10: ;	$(MAKE) ubuntudir UBUNTU=20.10
@@ -34,6 +37,9 @@ ubuntu.20.04: ;	$(MAKE) ubuntudir UBUNTU=20.04
 ubuntu.19.10: ;	$(MAKE) ubuntudir UBUNTU=19.10
 ubuntu.18.04: ;	$(MAKE) ubuntudir UBUNTU=18.04
 ubuntu.16.04: ; $(MAKE) ubuntudir UBUNTU=16.04
+ubuntusync.23.04: ; $(MAKE) ubuntusync UBUNTU=23.04
+ubuntusync.22.10: ; $(MAKE) ubuntusync UBUNTU=22.10
+ubuntusync.22.04: ; $(MAKE) ubuntusync UBUNTU=22.04
 ubuntusync.21.10: ; $(MAKE) ubuntusync UBUNTU=21.10
 ubuntusync.21.04: ; $(MAKE) ubuntusync UBUNTU=21.04
 ubuntusync.20.10: ; $(MAKE) ubuntusync UBUNTU=20.10
@@ -48,6 +54,9 @@ ubunturepo.20.04: ; $(MAKE) ubunturepo UBUNTU=20.04
 ubunturepo.19.10: ; $(MAKE) ubunturepo UBUNTU=19.10
 ubunturepo.18.04: ; $(MAKE) ubunturepo UBUNTU=18.04
 ubunturepo.16.04: ; $(MAKE) ubunturepo UBUNTU=16.04
+ubuntu-23.04: ; $(MAKE) ubuntu UBUNTU=23.04
+ubuntu-22.10: ; $(MAKE) ubuntu UBUNTU=22.10
+ubuntu-22.04: ; $(MAKE) ubuntu UBUNTU=22.04
 ubuntu-21.10: ; $(MAKE) ubuntu UBUNTU=21.10
 ubuntu-21.04: ; $(MAKE) ubuntu UBUNTU=21.04
 ubuntu-20.10: ; $(MAKE) ubuntu UBUNTU=20.10
@@ -57,6 +66,9 @@ ubuntu-18.04: ; $(MAKE) ubuntu UBUNTU=18.04
 ubuntu-16.04: ; $(MAKE) ubuntu UBUNTU=16.04
 
 universesync: ; $(MAKE) REPOS=universe
+universesync.23.04: ; $(MAKE) ubuntusync UBUNTU=23.04 UBUNTU_REPOS=--universe
+universesync.22.10: ; $(MAKE) ubuntusync UBUNTU=22.10 UBUNTU_REPOS=--universe
+universesync.22.04: ; $(MAKE) ubuntusync UBUNTU=22.04 UBUNTU_REPOS=--universe
 universesync.21.10: ; $(MAKE) ubuntusync UBUNTU=21.10 UBUNTU_REPOS=--universe
 universesync.21.04: ; $(MAKE) ubuntusync UBUNTU=21.04 UBUNTU_REPOS=--universe
 universesync.20.10: ; $(MAKE) ubuntusync UBUNTU=20.10 UBUNTU_REPOS=--universe

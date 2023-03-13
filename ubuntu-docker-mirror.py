@@ -37,13 +37,15 @@ DATADIRS = [REPODATADIR,
 
 
 UBUNTU_OS = "ubuntu"
-UBUNTU = "20.04"
+UBUNTU = "22.04"
 RSYNC_UBUNTU = "rsync://ftp5.gwdg.de/pub/linux/debian/ubuntu"
 
 UBUNTU_TMP = "ubuntu.tmp"
 
 LTS = ["14.04", "16.04", "18.04", "20.04", "22.04"]
 DIST: Dict[str, str] = {}
+DIST["23.04"] = "lunatic"  # Lunatic Lobster
+DIST["22.10"] = "kinetic"  # Kinetic Kudu
 DIST["22.04"] = "jammy"    # Jammy Jellyfish    (April 2027)
 DIST["21.10"] = "impish"   # Impish Indri
 DIST["21.04"] = "hirsute"  # Hirsute Hippo
@@ -74,7 +76,9 @@ DOCKER = "docker"
 RSYNC = "rsync"
 
 BASEVERSION: Dict[str, str] = {}  # image:ubuntu/base
-BASEVERSION["22.04"] = "20.04"  # previous LTS
+BASEVERSION["23.04"] = "22.04"
+BASEVERSION["22.10"] = "22.04"  # previous LTS
+BASEVERSION["22.04"] = "22.04"
 BASEVERSION["21.10"] = "20.04"
 BASEVERSION["21.04"] = "20.04"
 BASEVERSION["20.10"] = "20.04"
