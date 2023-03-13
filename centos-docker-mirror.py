@@ -174,6 +174,7 @@ def centos_epeldir(suffix: str = "") -> str:
     centos = CENTOS
     return distro_dir(distro, centos, suffix)
 def distro_dir(distro: str, release: str, suffix: str = "") -> str:
+    # distro = DISTRO
     repodir = REPODIR
     dirname = F"{distro}.{release}{suffix}"
     dirlink = path.join(repodir, dirname)
@@ -230,6 +231,7 @@ def centos_sync() -> None:
             logg.info(F"DONE [{base}] /{subdir}")
 
 def distro_sync_subdir(distro: str, release: str, subdir: str) -> None:
+    # distro = DISTRO
     rsync = RSYNC
     mirror = MIRRORS[distro][0]
     excludes = CENTOS_XXX
@@ -288,12 +290,12 @@ def centos_unpack() -> None:
     image = "localhost:5000/centos-repo"
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} run --name={cname} --detach {image}:{centos} sleep 9999")
-    sh___(F"{docker} cp {cname}:/srv/repo/7/os {repodir}/centos.{centos}/")
-    sh___(F"{docker} cp {cname}:/srv/repo/7/extras {repodir}/centos.{centos}/")
-    sh___(F"{docker} cp {cname}:/srv/repo/7/updates {repodir}/centos.{centos}/")
-    sh___(F"{docker} cp {cname}:/srv/repo/7/sclo {repodir}/centos.{centos}/")
+    sh___(F"{docker} cp {cname}:/srv/repo/7/os {repodir}/{distro}.{centos}/")
+    sh___(F"{docker} cp {cname}:/srv/repo/7/extras {repodir}/{distro}.{centos}/")
+    sh___(F"{docker} cp {cname}:/srv/repo/7/updates {repodir}/{distro}.{centos}/")
+    sh___(F"{docker} cp {cname}:/srv/repo/7/sclo {repodir}/{distro}.{centos}/")
     sh___(F"{docker} rm --force {cname}")
-    sh___(F"du -sh {repodir}/centos.{centos}/.")
+    sh___(F"du -sh {repodir}/{distro}.{centos}/.")
 
 def centos_clean() -> None:
     """ when moving from centos:7 to centos:8 """
@@ -301,7 +303,7 @@ def centos_clean() -> None:
     centos = CENTOS
     repodir = REPODIR
     for subdir in ["os", "extras", "updates", "sclo"]:
-        sh___(F"rm -rf {repodir}/centos.{centos}/{subdir}")
+        sh___(F"rm -rf {repodir}/{distro}.{centos}/{subdir}")
 
 def centos_epelrepo() -> None:
     if CENTOS.startswith("9"):
@@ -451,7 +453,7 @@ def centos_repo8() -> None:
         sx___(F"{docker} rm --force {cname}")
         sh___(F"{docker} run --name={cname} --detach {repo}/centos-repo/{base}:{centos} sleep 9999")
         for subdir in dists[dist]:
-            pooldir = F"{repodir}/centos.{centos}/{subdir}"
+            pooldir = F"{repodir}/{distro}.{centos}/{subdir}"
             if path.isdir(pooldir):
                 sh___(F"{docker} cp {pooldir} {cname}:/srv/repo/8/")
                 base = dist
@@ -487,7 +489,7 @@ def centos_repo7() -> None:
         sx___(F"{docker} rm --force {cname}")
         sh___(F"{docker} run --name={cname} --detach {repo}/centos-repo/{base}:{centos} sleep 9999")
         for subdir in dists[dist]:
-            pooldir = F"{repodir}/centos.{centos}/{subdir}"
+            pooldir = F"{repodir}/{distro}.{centos}/{subdir}"
             if path.isdir(pooldir):
                 sh___(F"{docker} cp {pooldir} {cname}:/srv/repo/7/")
                 base = dist
@@ -519,8 +521,8 @@ def centos_cleaner() -> None:
     repodir = REPODIR
     arch = "x86_64"
     for subdir in ["updates", "extras"]:
-        orig = F"{repodir}/centos.{centos}/{subdir}/{arch}/drpms"
-        save = F"{repodir}/centos.{centos}/{subdir}.{arch}.drpms"
+        orig = F"{repodir}/{distro}.{centos}/{subdir}/{arch}/drpms"
+        save = F"{repodir}/{distro}.{centos}/{subdir}.{arch}.drpms"
         if path.isdir(orig):
             shutil.move(orig, save)
 
@@ -530,8 +532,8 @@ def centos_restore() -> None:
     repodir = REPODIR
     arch = "x86_64"
     for subdir in ["updates", "extras"]:
-        orig = F"{repodir}/centos.{centos}/{subdir}/{arch}/drpms"
-        save = F"{repodir}/centos.{centos}/{subdir}.{arch}.drpms"
+        orig = F"{repodir}/{distro}.{centos}/{subdir}/{arch}/drpms"
+        save = F"{repodir}/{distro}.{centos}/{subdir}.{arch}.drpms"
         if path.isdir(save):
             shutil.move(save, orig)
 
@@ -554,7 +556,7 @@ def centos_check() -> None:
     cname = "centos-check-" + centos  # container name
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} run --name={cname} --detach centos:{centos} sleep 9999")
-    centosdir = F"{repodir}/centos.{centos}"
+    centosdir = F"{repodir}/{distro}.{centos}"
     out, end = output2(F"{docker} exec {cname} rpm -qa")
     for f in out.split("\n"):
         found = path_find(centosdir, f + ".rpm")
