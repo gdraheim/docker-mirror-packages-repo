@@ -61,7 +61,6 @@ X7CENTOS = max([os for os in OS if os.startswith("7.")])
 X8CENTOS = max([os for os in OS if os.startswith("8.")])
 CENTOS = "8.5.2111"
 ARCH = "x86_64"
-DISTRO = "centos"
 
 DOCKER = "docker"
 RSYNC = "rsync"
@@ -75,6 +74,12 @@ CENTOS_MIRROR = "rsync://rsync.hrz.tu-chemnitz.de/ftp/pub/linux/centos"
 #  http://fedora.tu-chemnitz.de/pub/linux/fedora-epel/7/x86_64/debug/repodata/repomd.xml
 # rsync://fedora.tu-chemnitz.de/ftp/pub/linux/fedora-epel/7/x86_64/debug/repodata/repomd.xml
 EPEL_MIRROR = "rsync://fedora.tu-chemnitz.de/ftp/pub/linux/fedora-epel"
+
+MIRRORS: Dict[str, List[str]] = {}
+MIRRORS["centos"] = [CENTOS_MIRROR]
+MIRRORS["epel"] = [EPEL_MIRROR]
+DISTRO = "centos"
+EPEL = "epel"
 
 _SUBDIRS: Dict[str, List[str]] = {}
 _SUBDIRS["7.9"] = ["os", "updates", "extras", "sclo", "centosplus", "atomic",
@@ -181,7 +186,7 @@ def centos_dir(suffix: str = "") -> str:
     return dirlink
 
 def centos_epeldir(suffix: str = "") -> str:
-    distro = DISTRO
+    distro = EPEL
     centos = CENTOS
     repodir = REPODIR
     epel = major(centos)
@@ -222,9 +227,9 @@ CENTOS_XXX = " ".join([
 
 def sync_subdir(subdir: str) -> None:
     rsync = RSYNC
-    mirror = CENTOS_MIRROR
     distro = DISTRO
     centos = CENTOS
+    mirror = MIRRORS[distro][0]
     excludes = CENTOS_XXX
     repodir = REPODIR
     sh___("{rsync} -rv {mirror}/{centos}/{subdir}   {repodir}/centos.{centos}/ {excludes}".format(**locals()))
@@ -246,18 +251,18 @@ def centos_epelsync() -> None:
 
 def centos_epelsync7() -> None:
     rsync = RSYNC
-    mirror = EPEL_MIRROR
-    distro = DISTRO
+    distro = EPEL
     centos = CENTOS
+    mirror = MIRRORS[distro][0]
     epel = major(centos)
     arch = ARCH
     excludes = """ --exclude "*.iso" """
     sh___("{rsync} -rv {mirror}/{epel}/{arch} epel.{epel}/{epel}/ {excludes}".format(**locals()))
 def centos_epelsync8() -> None:
     rsync = RSYNC
-    mirror = EPEL_MIRROR
-    distro = DISTRO
+    distro = EPEL
     centos = CENTOS
+    mirror = MIRRORS[distro][0]
     epel = major(centos)
     arch = ARCH
     excludes = """ --exclude "*.iso" """
@@ -298,7 +303,7 @@ def centos_epelrepo() -> None:
 
 def centos_epelrepo7() -> None:
     docker = DOCKER
-    distro = DISTRO
+    distro = EPEL
     centos = CENTOS
     epel = major(centos)
     arch = ARCH
@@ -327,7 +332,7 @@ def centos_epelrepo7() -> None:
 
 def centos_epelrepo8() -> None:
     docker = DOCKER
-    distro = DISTRO
+    distro = EPEL
     centos = CENTOS
     epel = major(centos)
     arch = ARCH
