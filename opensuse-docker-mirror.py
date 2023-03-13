@@ -81,7 +81,7 @@ def opensuse_dir(suffix: str = "") -> str:
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
-    dirname = F"opensuse.{leap}{suffix}"
+    dirname = F"{distro}.{leap}{suffix}"
     dirlink = path.join(repodir, dirname)
     if not path.isdir(repodir):
         os.mkdir(repodir)
@@ -112,7 +112,7 @@ def opensuse_save() -> None:
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
-    src = F"{repodir}/opensuse.{leap}/."
+    src = F"{repodir}/{distro}.{leap}/."
     dst = opensuse_dir("." + yymmdd) + "/."
     logg.info("src = %s", src)
     logg.info("dst = %s", dst)
@@ -154,11 +154,11 @@ def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
     excludes += """ --size-only --filter="exclude *.src.rpm" """
-    leaprepo = F"{repodir}/opensuse.{leap}/{dist}/leap/{leap}/repo"
+    leaprepo = F"{repodir}/{distro}.{leap}/{dist}/leap/{leap}/repo"
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     # retry:
     cmd = F"{rsync} -rv {mirror}/{dist}/leap/{leap}/repo/{repo} {leaprepo}/ {excludes}"
-    logfile = F"{repodir}/opensuse.{leap}.log"
+    logfile = F"{repodir}/{distro}.{leap}.log"
     for attempt in xrange(RETRY):
         try:
             sh___(F"set -o pipefail ; {cmd} |& tee {logfile}")
@@ -175,11 +175,11 @@ def opensuse_sync_pack_(dist: str, repo: str, filters: List[str] = []) -> None:
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
     excludes += """ --size-only --filter="exclude *.src.rpm" """
-    leaprepo = F"{repodir}/opensuse.{leap}/{dist}/leap/{leap}"
+    leaprepo = F"{repodir}/{distro}.{leap}/{dist}/leap/{leap}"
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     # retry:
     cmd = F"{rsync} -rv {mirror}/{dist}/leap/{leap}/{repo} {leaprepo}/ {excludes}"
-    logfile = F"{repodir}/opensuse.{leap}.log"
+    logfile = F"{repodir}/{distro}.{leap}.log"
     for attempt in xrange(RETRY):
         try:
             sh___(F"set -o pipefail ; {cmd} |& tee {logfile}")
@@ -202,7 +202,7 @@ def opensuse_games(suffix: str = "") -> None:
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
-    dirname = F"{repodir}/opensuse.{leap}{suffix}"
+    dirname = F"{repodir}/{distro}.{leap}{suffix}"
     basedir = dirname + "/."
     logg.info("check %s", basedir)
     if path.isdir(basedir):
@@ -236,7 +236,7 @@ def opensuse_repo() -> None:
     image = BASE[LEAP]
     imagesrepo = IMAGESREPO
     bind_repo = ""
-    base_repo = F"{repodir}/opensuse.{leap}/distribution/leap/{leap}/repo/oss"
+    base_repo = F"{repodir}/{distro}.{leap}/distribution/leap/{leap}/repo/oss"
     logg.info("/base-repo -> %s", base_repo)
     if path.isdir(base_repo):
         base_repo_path = path.abspath(base_repo)
@@ -269,10 +269,10 @@ def opensuse_repo() -> None:
         sh___(F"{docker} run --name={cname} --detach {imagesrepo}/opensuse-repo/{base}:{leap} sleep 9999")
         clean: Dict[str, str] = {}
         for subdir in dists[dist]:
-            basedir = F"{repodir}/opensuse.{leap}/."
-            pooldir = F"{repodir}/opensuse.{leap}/{subdir}"
+            basedir = F"{repodir}/{distro}.{leap}/."
+            pooldir = F"{repodir}/{distro}.{leap}/{subdir}"
             if subdir.startswith("-"):
-                gamesfile = F"{repodir}/opensuse.{leap}{subdir}.json"
+                gamesfile = F"{repodir}/{distro}.{leap}{subdir}.json"
                 clean = json.load(open(gamesfile))
                 if not clean:
                     continue
