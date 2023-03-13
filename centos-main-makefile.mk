@@ -5,6 +5,7 @@
 # however it doubles the required disk #
 # space to get a centos-repo:x image!! #
 
+ALMALINUX = 9.1
 CENTOS = 8.4
 
 centos:
