@@ -128,7 +128,9 @@ BASEVERSION["8.5.2111"] = "8.4.2105"  # image:centos/base
 
 def major(version: str) -> str:
     version = version or CENTOS
-    return version[0]
+    if len(version) == 1 or version[1] == ".":
+        return version[0]
+    return version[:1]
 
 def centos_epel() -> None:
     centos_epeldir()
@@ -162,6 +164,8 @@ def centos_pull() -> None:
             sh___(f"{docker} tag centos:{release} centos:{centos}")
     if release.startswith("9"):
         sh___(F"{docker} pull almalinux:{release}")
+        if release in ALMA:
+            centos = ALMA[release]
         if release != centos:
             sh___(f"{docker} tag almalinux:{release} almalinux:{centos}")
 
@@ -662,9 +666,13 @@ def commands() -> str:
     return "|".join(cmds)
 
 def CENTOS_set(centos: str) -> str:
-    global CENTOS
+    global CENTOS, DISTRO
     if centos in OS:
         CENTOS = OS[centos]
+        return CENTOS
+    if centos in ALMA.values():
+        CENTOS = max([os for os in ALMA if ALMA[os] == centos])
+        DISTRO = ALMALINUX
         return CENTOS
     if len(centos) <= 2:
         CENTOS = max([os for os in OS if os.startswith(centos)])
