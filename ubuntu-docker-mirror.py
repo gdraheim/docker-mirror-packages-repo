@@ -36,7 +36,7 @@ DATADIRS = [REPODATADIR,
             "/dock/docker-mirror-packages"]
 
 
-UBUNTU_OS = "ubuntu"
+DISTRO = "ubuntu"
 UBUNTU = "22.04"
 RSYNC_UBUNTU = "rsync://ftp5.gwdg.de/pub/linux/debian/ubuntu"
 
@@ -250,7 +250,7 @@ def ubuntu_repo() -> None:
     docker = DOCKER
     ubuntu = UBUNTU
     repodir = REPODIR
-    image = UBUNTU_OS
+    image = DISTRO
     imagesrepo = IMAGESREPO
     baseversion = ubuntu
     if baseversion in BASEVERSION:
@@ -292,7 +292,7 @@ def ubuntu_test() -> None:
     ubuntu = UBUNTU
     # cat ubuntu-compose.yml | sed \
     #    -e 's|ubuntu-repo:.*"|ubuntu/repo:$(UBUNTU)"|' \
-    #    -e 's|ubuntu:.*"|$(UBUNTU_OS):$(UBUNTU)"|' \
+    #    -e 's|ubuntu:.*"|$(DISTRO):$(UBUNTU)"|' \
     #    > ubuntu-compose.yml.tmp
     # - docker-compose -p $@ -f ubuntu-compose.yml.tmp down
     # docker-compose -p $@ -f ubuntu-compose.yml.tmp up -d
