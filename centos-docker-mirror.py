@@ -61,6 +61,7 @@ X7CENTOS = max([os for os in OS if os.startswith("7.")])
 X8CENTOS = max([os for os in OS if os.startswith("8.")])
 CENTOS = "8.5.2111"
 ARCH = "x86_64"
+DISTRO = "centos"
 
 DOCKER = "docker"
 RSYNC = "rsync"
@@ -123,6 +124,7 @@ def centos_make() -> None:
 
 def centos_pull() -> None:
     docker = DOCKER
+    distro = DISTRO
     centos = CENTOS
     if centos == X7CENTOS:
         sh___("{docker} pull centos:7".format(**locals()))
@@ -132,6 +134,7 @@ def centos_pull() -> None:
         sh___("{docker} tag  centos:8 centos:{centos}".format(**locals()))
 
 def centos_sync() -> None:
+    distro = DISTRO
     centos = CENTOS
     centos_dir()
     subdirs: Dict[str, List[str]] = OrderedDict()
@@ -148,6 +151,7 @@ def centos_sync() -> None:
             logg.info("DONE [{base}] /{subdir}".format(**locals()))
 
 def centos_dir(suffix: str = "") -> str:
+    distro = DISTRO
     centos = CENTOS
     repodir = REPODIR
     dirname = "centos.{centos}{suffix}".format(**locals())
@@ -177,6 +181,7 @@ def centos_dir(suffix: str = "") -> str:
     return dirlink
 
 def centos_epeldir(suffix: str = "") -> str:
+    distro = DISTRO
     centos = CENTOS
     repodir = REPODIR
     epel = major(centos)
@@ -218,6 +223,7 @@ CENTOS_XXX = " ".join([
 def sync_subdir(subdir: str) -> None:
     rsync = RSYNC
     mirror = CENTOS_MIRROR
+    distro = DISTRO
     centos = CENTOS
     excludes = CENTOS_XXX
     repodir = REPODIR
@@ -241,6 +247,7 @@ def centos_epelsync() -> None:
 def centos_epelsync7() -> None:
     rsync = RSYNC
     mirror = EPEL_MIRROR
+    distro = DISTRO
     centos = CENTOS
     epel = major(centos)
     arch = ARCH
@@ -249,6 +256,7 @@ def centos_epelsync7() -> None:
 def centos_epelsync8() -> None:
     rsync = RSYNC
     mirror = EPEL_MIRROR
+    distro = DISTRO
     centos = CENTOS
     epel = major(centos)
     arch = ARCH
@@ -261,6 +269,7 @@ def centos_epelsync8() -> None:
 
 def centos_unpack() -> None:
     docker = DOCKER
+    distro = DISTRO
     centos = CENTOS
     repodir = REPODIR
     cname = "centos-unpack-" + centos  # container name
@@ -275,6 +284,7 @@ def centos_unpack() -> None:
     sh___("du -sh {repodir}/centos.{centos}/.".format(**locals()))
 
 def centos_clean() -> None:
+    distro = DISTRO
     centos = CENTOS
     repodir = REPODIR
     for subdir in ["os", "extras", "updates", "sclo"]:
@@ -288,6 +298,7 @@ def centos_epelrepo() -> None:
 
 def centos_epelrepo7() -> None:
     docker = DOCKER
+    distro = DISTRO
     centos = CENTOS
     epel = major(centos)
     arch = ARCH
@@ -316,6 +327,7 @@ def centos_epelrepo7() -> None:
 
 def centos_epelrepo8() -> None:
     docker = DOCKER
+    distro = DISTRO
     centos = CENTOS
     epel = major(centos)
     arch = ARCH
@@ -389,6 +401,7 @@ def centos_repo() -> None:
 
 def centos_repo7() -> None:
     docker = DOCKER
+    distro = DISTRO
     centos = CENTOS
     repodir = REPODIR
     centos_restore()
@@ -427,6 +440,7 @@ def centos_repo7() -> None:
 
 def centos_repo8() -> None:
     docker = DOCKER
+    distro = DISTRO
     centos = CENTOS
     repodir = REPODIR
     centos_restore()
@@ -465,6 +479,7 @@ def centos_repo8() -> None:
 
 def centos_tags() -> None:
     docker = DOCKER
+    distro = DISTRO
     centos = CENTOS
     repo = IMAGESREPO
     name = "centos-repo"
@@ -478,6 +493,7 @@ def centos_tags() -> None:
         sh___("{docker} tag {repo}/{name}:{centos} {repo}/{name}{ver1}:latest".format(**locals()))
 
 def centos_cleaner() -> None:
+    distro = DISTRO
     centos = CENTOS
     repodir = REPODIR
     arch = "x86_64"
@@ -488,6 +504,7 @@ def centos_cleaner() -> None:
             shutil.move(orig, save)
 
 def centos_restore() -> None:
+    distro = DISTRO
     centos = CENTOS
     repodir = REPODIR
     arch = "x86_64"
@@ -498,6 +515,7 @@ def centos_restore() -> None:
             shutil.move(save, orig)
 
 def centos_test() -> None:
+    distro = DISTRO
     centos = CENTOS
     logg.error("not implemented")
     # sed -e "s|centos:centos7|centos:$(CENTOS)|" -e "s|centos-repo:7|centos-repo:$(CENTOS)|" \
@@ -509,6 +527,7 @@ def centos_test() -> None:
 
 def centos_check() -> None:
     docker = DOCKER
+    distro = DISTRO
     centos = CENTOS
     repodir = REPODIR
     cname = "centos-check-" + centos  # container name
