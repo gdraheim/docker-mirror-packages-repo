@@ -81,7 +81,7 @@ def opensuse_dir(suffix: str = "") -> str:
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
-    dirname = "opensuse.{leap}{suffix}".format(**locals())
+    dirname = F"opensuse.{leap}{suffix}"
     dirlink = path.join(repodir, dirname)
     if not path.isdir(repodir):
         os.mkdir(repodir)
@@ -112,7 +112,7 @@ def opensuse_save() -> None:
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
-    src = "{repodir}/opensuse.{leap}/.".format(**locals())
+    src = F"{repodir}/opensuse.{leap}/."
     dst = opensuse_dir("." + yymmdd) + "/."
     logg.info("src = %s", src)
     logg.info("dst = %s", dst)
@@ -154,14 +154,14 @@ def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
     excludes += """ --size-only --filter="exclude *.src.rpm" """
-    leaprepo = "{repodir}/opensuse.{leap}/{dist}/leap/{leap}/repo".format(**locals())
+    leaprepo = F"{repodir}/opensuse.{leap}/{dist}/leap/{leap}/repo"
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
-    cmd = "{rsync} -rv {mirror}/{dist}/leap/{leap}/repo/{repo} {leaprepo}/ {excludes}".format(**locals())
-    # sh___(cmd):
-    logfile = "{repodir}/opensuse.{leap}.log".format(**locals())
+    # retry:
+    cmd = F"{rsync} -rv {mirror}/{dist}/leap/{leap}/repo/{repo} {leaprepo}/ {excludes}"
+    logfile = F"{repodir}/opensuse.{leap}.log"
     for attempt in xrange(RETRY):
         try:
-            sh___("set -o pipefail ; {cmd} |& tee {logfile}".format(**locals()))
+            sh___(F"set -o pipefail ; {cmd} |& tee {logfile}")
         except subprocess.CalledProcessError as e:
             logg.warning("[%s] %s", e.returncode, cmd)
             raise
@@ -175,14 +175,14 @@ def opensuse_sync_pack_(dist: str, repo: str, filters: List[str] = []) -> None:
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
     excludes += """ --size-only --filter="exclude *.src.rpm" """
-    leaprepo = "{repodir}/opensuse.{leap}/{dist}/leap/{leap}".format(**locals())
+    leaprepo = F"{repodir}/opensuse.{leap}/{dist}/leap/{leap}"
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
-    cmd = "{rsync} -rv {mirror}/{dist}/leap/{leap}/{repo} {leaprepo}/ {excludes}".format(**locals())
-    # sh___(cmd):
-    logfile = "{repodir}/opensuse.{leap}.log".format(**locals())
+    # retry:
+    cmd = F"{rsync} -rv {mirror}/{dist}/leap/{leap}/{repo} {leaprepo}/ {excludes}"
+    logfile = F"{repodir}/opensuse.{leap}.log"
     for attempt in xrange(RETRY):
         try:
-            sh___("set -o pipefail ; {cmd} |& tee {logfile}".format(**locals()))
+            sh___(F"set -o pipefail ; {cmd} |& tee {logfile}")
         except subprocess.CalledProcessError as e:
             logg.warning("[%s] %s", e.returncode, cmd)
             log = open(logfile).read()
@@ -202,7 +202,7 @@ def opensuse_games(suffix: str = "") -> None:
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
-    dirname = "{repodir}/opensuse.{leap}{suffix}".format(**locals())
+    dirname = F"{repodir}/opensuse.{leap}{suffix}"
     basedir = dirname + "/."
     logg.info("check %s", basedir)
     if path.isdir(basedir):
@@ -211,7 +211,7 @@ def opensuse_games(suffix: str = "") -> None:
                 if filename.endswith(".rpm"):
                     rpm = path.join(dirpath, filename)
                     # if "tux" not in rpm: continue
-                    out, end = output2("rpm -q --info {rpm}".format(**locals()))
+                    out, end = output2(F"rpm -q --info {rpm}")
                     for line in out.splitlines():
                         if line.startswith("Group"):
                             if "/Games/" in line:
@@ -236,44 +236,43 @@ def opensuse_repo() -> None:
     image = BASE[LEAP]
     imagesrepo = IMAGESREPO
     bind_repo = ""
-    base_repo = "{repodir}/opensuse.{leap}/distribution/leap/{leap}/repo/oss".format(**locals())
+    base_repo = F"{repodir}/opensuse.{leap}/distribution/leap/{leap}/repo/oss"
     logg.info("/base-repo -> %s", base_repo)
     if path.isdir(base_repo):
         base_repo_path = path.abspath(base_repo)
-        bind_repo = "-v {base_repo_path}:/base-repo".format(**locals())
-    sx___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} run --name={cname} {bind_repo} --detach {image}:{baseversion} sleep 9999".format(**locals()))
-    sh___("{docker} exec {cname} mkdir -p /srv/repo/".format(**locals()))
-    sh___("{docker} cp {scripts} {cname}:/srv/scripts".format(**locals()))
+        bind_repo = F"-v {base_repo_path}:/base-repo"
+    sx___(F"{docker} rm --force {cname}")
+    sh___(F"{docker} run --name={cname} {bind_repo} --detach {image}:{baseversion} sleep 9999")
+    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/")
+    sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
     oss = "repo-oss"  # Opensuse 15.x main repo
     if bind_repo:
         oss = "local-repo"
-        sh___("{docker} exec {cname} zypper ar --no-gpgcheck file:///base-repo {oss}".format(**locals()))
+        sh___(F"{docker} exec {cname} zypper ar --no-gpgcheck file:///base-repo {oss}")
     if True:
-        sh___("{docker} exec {cname} zypper install -y -r {oss} python".format(**locals()))
-        sh___("{docker} exec {cname} zypper install -y -r {oss} python-xml".format(**locals()))
+        sh___(F"{docker} exec {cname} zypper install -y -r {oss} python")
+        sh___(F"{docker} exec {cname} zypper install -y -r {oss} python-xml")
     if leap in XXLEAP:
-        sh___("{docker} exec {cname} zypper install -y -r {oss} createrepo".format(**locals()))
+        sh___(F"{docker} exec {cname} zypper install -y -r {oss} createrepo")
     if bind_repo:
-        sh___("{docker} exec {cname} zypper rr {oss}".format(**locals()))
+        sh___(F"{docker} exec {cname} zypper rr {oss}")
     CMD = str(opensuserepo_CMD).replace("'", '"')
     PORT = opensuserepo_PORT
     base = "base"
-    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/opensuse-repo/{base}:{leap}"
-    sh___(cmd.format(**locals()))
+    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/opensuse-repo/{base}:{leap}")
     dists: Dict[str, List[str]] = OrderedDict()
     # dists["mini"] = ["distribution", "-games"]
     dists["main"] = ["distribution"]
     dists["update"] = ["update"]
     for dist in dists:
-        sx___("{docker} rm --force {cname}".format(**locals()))
-        sh___("{docker} run --name={cname} --detach {imagesrepo}/opensuse-repo/{base}:{leap} sleep 9999".format(**locals()))
+        sx___(F"{docker} rm --force {cname}")
+        sh___(F"{docker} run --name={cname} --detach {imagesrepo}/opensuse-repo/{base}:{leap} sleep 9999")
         clean: Dict[str, str] = {}
         for subdir in dists[dist]:
-            basedir = "{repodir}/opensuse.{leap}/.".format(**locals())
-            pooldir = "{repodir}/opensuse.{leap}/{subdir}".format(**locals())
+            basedir = F"{repodir}/opensuse.{leap}/."
+            pooldir = F"{repodir}/opensuse.{leap}/{subdir}"
             if subdir.startswith("-"):
-                gamesfile = "{repodir}/opensuse.{leap}{subdir}.json".format(**locals())
+                gamesfile = F"{repodir}/opensuse.{leap}{subdir}.json"
                 clean = json.load(open(gamesfile))
                 if not clean:
                     continue
@@ -287,23 +286,21 @@ def opensuse_repo() -> None:
                             remove[filepath] = filename
                 logg.info("removing %s files from %s", len(remove), subdir)
                 removes = " ".join(remove.keys())
-                sh___("{docker} exec {cname} rm -f {removes}".format(**locals()), debugs=False)
+                sh___(F"{docker} exec {cname} rm -f {removes}", debugs=False)
             elif path.isdir(pooldir):
-                sh___("{docker} cp {pooldir} {cname}:/srv/repo/".format(**locals()))
+                sh___(F"{docker} cp {pooldir} {cname}:/srv/repo/")
                 base = dist
-                sh___("{docker} exec {cname} bash -c \"find /srv/repo/{subdir} -name repomd.xml -exec python /srv/scripts/repodata-fix.py {{}} -v ';'\" ".format(**locals()))
+                sh___(F"{docker} exec {cname} bash -c \"find /srv/repo/{subdir} -name repomd.xml -exec python /srv/scripts/repodata-fix.py {{}} -v ';'\" ")
         if dist in ["update"]:
             # sh___("{docker} exec {cname} rm -r /srv/repo/{dist}/{leap}".format(**locals()))
-            sh___("{docker} exec {cname} ln -s /srv/repo/{dist}/leap/{leap}/oss /srv/repo/{dist}/{leap}".format(**locals()))
+            sh___(F"{docker} exec {cname} ln -s /srv/repo/{dist}/leap/{leap}/oss /srv/repo/{dist}/{leap}")
             if leap in XXLEAP:
-                cmd = """ {docker} exec {cname} bash -c "cd /srv/repo/{dist}/leap/{leap}/oss && createrepo ." """
-                sh___(cmd.format(**locals()))
+                sh___(F""" {docker} exec {cname} bash -c "cd /srv/repo/{dist}/leap/{leap}/oss && createrepo ." """)
         if base == dist:
-            cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/opensuse-repo/{base}:{leap}"
-            sh___(cmd.format(**locals()))
-    sh___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} tag {imagesrepo}/opensuse-repo/{base}:{leap} {imagesrepo}/opensuse-repo:{leap}".format(**locals()))
-    sh___("{docker} rmi {imagesrepo}/opensuse-repo/base:{leap}".format(**locals()))  # untag non-packages base
+            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/opensuse-repo/{base}:{leap}")
+    sh___(F"{docker} rm --force {cname}")
+    sh___(F"{docker} tag {imagesrepo}/opensuse-repo/{base}:{leap} {imagesrepo}/opensuse-repo:{leap}")
+    sh___(F"{docker} rmi {imagesrepo}/opensuse-repo/base:{leap}")  # untag non-packages base
 
 def opensuse_test() -> None:
     distro = DISTRO
@@ -448,9 +445,9 @@ def config_globals(settings: List[str]) -> None:
                 globals()[nam] = val.strip().split(",")
             else:
                 nam_type = type(old)
-                logg.warning("(ignored) unknown target type -c '{nam}' : {nam_type}".format(**locals()))
+                logg.warning(F"(ignored) unknown target type -c '{nam}' : {nam_type}")
         else:
-            logg.warning("(ignored) unknown target config -c '{nam}' : no such variable".format(**locals()))
+            logg.warning(F"(ignored) unknown target config -c '{nam}' : no such variable")
 
 if __name__ == "__main__":
     from optparse import OptionParser
