@@ -135,9 +135,10 @@ def ubuntu_sync() -> None:
     ubuntu_sync_multiverse_4()
 
 def ubuntu_dir(suffix: str = "") -> str:
+    distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    dirname = F"ubuntu.{ubuntu}{suffix}"
+    dirname = F"{distro}.{ubuntu}{suffix}"
     dirlink = path.join(repodir, dirname)
     if not path.isdir(repodir):
         os.mkdir(repodir)
@@ -173,7 +174,7 @@ def ubuntu_sync_base(dist: str) -> None:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    distdir = F"{repodir}/ubuntu.{ubuntu}/dists/{dist}"
+    distdir = F"{repodir}/{distro}.{ubuntu}/dists/{dist}"
     if not path.isdir(distdir):
         os.makedirs(distdir)
     if not path.isdir(tmpdir):
@@ -186,7 +187,7 @@ def ubuntu_sync_base(dist: str) -> None:
     distro = DISTRO
     mirror = MIRRORS[distro][0]
     options = "--ignore-times --files-from=" + tmpfile
-    sh___(F"{rsync} -v {mirror}/dists/{dist} {repodir}/ubuntu.{ubuntu}/dists/{dist} {options}")
+    sh___(F"{rsync} -v {mirror}/dists/{dist} {repodir}/{distro}.{ubuntu}/dists/{dist} {options}")
 
 def when(levels: str, repos: List[str]) -> List[str]: return [item for item in levels.split(",") if item and item in repos]
 def ubuntu_sync_main_1() -> None: ubuntu_sync_main(dist=DIST[UBUNTU], main="main", when=when("updates,restricted,universe,multiverse", REPOS))
@@ -214,7 +215,7 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    maindir = F"{repodir}/ubuntu.{ubuntu}/dists/{dist}/{main}"
+    maindir = F"{repodir}/{distro}.{ubuntu}/dists/{dist}/{main}"
     if not path.isdir(maindir): os.makedirs(maindir)
     rsync = RSYNC
     mirror = MIRRORS[distro][0]
@@ -232,7 +233,7 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
                 continue
             filename = re.sub("Filename: *pool/", "", line)
             print(filename, file=f)
-    pooldir = F"{repodir}/ubuntu.{ubuntu}/pools/{dist}/{main}/pool"
+    pooldir = F"{repodir}/{distro}.{ubuntu}/pools/{dist}/{main}/pool"
     if not path.isdir(pooldir): os.makedirs(pooldir)
     if when:
         sh___(F"{rsync} -rv {mirror}/pool {pooldir} --size-only --files-from={tmpfile}")
@@ -241,7 +242,7 @@ def ubuntu_pool() -> None:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    pooldir = F"{repodir}/ubuntu.{UBUNTU}/pool"
+    pooldir = F"{repodir}/{distro}.{UBUNTU}/pool"
     if path.isdir(pooldir):
         shutil.rmtree(pooldir)
     os.makedirs(pooldir)
@@ -250,7 +251,7 @@ def ubuntu_poolcount() -> None:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    sh___(F"echo `find {repodir}/ubuntu.{ubuntu}/pool -type f | wc -l` pool files")
+    sh___(F"echo `find {repodir}/{distro}.{ubuntu}/pool -type f | wc -l` pool files")
 
 ubunturepo_CMD = ["python", "/srv/scripts/filelist.py", "--data", "/srv/repo"]
 ubunturepo_PORT = "80"
@@ -271,7 +272,7 @@ def ubuntu_repo() -> None:
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
-    sh___(F"{docker} cp {repodir}/ubuntu.{ubuntu}/dists {cname}:/srv/repo/ubuntu")
+    sh___(F"{docker} cp {repodir}/{distro}.{ubuntu}/dists {cname}:/srv/repo/ubuntu")
     sh___(F"{docker} exec {cname} apt-get update")
     sh___(F"{docker} exec {cname} apt-get install -y python")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu/pool")
@@ -283,7 +284,7 @@ def ubuntu_repo() -> None:
         sh___(F"{docker} rm --force {cname}")
         sh___(F"{docker} run --name={cname} --detach {imagesrepo}/ubuntu-repo/{base}:{ubuntu} sleep 9999")
         for dist in [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]:
-            pooldir = F"{repodir}/ubuntu.{ubuntu}/pools/{dist}/{main}/pool"
+            pooldir = F"{repodir}/{distro}.{ubuntu}/pools/{dist}/{main}/pool"
             if path.isdir(pooldir):
                 sh___(F"{docker} cp {pooldir}  {cname}:/srv/repo/ubuntu/")
                 base = main
