@@ -311,6 +311,7 @@ def centos_epelrepo() -> None:
     if CENTOS.startswith("7"):
         centos_epelrepo7()
 
+MAKE_EPEL_HTTP = True
 def centos_epelrepo9() -> None:
     centos_epelrepo8()
 def centos_epelrepo8() -> None:
@@ -347,20 +348,20 @@ def centos_epelrepo8() -> None:
         sh___(F"{docker} run --name={cname} --detach {repo}/epel-repo/{base}:{epel}.x.{yymm} sleep 9999")
         for subdir in dists[dist]:
             sh___(F"{docker} cp epel.{epel}/{epel}/{subdir} {cname}:/srv/repo/epel/{epel}/")
-            base = dist
+            base = dist  #!!
         if base == dist:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/epel-repo/{base}:{epel}.x.{yymm}")
     sh___(F"{docker} tag {repo}/epel-repo/{base}:{epel}.x.{yymm} {repo}/epel-repo:{epel}.x.{yymm}")
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} rmi {repo}/epel-repo/base:{epel}.x.{yymm}")
-    #
-    CMD = str(epelrepo8_http_CMD).replace("'", '"')
-    PORT = str(epelrepo8_http_PORT)
-    base = "http"
-    sh___(F"{docker} run --name={cname} --detach {repo}/epel-repo:{epel}.x.{yymm} sleep 9999")
-    if False:
-        sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/epel-repo/{base}:{epel}.x.{yymm}")
-    sx___(F"{docker} rm --force {cname}")
+    if MAKE_EPEL_HTTP:
+        # the upstream epel repository runs on https by default but we don't have their certificate anyway
+        CMD2 = str(epelrepo8_http_CMD).replace("'", '"')
+        PORT2 = str(epelrepo8_http_PORT)
+        base2 = "http"  #!!
+        sh___(F"{docker} run --name={cname} --detach {repo}/epel-repo:{epel}.x.{yymm} sleep 9999")
+        sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/epel-repo/{base2}:{epel}.x.{yymm}")
+        sx___(F"{docker} rm --force {cname}")
 
 def centos_epelrepo7() -> None:
     docker = DOCKER
@@ -387,9 +388,11 @@ def centos_epelrepo7() -> None:
     sh___(F"{docker} cp epel.{epel}/{epel} {cname}:/srv/repo/epel/")
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/epel-repo:{epel}.x.{yymm}")
     sh___(F"{docker} rm --force {cname}")
-    sh___(F"{docker} run --name={cname} --detach {repo}/epel-repo:{epel}.x.{yymm} sleep 999")
-    sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' {cname} {repo}/epel-repo/http:{epel}.x.{yymm}")
-    sh___(F"{docker} rm --force {cname}")
+    if MAKE_EPEL_HTTP:
+        # the upstream epel repository runs on https by default but we don't have their certificate anyway
+        sh___(F"{docker} run --name={cname} --detach {repo}/epel-repo:{epel}.x.{yymm} sleep 999")
+        sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' {cname} {repo}/epel-repo/http:{epel}.x.{yymm}")
+        sh___(F"{docker} rm --force {cname}")
 
 
 epelrepo8_PORT = 443
