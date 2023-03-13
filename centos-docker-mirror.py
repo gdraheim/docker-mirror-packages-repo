@@ -153,17 +153,17 @@ def centos_pull() -> None:
     if release in BASEVERSION:
         release = BASEVERSION[release]
     if release.startswith("7"):
-        sh___("{docker} pull centos:{release}".format(**locals()))
+        sh___(F"{docker} pull centos:{release}")
         if release != centos:
-            sh___("{docker} tag centos:{release} centos:{centos}".format(**locals()))
+            sh___(f"{docker} tag centos:{release} centos:{centos}")
     if release.startswith("8"):
-        sh___("{docker} pull centos:{release}".format(**locals()))
+        sh___(F"{docker} pull centos:{release}")
         if release != centos:
-            sh___("{docker} tag centos:{release} centos:{centos}".format(**locals()))
+            sh___(f"{docker} tag centos:{release} centos:{centos}")
     if release.startswith("9"):
-        sh___("{docker} pull almalinux:{release}".format(**locals()))
+        sh___(F"{docker} pull almalinux:{release}")
         if release != centos:
-            sh___("{docker} tag almalinux:{release} almalinux:{centos}".format(**locals()))
+            sh___(f"{docker} tag almalinux:{release} almalinux:{centos}")
 
 def centos_dir(suffix: str = "") -> str:
     distro = DISTRO
@@ -175,7 +175,7 @@ def centos_epeldir(suffix: str = "") -> str:
     return distro_dir(distro, centos, suffix)
 def distro_dir(distro: str, release: str, suffix: str = "") -> str:
     repodir = REPODIR
-    dirname = "{distro}.{release}{suffix}".format(**locals())
+    dirname = F"{distro}.{release}{suffix}"
     dirlink = path.join(repodir, dirname)
     if not path.isdir(repodir):
         os.mkdir(repodir)
@@ -225,16 +225,16 @@ def centos_sync() -> None:
         subdirs = SUBDIRS9
     for base in subdirs:
         for subdir in subdirs[base]:
-            logg.info("#### [{base}] /{subdir}".format(**locals()))
+            logg.info(F"#### [{base}] /{subdir}")
             distro_sync_subdir(distro, centos, subdir)
-            logg.info("DONE [{base}] /{subdir}".format(**locals()))
+            logg.info(F"DONE [{base}] /{subdir}")
 
 def distro_sync_subdir(distro: str, release: str, subdir: str) -> None:
     rsync = RSYNC
     mirror = MIRRORS[distro][0]
     excludes = CENTOS_XXX
     repodir = REPODIR
-    sh___("{rsync} -rv {mirror}/{release}/{subdir}   {repodir}/{distro}.{release}/ {excludes}".format(**locals()))
+    sh___(F"{rsync} -rv {mirror}/{release}/{subdir}   {repodir}/{distro}.{release}/ {excludes}")
 
 def centos_sync_AppStream() -> None: distro_sync_subdir(DISTRO, CENTOS, "AppStream")
 def centos_sync_BaseOS() -> None: distro_sync_subdir(DISTRO, CENTOS, "BaseOS")
@@ -264,10 +264,10 @@ def centos_epelsync8() -> None:
     arch = ARCH
     excludes = """ --exclude "*.iso" """
     for subdir in ["Everything", "Modular"]:
-        basedir = "epel.{epel}/{epel}/{subdir}".format(**locals())
+        basedir = F"epel.{epel}/{epel}/{subdir}"
         if not path.isdir(basedir):
             os.makedirs(basedir)
-        sh___("{rsync} -rv {mirror}/{epel}/{subdir}/{arch} {basedir}/ {excludes}".format(**locals()))
+        sh___(F"{rsync} -rv {mirror}/{epel}/{subdir}/{arch} {basedir}/ {excludes}")
 def centos_epelsync7() -> None:
     rsync = RSYNC
     distro = EPEL
@@ -276,7 +276,7 @@ def centos_epelsync7() -> None:
     epel = major(centos)
     arch = ARCH
     excludes = """ --exclude "*.iso" """
-    sh___("{rsync} -rv {mirror}/{epel}/{arch} epel.{epel}/{epel}/ {excludes}".format(**locals()))
+    sh___(F"{rsync} -rv {mirror}/{epel}/{arch} epel.{epel}/{epel}/ {excludes}")
 
 def centos_unpack() -> None:
     """ used while testing if centos:7 had all packages """
@@ -286,14 +286,14 @@ def centos_unpack() -> None:
     repodir = REPODIR
     cname = "centos-unpack-" + centos  # container name
     image = "localhost:5000/centos-repo"
-    sx___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} run --name={cname} --detach {image}:{centos} sleep 9999".format(**locals()))
-    sh___("{docker} cp {cname}:/srv/repo/7/os {repodir}/centos.{centos}/".format(**locals()))
-    sh___("{docker} cp {cname}:/srv/repo/7/extras {repodir}/centos.{centos}/".format(**locals()))
-    sh___("{docker} cp {cname}:/srv/repo/7/updates {repodir}/centos.{centos}/".format(**locals()))
-    sh___("{docker} cp {cname}:/srv/repo/7/sclo {repodir}/centos.{centos}/".format(**locals()))
-    sh___("{docker} rm --force {cname}".format(**locals()))
-    sh___("du -sh {repodir}/centos.{centos}/.".format(**locals()))
+    sx___(F"{docker} rm --force {cname}")
+    sh___(F"{docker} run --name={cname} --detach {image}:{centos} sleep 9999")
+    sh___(F"{docker} cp {cname}:/srv/repo/7/os {repodir}/centos.{centos}/")
+    sh___(F"{docker} cp {cname}:/srv/repo/7/extras {repodir}/centos.{centos}/")
+    sh___(F"{docker} cp {cname}:/srv/repo/7/updates {repodir}/centos.{centos}/")
+    sh___(F"{docker} cp {cname}:/srv/repo/7/sclo {repodir}/centos.{centos}/")
+    sh___(F"{docker} rm --force {cname}")
+    sh___(F"du -sh {repodir}/centos.{centos}/.")
 
 def centos_clean() -> None:
     """ when moving from centos:7 to centos:8 """
@@ -301,7 +301,7 @@ def centos_clean() -> None:
     centos = CENTOS
     repodir = REPODIR
     for subdir in ["os", "extras", "updates", "sclo"]:
-        sh___("rm -rf {repodir}/centos.{centos}/{subdir}".format(**locals()))
+        sh___(F"rm -rf {repodir}/centos.{centos}/{subdir}")
 
 def centos_epelrepo() -> None:
     if CENTOS.startswith("9"):
@@ -321,46 +321,46 @@ def centos_epelrepo8() -> None:
     arch = ARCH
     scripts = repo_scripts()
     cname = "epel-repo-" + epel  # container name
-    out, end = output2("./docker_mirror.py start centos:{centos} -a".format(**locals()))
+    out, end = output2(F"./docker_mirror.py start centos:{centos} -a")
     addhosts = out.strip()
-    sx___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} run --name={cname} {addhosts} --detach centos:{centos} sleep 9999".format(**locals()))
-    sh___("{docker} exec {cname} mkdir -p /srv/repo/epel/{epel}".format(**locals()))
-    sh___("{docker} exec {cname} yum install -y openssl".format(**locals()))
-    sh___("{docker} cp {scripts} {cname}:/srv/scripts".format(**locals()))
-    # for script in os.listdir(f"{scripts}/."):
-    #    sh___("{docker} exec {cname} sed -i s:/usr/bin/python:/usr/libexec/platform-python: /srv/scripts/{script}".format(**locals()))
-    #    sh___("{docker} exec {cname} chmod +x /srv/scripts/{script}".format(**locals()))
+    sx___(F"{docker} rm --force {cname}")
+    sh___(F"{docker} run --name={cname} {addhosts} --detach centos:{centos} sleep 9999")
+    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/epel/{epel}")
+    sh___(F"{docker} exec {cname} yum install -y openssl")
+    sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
+    if False:
+        # instead we use an explicit epelrepo8_CMD
+        for script in os.listdir(F"{scripts}/."):
+            sh___(F"{docker} exec {cname} sed -i s:/usr/bin/python:/usr/libexec/platform-python: /srv/scripts/{script}")
+            sh___(F"{docker} exec {cname} chmod +x /srv/scripts/{script}")
     base = "base"
     CMD = str(epelrepo8_CMD).replace("'", '"')
     PORT = str(epelrepo8_PORT)
     repo = IMAGESREPO
     yymm = datetime.date.today().strftime("%y%m")
-    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/epel-repo/{base}:{epel}.x.{yymm}"
-    sh___(cmd.format(**locals()))
+    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/epel-repo/{base}:{epel}.x.{yymm}")
     dists: Dict[str, List[str]] = {}
     dists["main"] = ["Everything"]
     dists["plus"] = ["Modular"]
     for dist in dists:
-        sx___("{docker} rm --force {cname}".format(**locals()))
-        sh___("{docker} run --name={cname} --detach {repo}/epel-repo/{base}:{epel}.x.{yymm} sleep 9999".format(**locals()))
+        sx___(F"{docker} rm --force {cname}")
+        sh___(F"{docker} run --name={cname} --detach {repo}/epel-repo/{base}:{epel}.x.{yymm} sleep 9999")
         for subdir in dists[dist]:
-            sh___("{docker} cp epel.{epel}/{epel}/{subdir} {cname}:/srv/repo/epel/{epel}/".format(**locals()))
+            sh___(F"{docker} cp epel.{epel}/{epel}/{subdir} {cname}:/srv/repo/epel/{epel}/")
             base = dist
         if base == dist:
-            cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/epel-repo/{base}:{epel}.x.{yymm}"
-            sh___(cmd.format(**locals()))
-    cmd = "{docker} tag {repo}/epel-repo/{base}:{epel}.x.{yymm} {repo}/epel-repo:{epel}.x.{yymm}"
-    sh___(cmd.format(**locals()))
-    sx___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} rmi {repo}/epel-repo/base:{epel}.x.{yymm}".format(**locals()))
+            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/epel-repo/{base}:{epel}.x.{yymm}")
+    sh___(F"{docker} tag {repo}/epel-repo/{base}:{epel}.x.{yymm} {repo}/epel-repo:{epel}.x.{yymm}")
+    sx___(F"{docker} rm --force {cname}")
+    sh___(F"{docker} rmi {repo}/epel-repo/base:{epel}.x.{yymm}")
     #
     CMD = str(epelrepo8_http_CMD).replace("'", '"')
     PORT = str(epelrepo8_http_PORT)
     base = "http"
-    sh___("{docker} run --name={cname} --detach {repo}/epel-repo:{epel}.x.{yymm} sleep 9999".format(**locals()))
-    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/epel-repo/{base}:{epel}.x.{yymm}"
-    sx___("{docker} rm --force {cname}".format(**locals()))
+    sh___(F"{docker} run --name={cname} --detach {repo}/epel-repo:{epel}.x.{yymm} sleep 9999")
+    if False:
+        sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/epel-repo/{base}:{epel}.x.{yymm}")
+    sx___(F"{docker} rm --force {cname}")
 
 def centos_epelrepo7() -> None:
     docker = DOCKER
@@ -370,13 +370,13 @@ def centos_epelrepo7() -> None:
     arch = ARCH
     scripts = repo_scripts()
     cname = "epel-repo-" + epel  # container name
-    sx___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} run --name={cname} --detach centos:{centos} sleep 9999".format(**locals()))
-    sh___("{docker} exec {cname} mkdir -p /srv/repo/epel".format(**locals()))
-    sh___("{docker} exec {cname} yum install -y openssl".format(**locals()))
-    sh___("{docker} cp {scripts} {cname}:/srv/scripts".format(**locals()))
+    sx___(F"{docker} rm --force {cname}")
+    sh___(F"{docker} run --name={cname} --detach centos:{centos} sleep 9999")
+    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/epel")
+    sh___(F"{docker} exec {cname} yum install -y openssl")
+    sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
     for script in os.listdir(f"{scripts}/."):
-        sh___("{docker} exec {cname} chmod +x /srv/scripts/{script}".format(**locals()))
+        sh___(F"{docker} exec {cname} chmod +x /srv/scripts/{script}")
     #
     CMD = str(epelrepo7_CMD).replace("'", '"')
     PORT = str(epelrepo7_PORT)
@@ -384,12 +384,12 @@ def centos_epelrepo7() -> None:
     PORT2 = str(epelrepo7_http_PORT)
     repo = IMAGESREPO
     yymm = datetime.date.today().strftime("%y%m")
-    sh___("{docker} cp epel.{epel}/{epel} {cname}:/srv/repo/epel/".format(**locals()))
-    sh___("{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/epel-repo:{epel}.x.{yymm}".format(**locals()))
-    sh___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} run --name={cname} --detach {repo}/epel-repo:{epel}.x.{yymm} sleep 999".format(**locals()))
-    sh___("{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' {cname} {repo}/epel-repo/http:{epel}.x.{yymm}".format(**locals()))
-    sh___("{docker} rm --force {cname}".format(**locals()))
+    sh___(F"{docker} cp epel.{epel}/{epel} {cname}:/srv/repo/epel/")
+    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/epel-repo:{epel}.x.{yymm}")
+    sh___(F"{docker} rm --force {cname}")
+    sh___(F"{docker} run --name={cname} --detach {repo}/epel-repo:{epel}.x.{yymm} sleep 999")
+    sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' {cname} {repo}/epel-repo/http:{epel}.x.{yymm}")
+    sh___(F"{docker} rm --force {cname}")
 
 
 epelrepo8_PORT = 443
@@ -434,31 +434,29 @@ def centos_repo8() -> None:
         version = BASEVERSION[centos]
     scripts = repo_scripts()
     cname = "centos-repo-" + centos  # container name
-    sx___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} run --name={cname} --detach centos:{version} sleep 9999".format(**locals()))
-    sh___("{docker} exec {cname} mkdir -p /srv/repo/8".format(**locals()))
-    sh___("{docker} cp {scripts} {cname}:/srv/scripts".format(**locals()))
+    sx___(F"{docker} rm --force {cname}")
+    sh___(F"{docker} run --name={cname} --detach centos:{version} sleep 9999")
+    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/8")
+    sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
     base = "base"
     CMD = str(centosrepo8_CMD).replace("'", '"')
     PORT = centosrepo8_PORT
     repo = IMAGESREPO
-    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}"
-    sh___(cmd.format(**locals()))
+    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}")
     dists = SUBDIRS8
     for dist in dists:
-        sx___("{docker} rm --force {cname}".format(**locals()))
-        sh___("{docker} run --name={cname} --detach {repo}/centos-repo/{base}:{centos} sleep 9999".format(**locals()))
+        sx___(F"{docker} rm --force {cname}")
+        sh___(F"{docker} run --name={cname} --detach {repo}/centos-repo/{base}:{centos} sleep 9999")
         for subdir in dists[dist]:
-            pooldir = "{repodir}/centos.{centos}/{subdir}".format(**locals())
+            pooldir = F"{repodir}/centos.{centos}/{subdir}"
             if path.isdir(pooldir):
-                sh___("{docker} cp {pooldir} {cname}:/srv/repo/8/".format(**locals()))
+                sh___(F"{docker} cp {pooldir} {cname}:/srv/repo/8/")
                 base = dist
         if base == dist:
-            cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}"
-            sh___(cmd.format(**locals()))
-    sh___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} tag {repo}/centos-repo/{base}:{centos} {repo}/centos-repo:{centos}".format(**locals()))
-    sh___("{docker} rmi {repo}/centos-repo/base:{centos}".format(**locals()))  # untag non-packages base
+            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}")
+    sh___(F"{docker} rm --force {cname}")
+    sh___(F"{docker} tag {repo}/centos-repo/{base}:{centos} {repo}/centos-repo:{centos}")
+    sh___(F"{docker} rmi {repo}/centos-repo/base:{centos}")  # untag non-packages base
     centos_restore()
 def centos_repo7() -> None:
     docker = DOCKER
@@ -472,31 +470,29 @@ def centos_repo7() -> None:
         baseversion = BASEVERSION[baseversion]
     scripts = repo_scripts()
     cname = "centos-repo-" + centos  # container name
-    sx___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} run --name={cname} --detach centos:{baseversion} sleep 9999".format(**locals()))
-    sh___("{docker} exec {cname} mkdir -p /srv/repo/7".format(**locals()))
-    sh___("{docker} cp {scripts} {cname}:/srv/scripts".format(**locals()))
+    sx___(F"{docker} rm --force {cname}")
+    sh___(F"{docker} run --name={cname} --detach centos:{baseversion} sleep 9999")
+    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/7")
+    sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
     base = "base"
     CMD = str(centosrepo7_CMD).replace("'", '"')
     PORT = centosrepo7_PORT
     repo = IMAGESREPO
-    cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}"
-    sh___(cmd.format(**locals()))
+    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}")
     dists = SUBDIRS7
     for dist in dists:
-        sx___("{docker} rm --force {cname}".format(**locals()))
-        sh___("{docker} run --name={cname} --detach {repo}/centos-repo/{base}:{centos} sleep 9999".format(**locals()))
+        sx___(F"{docker} rm --force {cname}")
+        sh___(F"{docker} run --name={cname} --detach {repo}/centos-repo/{base}:{centos} sleep 9999")
         for subdir in dists[dist]:
-            pooldir = "{repodir}/centos.{centos}/{subdir}".format(**locals())
+            pooldir = F"{repodir}/centos.{centos}/{subdir}"
             if path.isdir(pooldir):
-                sh___("{docker} cp {pooldir} {cname}:/srv/repo/7/".format(**locals()))
+                sh___(F"{docker} cp {pooldir} {cname}:/srv/repo/7/")
                 base = dist
         if base == dist:
-            cmd = "{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}"
-            sh___(cmd.format(**locals()))
-    sh___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} tag {repo}/centos-repo/{base}:{centos} {repo}/centos-repo:{centos}".format(**locals()))
-    sh___("{docker} rmi {repo}/centos-repo/base:{centos}".format(**locals()))  # untag non-packages base
+            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/centos-repo/{base}:{centos}")
+    sh___(F"{docker} rm --force {cname}")
+    sh___(F"{docker} tag {repo}/centos-repo/{base}:{centos} {repo}/centos-repo:{centos}")
+    sh___(F"{docker} rmi {repo}/centos-repo/base:{centos}")  # untag non-packages base
     centos_restore()
 
 def centos_tags() -> None:
@@ -504,15 +500,15 @@ def centos_tags() -> None:
     distro = DISTRO
     centos = CENTOS
     repo = IMAGESREPO
-    name = "{distro}-repo".format(**locals())
+    name = F"{distro}-repo"
     ver2 = re.sub("[.]\d+$", "", centos)
     if ver2 != centos:
-        sh___("{docker} tag {repo}/{name}:{centos} {repo}/{name}:{ver2}".format(**locals()))
+        sh___(F"{docker} tag {repo}/{name}:{centos} {repo}/{name}:{ver2}")
     ver1 = re.sub("[.]\d+$", "", ver2)
     if ver1 != ver2:
-        sh___("{docker} tag {repo}/{name}:{centos} {repo}/{name}:{ver1}".format(**locals()))
-        sh___("{docker} tag {repo}/{name}:{centos} {repo}/{name}{ver1}:{centos}".format(**locals()))
-        sh___("{docker} tag {repo}/{name}:{centos} {repo}/{name}{ver1}:latest".format(**locals()))
+        sh___(F"{docker} tag {repo}/{name}:{centos} {repo}/{name}:{ver1}")
+        sh___(F"{docker} tag {repo}/{name}:{centos} {repo}/{name}{ver1}:{centos}")
+        sh___(F"{docker} tag {repo}/{name}:{centos} {repo}/{name}{ver1}:latest")
 
 def centos_cleaner() -> None:
     distro = DISTRO
@@ -520,8 +516,8 @@ def centos_cleaner() -> None:
     repodir = REPODIR
     arch = "x86_64"
     for subdir in ["updates", "extras"]:
-        orig = "{repodir}/centos.{centos}/{subdir}/{arch}/drpms"
-        save = "{repodir}/centos.{centos}/{subdir}.{arch}.drpms"
+        orig = F"{repodir}/centos.{centos}/{subdir}/{arch}/drpms"
+        save = F"{repodir}/centos.{centos}/{subdir}.{arch}.drpms"
         if path.isdir(orig):
             shutil.move(orig, save)
 
@@ -531,8 +527,8 @@ def centos_restore() -> None:
     repodir = REPODIR
     arch = "x86_64"
     for subdir in ["updates", "extras"]:
-        orig = "{repodir}/centos.{centos}/{subdir}/{arch}/drpms"
-        save = "{repodir}/centos.{centos}/{subdir}.{arch}.drpms"
+        orig = F"{repodir}/centos.{centos}/{subdir}/{arch}/drpms"
+        save = F"{repodir}/centos.{centos}/{subdir}.{arch}.drpms"
         if path.isdir(save):
             shutil.move(save, orig)
 
@@ -553,19 +549,19 @@ def centos_check() -> None:
     centos = CENTOS
     repodir = REPODIR
     cname = "centos-check-" + centos  # container name
-    sx___("{docker} rm --force {cname}".format(**locals()))
-    sh___("{docker} run --name={cname} --detach centos:{centos} sleep 9999".format(**locals()))
-    centosdir = "{repodir}/centos.{centos}".format(**locals())
-    out, end = output2("{docker} exec {cname} rpm -qa".format(**locals()))
+    sx___(F"{docker} rm --force {cname}")
+    sh___(F"{docker} run --name={cname} --detach centos:{centos} sleep 9999")
+    centosdir = F"{repodir}/centos.{centos}"
+    out, end = output2(F"{docker} exec {cname} rpm -qa")
     for f in out.split("\n"):
         found = path_find(centosdir, f + ".rpm")
         if found:
-            print("OK {f}.rpm        {found}".format(**locals()))
+            print(F"OK {f}.rpm        {found}")
     for f in out.split("\n"):
         found = path_find(centosdir, f + ".rpm")
         if not found:
-            print("?? {f}.rpm".format(**locals()))
-    sh___("{docker} rm --force {cname}".format(**locals()))
+            print(F"?? {f}.rpm")
+    sh___(F"{docker} rm --force {cname}")
 
 def centos_scripts() -> None:
     print(repo_scripts())
@@ -691,9 +687,9 @@ def config_globals(settings: List[str]) -> None:
                 globals()[nam] = val.strip().split(",")
             else:
                 nam_type = type(old)
-                logg.warning("(ignored) unknown target type -c '{nam}' : {nam_type}".format(**locals()))
+                logg.warning(F"(ignored) unknown target type -c '{nam}' : {nam_type}")
         else:
-            logg.warning("(ignored) unknown target config -c '{nam}' : no such variable".format(**locals()))
+            logg.warning(F"(ignored) unknown target config -c '{nam}' : no such variable")
 
 if __name__ == "__main__":
     from optparse import OptionParser
