@@ -18,6 +18,7 @@ import sys
 import re
 import subprocess
 import shutil
+from fnmatch import fnmatchcase as fnmatch
 import logging
 logg = logging.getLogger("MIRROR")
 
@@ -73,6 +74,8 @@ UPDATES_REPOS = ["main", "restricted"]
 UNIVERSE_REPOS = ["main", "restricted", "universe"]
 MULTIVERSE_REPOS = ["main", "restricted", "universe", "multiverse"]
 AREAS = {"1": "", "2": "-updates", "3": "-backports", "4": "-security"}
+
+UBUNTU_XXX = ["linux-image*", "linux-module*", "linux-objects*"]
 
 REPOS = UPDATES_REPOS
 DOCKER = "docker"
@@ -187,6 +190,7 @@ def ubuntu_sync_base(dist: str) -> None:
     distro = DISTRO
     mirror = MIRRORS[distro][0]
     options = "--ignore-times --files-from=" + tmpfile
+    # excludes = " ".join(["--exclude '%s'" % parts for parts in UBUNTU_XXX])
     sh___(F"{rsync} -v {mirror}/dists/{dist} {repodir}/{distro}.{ubuntu}/dists/{dist} {options}")
 
 def when(levels: str, repos: List[str]) -> List[str]: return [item for item in levels.split(",") if item and item in repos]
@@ -219,24 +223,38 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
     if not path.isdir(maindir): os.makedirs(maindir)
     rsync = RSYNC
     mirror = MIRRORS[distro][0]
-    sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-amd64 {maindir} --ignore-times")
-    sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-i386  {maindir} --ignore-times")
-    sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/source       {maindir} --ignore-times")
+    # excludes = " ".join(["--exclude '%s'" % parts for parts in UBUNTU_XXX])
+    options = "--ignore-times"
+    sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-amd64 {maindir} {options}")
+    sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-i386  {maindir} {options}")
+    sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/source       {maindir} {options}")
     gz1 = F"{maindir}/binary-amd64/Packages.gz"
-    packages = output(F"zcat {maindir}/binary-amd64/Packages.gz {maindir}/binary-i386/Packages.gz")
+    gz2 = F"{maindir}/binary-i386/Packages.gz"
+    packages = output(F"zcat {gz1} {gz2}")
     tmpdir = UBUNTU_TMP
     if not path.isdir(tmpdir): os.makedirs(tmpdir)
+    filenames, syncing = 0, 0
     tmpfile = F"{tmpdir}/Packages.{dist}.{main}.tmp"
     with open(tmpfile, "w") as f:
         for line in packages.split("\n"):
             if not line.startswith("Filename:"):
                 continue
             filename = re.sub("Filename: *pool/", "", line)
-            print(filename, file=f)
+            filenames += 1
+            skip = False
+            for parts in UBUNTU_XXX:
+                if fnmatch(filename, parts): skip = True
+                if fnmatch(filename, "*/" + parts): skip = True
+            if not skip:
+                print(filename, file=f)
+                syncing += 1
+    logg.info("syncing %s of %s filenames in %s", syncing, filenames, gz1)
     pooldir = F"{repodir}/{distro}.{ubuntu}/pools/{dist}/{main}/pool"
     if not path.isdir(pooldir): os.makedirs(pooldir)
     if when:
-        sh___(F"{rsync} -rv {mirror}/pool {pooldir} --size-only --files-from={tmpfile}")
+        # excludes = " ".join(["--exclude '%s'" % parts for parts in UBUNTU_XXX])
+        options = "--size-only"
+        sh___(F"{rsync} -rv {mirror}/pool {pooldir} {options} --files-from={tmpfile}")
 
 def ubuntu_pool() -> None:
     distro = DISTRO
