@@ -104,7 +104,7 @@ _SUBDIRS["7.9"] = ["os", "updates", "extras", "sclo", "centosplus", "atomic",
 
 SUBDIRS9: Dict[str, List[str]] = OrderedDict()
 SUBDIRS9["main"] = ["BaseOS", "AppStream", "extras"]
-SUBDIRS9["plus"] = ["plus"] # ALMALINUX
+SUBDIRS9["plus"] = ["plus"]  # ALMALINUX
 #SUBDIRS9["dev"] = ["devel", "HighAvailibility"]
 
 SUBDIRS8: Dict[str, List[str]] = OrderedDict()
@@ -355,7 +355,7 @@ def centos_epelrepo8() -> None:
         sh___(F"{docker} run --name={cname} --detach {repo}/epel-repo/{base}:{epel}.x.{yymm} sleep 9999")
         for subdir in dists[dist]:
             sh___(F"{docker} cp epel.{epel}/{epel}/{subdir} {cname}:/srv/repo/epel/{epel}/")
-            base = dist  #!!
+            base = dist  # !!
         if base == dist:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/epel-repo/{base}:{epel}.x.{yymm}")
     sh___(F"{docker} tag {repo}/epel-repo/{base}:{epel}.x.{yymm} {repo}/epel-repo:{epel}.x.{yymm}")
@@ -365,7 +365,7 @@ def centos_epelrepo8() -> None:
         # the upstream epel repository runs on https by default but we don't have their certificate anyway
         CMD2 = str(epelrepo8_http_CMD).replace("'", '"')
         PORT2 = str(epelrepo8_http_PORT)
-        base2 = "http"  #!!
+        base2 = "http"  # !!
         sh___(F"{docker} run --name={cname} --detach {repo}/epel-repo:{epel}.x.{yymm} sleep 9999")
         sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/epel-repo/{base2}:{epel}.x.{yymm}")
         sx___(F"{docker} rm --force {cname}")
