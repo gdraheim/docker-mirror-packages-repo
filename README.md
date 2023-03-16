@@ -62,6 +62,8 @@ Tested repos are
  * localhost:5000/mirror-packages/**ubuntu-repo/main:18.04**     _(19.5GB)_
  * localhost:5000/mirror-packages/**ubuntu-repo/main:20.04**     _(25.5GB)_
  * localhost:5000/mirror-packages/**ubuntu-repo/universe:20.04**  _(125GB)_
+ * localhost:5000/mirror-packages/**ubuntu-repo/main:22.04**       _(35GB)_
+ * localhost:5000/mirror-packages/**ubuntu-repo/universe:22.04**  _(178GB)_
 
 Remember that the internet package repos contain updates for the last
 distribution release, so they do grow in size over time. As such the
