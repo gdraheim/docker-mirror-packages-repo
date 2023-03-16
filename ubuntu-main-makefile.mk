@@ -47,6 +47,10 @@ ubuntusync.20.04: ; $(MAKE) ubuntusync UBUNTU=20.04
 ubuntusync.19.10: ; $(MAKE) ubuntusync UBUNTU=19.10
 ubuntusync.18.04: ; $(MAKE) ubuntusync UBUNTU=18.04
 ubuntusync.16.04: ; $(MAKE) ubuntusync UBUNTU=16.04
+# -
+ubunturepo.23.04: ; $(MAKE) ubunturepo UBUNTU=23.04
+ubunturepo.22.10: ; $(MAKE) ubunturepo UBUNTU=22.10
+ubunturepo.22.04: ; $(MAKE) ubunturepo UBUNTU=22.04
 ubunturepo.21.10: ; $(MAKE) ubunturepo UBUNTU=21.10
 ubunturepo.21.04: ; $(MAKE) ubunturepo UBUNTU=21.04
 ubunturepo.20.10: ; $(MAKE) ubunturepo UBUNTU=20.10
@@ -76,6 +80,14 @@ universesync.20.04: ; $(MAKE) ubuntusync UBUNTU=20.04 UBUNTU_REPOS=--universe
 universesync.19.10: ; $(MAKE) ubuntusync UBUNTU=19.10 UBUNTU_REPOS=--universe
 universesync.18.04: ; $(MAKE) ubuntusync UBUNTU=18.04 UBUNTU_REPOS=--universe
 universesync.16.04: ; $(MAKE) ubuntusync UBUNTU=16.04 UBUNTU_REPOS=--universe
+# -
+universerepo.23.04: ; $(MAKE) ubunturepo UBUNTU=23.04 UBUNTU_REPOS=--universe
+universerepo.22.10: ; $(MAKE) ubunturepo UBUNTU=22.10 UBUNTU_REPOS=--universe
+universerepo.22.04: ; $(MAKE) ubunturepo UBUNTU=22.04 UBUNTU_REPOS=--universe
+universerepo.21.10: ; $(MAKE) ubunturepo UBUNTU=21.10 UBUNTU_REPOS=--universe
+universerepo.21.04: ; $(MAKE) ubunturepo UBUNTU=21.04 UBUNTU_REPOS=--universe
+universerepo.20.10: ; $(MAKE) ubunturepo UBUNTU=20.10 UBUNTU_REPOS=--universe
+universerepo.20.04: ; $(MAKE) ubunturepo UBUNTU=20.04 UBUNTU_REPOS=--universe
 universerepo.19.10: ; $(MAKE) ubunturepo UBUNTU=19.10 UBUNTU_REPOS=--universe
 universerepo.18.04: ; $(MAKE) ubunturepo UBUNTU=18.04 UBUNTU_REPOS=--universe
 universerepo.16.04: ; $(MAKE) ubunturepo UBUNTU=16.04 UBUNTU_REPOS=--universe
