@@ -79,3 +79,9 @@ universesync.16.04: ; $(MAKE) ubuntusync UBUNTU=16.04 UBUNTU_REPOS=--universe
 universerepo.19.10: ; $(MAKE) ubunturepo UBUNTU=19.10 UBUNTU_REPOS=--universe
 universerepo.18.04: ; $(MAKE) ubunturepo UBUNTU=18.04 UBUNTU_REPOS=--universe
 universerepo.16.04: ; $(MAKE) ubunturepo UBUNTU=16.04 UBUNTU_REPOS=--universe
+
+ubuntudu: ubuntudu.16.04  ubuntudu.18.04  ubuntudu.20.04  ubuntudu.22.04 
+ubuntudu.22.04: ; ./ubuntu-docker-mirror.py 22.04 du -v
+ubuntudu.20.04: ; ./ubuntu-docker-mirror.py 20.04 du -v
+ubuntudu.18.04: ; ./ubuntu-docker-mirror.py 18.04 du -v
+ubuntudu.16.04: ; ./ubuntu-docker-mirror.py 16.04 du -v

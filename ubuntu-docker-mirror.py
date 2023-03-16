@@ -167,6 +167,16 @@ def ubuntu_dir(suffix: str = "") -> str:
         logg.warning("%s/. local dir", dirlink)
     return dirlink
 
+def ubuntu_du(suffix: str = "") -> str:
+    distro = DISTRO
+    ubuntu = UBUNTU
+    repodir = REPODIR
+    dirpath = F"{repodir}/{distro}.{ubuntu}{suffix}/."
+    logg.info(F"dirpath {dirpath}")
+    if os.path.isdir(dirpath):
+        sh___(F"du -sh {dirpath}")
+    return dirpath
+
 def ubuntu_sync_base_1() -> None: ubuntu_sync_base(dist=DIST[UBUNTU])
 def ubuntu_sync_base_2() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-updates")
 def ubuntu_sync_base_3() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-backports")
@@ -416,14 +426,19 @@ def UBUNTU_set(ubuntu: str) -> str:
     global UBUNTU
     if len(ubuntu) <= 2:
         UBUNTU = max([os for os in DIST if os.startswith(ubuntu)])
+        logg.info(F"UBUNTU:={UBUNTU} (max {ubuntu})")
         return UBUNTU
     if ubuntu in DIST.values():
         for version, dist in DIST.items():
             if dist == ubuntu:
                 UBUNTU = version
+                logg.info("UBUNTU {dist} -> {version}", dist, version)
                 break
     elif ubuntu not in DIST:
-        logg.warning("%s is not a known os version", ubuntu)
+        logg.warning("UBUNTU=%s is not a known os version", ubuntu)
+        UBUNTU = ubuntu
+    else:
+        logg.debug("UBUNTU=%s override", ubuntu)
         UBUNTU = ubuntu
     return UBUNTU
 
