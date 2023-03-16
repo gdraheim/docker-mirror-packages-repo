@@ -36,7 +36,7 @@ DATADIRS = [REPODATADIR,
             "/data/docker-centos-repo-mirror",
             "/dock/docker-mirror-packages"]
 
-
+PYTHON = "python3"
 DISTRO = "ubuntu"
 UBUNTU = "22.04"
 RSYNC_UBUNTU = "rsync://ftp5.gwdg.de/pub/linux/debian/ubuntu"
@@ -75,7 +75,7 @@ UNIVERSE_REPOS = ["main", "restricted", "universe"]
 MULTIVERSE_REPOS = ["main", "restricted", "universe", "multiverse"]
 AREAS = {"1": "", "2": "-updates", "3": "-backports", "4": "-security"}
 
-UBUNTU_XXX = ["linux-image*", "linux-module*", "linux-objects*"]
+UBUNTU_XXX = ["linux-image*", "linux-module*", "linux-objects*", "universe/g/gcc-*-cross*"]
 
 REPOS = UPDATES_REPOS
 DOCKER = "docker"
@@ -183,16 +183,14 @@ def ubuntu_sync_base_3() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-backpor
 def ubuntu_sync_base_4() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-security")
 def ubuntu_sync_base(dist: str) -> None:
     logg.info("dist = %s", dist)
-    tmpdir = UBUNTU_TMP
+    cache = ubuntu_cache()
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
     distdir = F"{repodir}/{distro}.{ubuntu}/dists/{dist}"
     if not path.isdir(distdir):
         os.makedirs(distdir)
-    if not path.isdir(tmpdir):
-        os.makedirs(tmpdir)
-    tmpfile = F"{tmpdir}/Release.{dist}.base.tmp"
+    tmpfile = F"{cache}/Release.{dist}.base.tmp"
     with open(tmpfile, "w") as f:
         print("Release", file=f)
         print("InRelease", file=f)
@@ -240,25 +238,25 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
     sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/source       {maindir} {options}")
     gz1 = F"{maindir}/binary-amd64/Packages.gz"
     gz2 = F"{maindir}/binary-i386/Packages.gz"
-    packages = output(F"zcat {gz1} {gz2}")
-    tmpdir = UBUNTU_TMP
-    if not path.isdir(tmpdir): os.makedirs(tmpdir)
-    filenames, syncing = 0, 0
-    tmpfile = F"{tmpdir}/Packages.{dist}.{main}.tmp"
-    with open(tmpfile, "w") as f:
-        for line in packages.split("\n"):
-            if not line.startswith("Filename:"):
-                continue
-            filename = re.sub("Filename: *pool/", "", line)
-            filenames += 1
-            skip = False
-            for parts in UBUNTU_XXX:
-                if fnmatch(filename, parts): skip = True
-                if fnmatch(filename, "*/" + parts): skip = True
-            if not skip:
-                print(filename, file=f)
-                syncing += 1
-    logg.info("syncing %s of %s filenames in %s", syncing, filenames, gz1)
+    cache = ubuntu_cache()
+    tmpfile = F"{cache}/Packages.{dist}.{main}.tmp"
+    if outdated(tmpfile, gz1, gz2):
+        packages = output(F"zcat {gz1} {gz2}")
+        filenames, syncing = 0, 0
+        with open(tmpfile, "w") as f:
+            for line in packages.split("\n"):
+                if not line.startswith("Filename:"):
+                    continue
+                filename = re.sub("Filename: *pool/", "", line)
+                filenames += 1
+                skip = False
+                for parts in UBUNTU_XXX:
+                    if fnmatch(filename, parts): skip = True
+                    if fnmatch(filename, "*/" + parts): skip = True
+                if not skip:
+                    print(filename, file=f)
+                    syncing += 1
+        logg.info("syncing %s of %s filenames in %s", syncing, filenames, gz1)
     pooldir = F"{repodir}/{distro}.{ubuntu}/pools/{dist}/{main}/pool"
     if not path.isdir(pooldir): os.makedirs(pooldir)
     if when:
@@ -281,8 +279,13 @@ def ubuntu_poolcount() -> None:
     repodir = REPODIR
     sh___(F"echo `find {repodir}/{distro}.{ubuntu}/pool -type f | wc -l` pool files")
 
-ubunturepo_CMD = ["python", "/srv/scripts/filelist.py", "--data", "/srv/repo"]
-ubunturepo_PORT = "80"
+def ubuntu_http_port() -> str:
+    return "80"
+def ubuntu_http_cmd() -> str:
+    python = PYTHON
+    if "/" not in python:
+        python = F"/usr/bin/{python}"
+    return [python, "/srv/scripts/filelist.py", "--data", "/srv/repo"]
 def ubuntu_repo() -> None:
     docker = DOCKER
     distro = DISTRO
@@ -293,6 +296,7 @@ def ubuntu_repo() -> None:
     baseversion = ubuntu
     if baseversion in BASEVERSION:
         baseversion = BASEVERSION[baseversion]
+    python = PYTHON
     scripts = repo_scripts()
     cname = "ubuntu-repo-" + ubuntu  # container name
     sx___(F"{docker} rm --force {cname}")
@@ -302,11 +306,11 @@ def ubuntu_repo() -> None:
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
     sh___(F"{docker} cp {repodir}/{distro}.{ubuntu}/dists {cname}:/srv/repo/ubuntu")
     sh___(F"{docker} exec {cname} apt-get update")
-    sh___(F"{docker} exec {cname} apt-get install -y python")
+    sh___(F"{docker} exec {cname} apt-get install -y {python}")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu/pool")
     base = "base"
-    CMD = str(ubunturepo_CMD).replace("'", '"')
-    PORT = ubunturepo_PORT
+    PORT = ubuntu_http_port()
+    CMD = str(ubuntu_http_cmd()).replace("'", '"')
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/ubuntu-repo/{base}:{ubuntu}")
     for main in REPOS:
         sh___(F"{docker} rm --force {cname}")
@@ -401,6 +405,31 @@ def output3(cmd: Union[str, List[str]], shell: bool = True) -> Tuple[str, str, i
     return decodes(out), decodes(err), run.returncode
 
 #############################################################################
+def outdated(cachefile: str, *files: str) -> bool:
+    if not os.path.exists(cachefile):
+        return True
+    cached = os.path.getmtime(cachefile)
+    for filename in files:
+        if not os.path.exists(filename):
+            return True
+        older = os.path.getmtime(filename)
+        if cached < older:
+            return True
+    return False
+
+def xdg_cache_home() -> str:
+    value = os.environ.get("XDG_CACHE_HOME", "~/.cache")
+    return os.path.expanduser(value)
+
+def ubuntu_cache() -> str:
+    distro = DISTRO
+    ubuntu = UBUNTU
+    cachedir = xdg_cache_home()
+    basedir = F"{cachedir}/docker_mirror"
+    maindir = F"{cachedir}/docker_mirror/{distro}.{ubuntu}"
+    if not os.path.isdir(maindir):
+        os.makedirs(maindir)
+    return maindir
 
 def path_find(base: str, name: str) -> Optional[str]:
     for dirpath, dirnames, filenames in os.walk(base):
@@ -513,7 +542,9 @@ if __name__ == "__main__":
         if funcname in globals():
             func = globals()[funcname]
             if callable(func):
-                func()
+                result = func()
+                if isinstance(result, str):
+                    print(result)
             else:
                 logg.error("%s is not callable", funcname)
                 sys.exit(1)
