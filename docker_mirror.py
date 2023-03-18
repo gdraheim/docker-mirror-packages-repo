@@ -39,7 +39,9 @@ CENTOS_VERSIONS = {"7.0": "7.0.1406", "7.1": "7.1.1503", "7.2": "7.2.1511", "7.3
                    "7.4": "7.4.1708", "7.5": "7.5.1804", "7.6": "7.6.1810", "7.7": "7.7.1908",
                    "7.8": "7.8.2003", "7.9": "7.9.2009",
                    "8.0": "8.0.1905", "8.1": "8.1.1911", "8.2": "8.2.2004", "8.3": "8.3.2011",
-                   "8.4": "8.4.2105", "9.0": "9.0.20221001", "9.1": "9.1.20230222", }
+                   "8.4": "8.4.2105" }
+ALMA_VERSIONS = { "9.1-20230222": "9.1", "9.1-20221201": "9.1", "9.1-20221117": "9.1",
+                  "9.0-20221001": "9.0", "9.0-20220901": "9.0", "9.0-20220706": "9.0", }
 
 def decodes(text):
     if text is None: return None
@@ -187,6 +189,8 @@ class DockerMirrorPackagesRepo:
         """ converts a shorthand version into the version string used on an image name. """
         if image.startswith("centos:"):
             return self.get_centos_latest(image)
+        if image.startswith("almalinux:"):
+            return self.get_centos_latest(image)
         if image.startswith("opensuse/leap:"):
             return self.get_opensuse_latest(image)
         if image.startswith("opensuse:"):
@@ -198,6 +202,9 @@ class DockerMirrorPackagesRepo:
         """ converts a shorthand version into the version string used on an image name. """
         if image.startswith("centos:"):
             version = image[len("centos:"):]
+            return self.get_centos_latest_version(version)
+        if image.startswith("almalinux:"):
+            version = image[len("almalinux:"):]
             return self.get_centos_latest_version(version)
         if image.startswith("opensuse/leap:"):
             version = image[len("opensuse/leap:"):]
@@ -293,6 +300,12 @@ class DockerMirrorPackagesRepo:
             latest = self.get_centos_latest_version(version)
             if latest:
                 return "{distro}:{latest}".format(**locals())
+        if image.startswith("almalinux:"):
+            distro = "almalinux"
+            version = image[len("almalinux:"):]
+            latest = self.get_centos_latest_version(version)
+            if latest:
+                return "{distro}:{latest}".format(**locals())
         if default is not None:
             return default
         return image
@@ -309,10 +322,18 @@ class DockerMirrorPackagesRepo:
                     logg.debug("release %s (%s)", release, fullrelease)
                     if latest < fullrelease:
                         latest = fullrelease
+            for release in ALMA_VERSIONS:
+                if release.startswith(ver):
+                    fullrelease = ALMA_VERSIONS[release]
+                    logg.debug("release %s (%s)", release, fullrelease)
+                    if latest < fullrelease:
+                        latest = fullrelease
             if latest:
                 ver = latest
         if ver in CENTOS_VERSIONS:
             ver = CENTOS_VERSIONS[ver]
+        if version in ALMA_VERSIONS.values():
+            ver = max([os for os in ALMA_VERSIONS if ALMA_VERSIONS[os] == version])
         return ver or version
     def get_centos_docker_mirror(self, image):
         """ detects a local centos mirror or starts a local
@@ -400,6 +421,11 @@ class DockerMirrorPackagesRepo:
         version = self.get_centos_latest_version(ver)
         # cut the yymm date part from the centos release
         released = version.split(".")[-1]
+        # cut the yymm date part from the almalinux release
+        yymm = re.match("\\d+[.]\\d+-22(\\d\\d\\d\\d)\\d*", version)
+        if yymm:
+           released = yymm.group(1)
+        logg.info("%s -> epel %s", version, released)
         later = ""
         before = ""
         # and then check for actual images around
