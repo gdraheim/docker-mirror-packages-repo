@@ -34,20 +34,9 @@ centosbash:
 	docker exec -it centos-bash-$(CENTOS) bash
 
 ### centos versions
+almapull.9.1: ; $(MAKE) centospull CENTOS=9.1
 
-centos.8.5 centos.8.5.2111: ; $(MAKE) centosdir CENTOS=8.5.2111
-centos.8.4 centos.8.4.2105: ; $(MAKE) centosdir CENTOS=8.4.2105
-centos.8.3 centos.8.3.2011: ; $(MAKE) centosdir CENTOS=8.3.2011
-centos.8.2 centos.8.2.2004: ; $(MAKE) centosdir CENTOS=8.2.2004
-centos.8.1 centos.8.1.1911: ; $(MAKE) centosdir CENTOS=8.1.1911
-centos.8.0 centos.8.0.1905: ; $(MAKE) centosdir CENTOS=8.0.1905
-centos.7.9 centos.7.9.2009: ; $(MAKE) centosdir CENTOS=7.9.2009
-centos.7.8 centos.7.8.2003: ; $(MAKE) centosdir CENTOS=7.8.2003
-centos.7.7 centos.7.7.1908: ; $(MAKE) centosdir CENTOS=7.7.1908
-centos.7.6 centos.7.6.1810: ; $(MAKE) centosdir CENTOS=7.6.1810
-centos.7.5 centos.7.5.1804: ; $(MAKE) centosdir CENTOS=7.5.1804
-centos.7.4 centos.7.4.1708: ; $(MAKE) centosdir CENTOS=7.4.1708
-centos.7.3 centos.7.3.1611: ; $(MAKE) centosdir CENTOS=7.3.1611
+almasync.9.1: ; $(MAKE) centossync CENTOS=9.1
 centossync.8.5 centossync.8.5.2111: ; $(MAKE) centossync CENTOS=8.5.2111
 centossync.8.4 centossync.8.4.2105: ; $(MAKE) centossync CENTOS=8.4.2105
 centossync.8.3 centossync.8.2.2011: ; $(MAKE) centossync CENTOS=8.3.2011
