@@ -291,30 +291,37 @@ def centos_epelsync(distro: str = NIX, centos: str = NIX) -> None:
         return centos_epelsync7()
     raise RuntimeWarning("unknown CENTOS %s" % centos)
 
-def centos_epelsync9() -> None:
-    centos_epelsync8()
-def centos_epelsync8() -> None:
+def centos_epelsync9(distro: str = NIX, centos: str = NIX) -> None:
+    distro = distro or EPEL
+    centos = centos or CENTOS
+    distro_epelsyncs(distro, centos, ["Everything"])
+def centos_epelsync8(distro: str = NIX, centos: str = NIX) -> None:
+    distro = distro or EPEL
+    centos = centos or CENTOS
+    distro_epelsyncs(distro, centos, ["Everything", "Modular"])
+def centos_epelsync7(distro: str = NIX, centos: str = NIX) -> None:
+    distro = distro or EPEL
+    centos = centos or CENTOS
+    distro_epelsyncs(distro, centos, [])
+def distro_epelsyncs(distro: str, centos: str, subdirs: List[str] = []) -> str:
+    distro = distro or EPEL
+    centos = centos or CENTOS
     rsync = RSYNC
-    distro = EPEL
-    centos = CENTOS
     mirror = MIRRORS[distro][0]
     epel = major(centos)
     arch = ARCH
+    repo = distro_dir(distro, epel)
     excludes = """ --exclude "*.iso" """
-    for subdir in ["Everything", "Modular"]:
-        basedir = F"epel.{epel}/{epel}/{subdir}"
-        if not path.isdir(basedir):
-            os.makedirs(basedir)
-        sh___(F"{rsync} -rv {mirror}/{epel}/{subdir}/{arch} {basedir}/ {excludes}")
-def centos_epelsync7() -> None:
-    rsync = RSYNC
-    distro = EPEL
-    centos = CENTOS
-    mirror = MIRRORS[distro][0]
-    epel = major(centos)
-    arch = ARCH
-    excludes = """ --exclude "*.iso" """
-    sh___(F"{rsync} -rv {mirror}/{epel}/{arch} epel.{epel}/{epel}/ {excludes}")
+    if subdirs:
+        for subdir in subdirs:
+            basedir = F"{repo}/{epel}/{subdir}"
+            if not path.isdir(basedir):
+                os.makedirs(basedir)
+            sh___(F"{rsync} -rv {mirror}/{epel}/{subdir}/{arch} {basedir}/ {excludes}")
+    else:
+        basedir = F"{repo}/{epel}"
+        sh___(F"{rsync} -rv {mirror}/{epel}/{arch} {basedir}/ {excludes}")
+    return F"epel.{epel}/{epel}"
 
 def centos_unpack() -> None:
     """ used while testing if centos had all packages """
@@ -355,7 +362,11 @@ def centos_epelrepo(distro: str = NIX, centos: str = NIX) -> None:
 
 MAKE_EPEL_HTTP = True
 def centos_epelrepo9(distro: str = NIX, centos: str = NIX) -> None:
-    centos_epelrepo8(distro, centos)
+    distro = distro or EPEL
+    centos = centos or CENTOS
+    dists: Dict[str, List[str]] = OrderedDict()
+    dists["main"] = ["Everything"]
+    distro_epelrepos(distro, centos, dists)
 def centos_epelrepo8(distro: str = NIX, centos: str = NIX) -> None:
     distro = distro or EPEL
     centos = centos or CENTOS
