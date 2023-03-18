@@ -292,7 +292,7 @@ def centos_epelsync(distro: str = NIX, centos: str = NIX) -> None:
     raise RuntimeWarning("unknown CENTOS %s" % centos)
 
 def centos_epelsync9() -> None:
-    centos_epelsync9()
+    centos_epelsync8()
 def centos_epelsync8() -> None:
     rsync = RSYNC
     distro = EPEL
