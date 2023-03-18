@@ -38,9 +38,10 @@ if opt.data and opt.data != ".":
 
 class MyHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
-        if self.path.startswith("/?"):
+        if self.path.startswith("/?") or self.path.startswith("/mirrorlist?") or self.path.startswith("/mirrorlist/?"):
+            mirrorlist, parameters = self.path.split("?", 1)
             values = {}
-            for param in self.path[2:].split("&"):
+            for param in parameters.split("&"):
                 if "=" in param:
                     name, value = param.split("=")
                     values[name] = value
