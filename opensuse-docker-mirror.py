@@ -232,7 +232,7 @@ def opensuse_repo() -> None:
     if baseversion in BASEVERSION:
         baseversion = BASEVERSION[baseversion]
     scripts = repo_scripts()
-    cname = "opensuse-repo-" + leap
+    cname = F"{distro}-repo-{leap}"
     image = BASE[LEAP]
     imagesrepo = IMAGESREPO
     bind_repo = ""
@@ -259,14 +259,14 @@ def opensuse_repo() -> None:
     CMD = str(opensuserepo_CMD).replace("'", '"')
     PORT = opensuserepo_PORT
     base = "base"
-    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/opensuse-repo/{base}:{leap}")
+    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{leap}")
     dists: Dict[str, List[str]] = OrderedDict()
     # dists["mini"] = ["distribution", "-games"]
     dists["main"] = ["distribution"]
     dists["update"] = ["update"]
     for dist in dists:
         sx___(F"{docker} rm --force {cname}")
-        sh___(F"{docker} run --name={cname} --detach {imagesrepo}/opensuse-repo/{base}:{leap} sleep 9999")
+        sh___(F"{docker} run --name={cname} --detach {imagesrepo}/{distro}-repo/{base}:{leap} sleep 9999")
         clean: Dict[str, str] = {}
         for subdir in dists[dist]:
             basedir = F"{repodir}/{distro}.{leap}/."
@@ -297,10 +297,10 @@ def opensuse_repo() -> None:
             if leap in XXLEAP:
                 sh___(F""" {docker} exec {cname} bash -c "cd /srv/repo/{dist}/leap/{leap}/oss && createrepo ." """)
         if base == dist:
-            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/opensuse-repo/{base}:{leap}")
+            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{leap}")
     sh___(F"{docker} rm --force {cname}")
-    sh___(F"{docker} tag {imagesrepo}/opensuse-repo/{base}:{leap} {imagesrepo}/opensuse-repo:{leap}")
-    sh___(F"{docker} rmi {imagesrepo}/opensuse-repo/base:{leap}")  # untag non-packages base
+    sh___(F"{docker} tag {imagesrepo}/{distro}-repo/{base}:{leap} {imagesrepo}/{distro}-repo:{leap}")
+    sh___(F"{docker} rmi {imagesrepo}/{distro}-repo/base:{leap}")  # untag non-packages base
 
 def opensuse_test() -> None:
     distro = DISTRO
