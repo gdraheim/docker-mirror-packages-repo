@@ -378,17 +378,22 @@ def centos_epelrepo8(distro: str = NIX, centos: str = NIX) -> None:
 def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> None:
     distro = distro or EPEL
     centos = centos or CENTOS
+    repodir = REPODIR
     docker = DOCKER
     epel = major(centos)
     arch = ARCH
     scripts = repo_scripts()
     cname = F"{distro}-repo-{epel}"
-    out, end = output2(F"./docker_mirror.py start centos:{centos} -a")
+    baseimage = DISTRO
+    baseversion = BASEVERSION or centos
+    if baseversion in BASEVERSIONS:
+        baseversion = BASEVERSIONS[baseversion]
+    out, end = output2(F"./docker_mirror.py start {baseimage}:{baseversion} -a")
     addhosts = out.strip()
     sx___(F"{docker} rm --force {cname}")
-    sh___(F"{docker} run --name={cname} {addhosts} --detach centos:{centos} sleep 9999")
-    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/epel/{epel}")
+    sh___(F"{docker} run --name={cname} {addhosts} --detach {baseimage}:{baseversion} sleep 9999")
     sh___(F"{docker} exec {cname} yum install -y openssl")
+    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/epel/{epel}")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
     if False:
         # instead we use an explicit epelrepo8_CMD
@@ -405,7 +410,7 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
         sx___(F"{docker} rm --force {cname}")
         sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo/{base}:{epel}.x.{yymm} sleep 9999")
         for subdir in dists[dist]:
-            sh___(F"{docker} cp epel.{epel}/{epel}/{subdir} {cname}:/srv/repo/epel/{epel}/")
+            sh___(F"{docker} cp {repodir}/{distro}.{epel}/{epel}/{subdir} {cname}:/srv/repo/epel/{epel}/")
             base = dist  # !!
         if base == dist:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{epel}.x.{yymm}")
@@ -424,6 +429,7 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
 def centos_epelrepo7(distro: str = NIX, centos: str = NIX) -> None:
     distro = distro or EPEL
     centos = centos or CENTOS
+    repodir = REPODIR
     docker = DOCKER
     epel = major(centos)
     arch = ARCH
@@ -441,7 +447,7 @@ def centos_epelrepo7(distro: str = NIX, centos: str = NIX) -> None:
     CMD = str(centos_epel_cmd(distro, centos)).replace("'", '"')
     repo = IMAGESREPO
     yymm = datetime.date.today().strftime("%y%m")
-    sh___(F"{docker} cp epel.{epel}/{epel} {cname}:/srv/repo/epel/")
+    sh___(F"{docker} cp {repodir}/{distro}.{epel}/{epel} {cname}:/srv/repo/epel/")
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/{distro}-repo:{epel}.x.{yymm}")
     sh___(F"{docker} rm --force {cname}")
     if MAKE_EPEL_HTTP:
