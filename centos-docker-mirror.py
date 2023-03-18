@@ -401,7 +401,7 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
             sh___(F"{docker} exec {cname} sed -i s:/usr/bin/python:/usr/libexec/platform-python: /srv/scripts/{script}")
             sh___(F"{docker} exec {cname} chmod +x /srv/scripts/{script}")
     base = "base"
-    PORT = str(centos_epel_port(distro, centos))
+    PORT = centos_epel_port(distro, centos)
     CMD = str(centos_epel_cmd(distro, centos)).replace("'", '"')
     repo = IMAGESREPO
     yymm = datetime.date.today().strftime("%y%m")
@@ -417,10 +417,10 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
     sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{epel}.x.{yymm} {repo}/{distro}-repo:{epel}.x.{yymm}")
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} rmi {repo}/{distro}-repo/base:{epel}.x.{yymm}")
-    if MAKE_EPEL_HTTP:
+    PORT2 = centos_epel_http_port(distro, centos)
+    CMD2 = str(centos_epel_http_cmd(distro, centos)).replace("'", '"')
+    if PORT != PORT2:
         # the upstream epel repository runs on https by default but we don't have their certificate anyway
-        PORT2 = str(centos_epel_http_port(distro, centos))
-        CMD2 = str(centos_epel_http_cmd(distro, centos)).replace("'", '"')
         base2 = "http"  # !!
         sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo:{epel}.x.{yymm} sleep 9999")
         sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/{distro}-repo/{base2}:{epel}.x.{yymm}")
@@ -435,23 +435,24 @@ def centos_epelrepo7(distro: str = NIX, centos: str = NIX) -> None:
     arch = ARCH
     scripts = repo_scripts()
     cname = F"{distro}-repo-{epel}"  # container name
+    PORT = centos_epel_port(distro, centos)
+    CMD = str(centos_epel_cmd(distro, centos)).replace("'", '"')
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} run --name={cname} --detach centos:{centos} sleep 9999")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/epel")
-    sh___(F"{docker} exec {cname} yum install -y openssl")
+    if PORT != 80:
+        sh___(F"{docker} exec {cname} yum install -y openssl")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
     for script in os.listdir(f"{scripts}/."):
         sh___(F"{docker} exec {cname} chmod +x /srv/scripts/{script}")
     #
-    PORT = str(centos_epel_port(distro, centos))
-    CMD = str(centos_epel_cmd(distro, centos)).replace("'", '"')
     repo = IMAGESREPO
     yymm = datetime.date.today().strftime("%y%m")
     sh___(F"{docker} cp {repodir}/{distro}.{epel}/{epel} {cname}:/srv/repo/epel/")
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/{distro}-repo:{epel}.x.{yymm}")
     sh___(F"{docker} rm --force {cname}")
     if MAKE_EPEL_HTTP:
-        PORT2 = str(centos_epel_http_port(distro, centos))
+        PORT2 = centos_epel_http_port(distro, centos)
         CMD2 = str(centos_epel_http_cmd(distro, centos)).replace("'", '"')
         base2 = "http"  # !!
         # the upstream epel repository runs on https by default but we don't have their certificate anyway
@@ -477,6 +478,21 @@ def centos_epel_http_cmd(distro: str = NIX, centos: str = NIX) -> List[str]:
     centos = centos or CENTOS
     python = centos_python(distro, centos)
     return [python, "/srv/scripts/mirrors.fedoraproject.org.py", "--data", "/srv/repo/epel"]
+
+def centos_main_port(distro: str = NIX, centos: str = NIX) -> int:
+    distro = distro or DISTRO
+    centos = centos or CENTOS
+    if distro == "almalinux":
+        return 443
+    return 80
+def centos_main_cmd(distro: str = NIX, centos: str = NIX) -> List[str]:
+    distro = distro or DISTRO
+    centos = centos or CENTOS
+    python = centos_python(distro, centos)
+    if distro == "almalinux":
+        return [python, "/srv/scripts/mirrorlist.py", "--data", "/srv/repo", "--ssl", "https://mirrors.almalinux.org"]
+    else:
+        return [python, "/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
 
 def centos_http_port(distro: str = NIX, centos: str = NIX) -> int:
     distro = distro or DISTRO
@@ -531,13 +547,15 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
     baseimage = distro
     scripts = repo_scripts()
     cname = F"{distro}-repo-{centos}"
+    PORT = centos_main_port(distro, centos)
+    CMD = str(centos_main_cmd(distro, centos)).replace("'", '"')
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} run --name={cname} --detach {baseimage}:{version} sleep 9999")
+    if PORT != 80:
+        sh___(F"{docker} exec {cname} yum install -y openssl")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{R}")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
     base = "base"
-    PORT = centos_http_port(distro, centos)
-    CMD = str(centos_http_cmd(distro, centos)).replace("'", '"')
     repo = IMAGESREPO
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{centos}")
     for dist in dists:
@@ -553,6 +571,14 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
     sh___(F"{docker} rm --force {cname}")
     sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{centos} {repo}/{distro}-repo:{centos}")
     sh___(F"{docker} rmi {repo}/{distro}-repo/base:{centos}")  # untag non-packages base
+    PORT2 = centos_http_port(distro, centos)
+    CMD2 = str(centos_http_cmd(distro, centos)).replace("'", '"')
+    if PORT != PORT2:
+        # the upstream almalinux repository runs on https by default but we don't have their certificate anyway
+        base2 = "http"  # !!
+        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo:{centos} sleep 9999")
+        sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/{distro}-repo/{base2}:{centos}")
+        sx___(F"{docker} rm --force {cname}")
     centos_restore()
     return F"{repo}/{distro}-repo:{centos}"
 
