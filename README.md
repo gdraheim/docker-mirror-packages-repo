@@ -47,6 +47,8 @@ Tested repos are
  * localhost:5000/mirror-packages/**centos-repo/sclo:7.9.2009**  _(22.4GB)_
  * localhost:5000/mirror-packages/**centos-repo/main:8.3.2011**  _(18.6GB)_
  * localhost:5000/mirror-packages/**centos-repo/plus:8.3.2011**  _(21.6GB)_
+ * localhost:5000/mirror-packages/**almalinux-repo/main:9.1**    _(22.3GB)_
+ * localhost:5000/mirror-packages/**almalinux-repo/plus:9.1**    _(23.1GB)_
  * localhost:5000/mirror-packages/**epel-repo:7.x.1910**         _(39.4GB)_
  * localhost:5000/mirror-packages/**opensuse-repo:42.3**         _(38.6GB)_
  * localhost:5000/mirror-packages/**opensuse-repo:15.0**         _(48.9GB)_
