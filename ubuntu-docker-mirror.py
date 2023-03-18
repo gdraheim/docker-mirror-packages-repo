@@ -281,7 +281,7 @@ def ubuntu_poolcount() -> None:
 
 def ubuntu_http_port() -> str:
     return "80"
-def ubuntu_http_cmd() -> str:
+def ubuntu_http_cmd() -> List[str]:
     python = PYTHON
     if "/" not in python:
         python = F"/usr/bin/{python}"
@@ -298,7 +298,7 @@ def ubuntu_repo() -> None:
         baseversion = BASEVERSION[baseversion]
     python = PYTHON
     scripts = repo_scripts()
-    cname = "ubuntu-repo-" + ubuntu  # container name
+    cname = F"{distro}-repo-{ubuntu}"  # container name
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} run --name={cname} --detach {image}:{baseversion} sleep 9999")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu")
@@ -311,20 +311,20 @@ def ubuntu_repo() -> None:
     base = "base"
     PORT = ubuntu_http_port()
     CMD = str(ubuntu_http_cmd()).replace("'", '"')
-    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/ubuntu-repo/{base}:{ubuntu}")
+    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{ubuntu}")
     for main in REPOS:
         sh___(F"{docker} rm --force {cname}")
-        sh___(F"{docker} run --name={cname} --detach {imagesrepo}/ubuntu-repo/{base}:{ubuntu} sleep 9999")
+        sh___(F"{docker} run --name={cname} --detach {imagesrepo}/{distro}-repo/{base}:{ubuntu} sleep 9999")
         for dist in [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]:
             pooldir = F"{repodir}/{distro}.{ubuntu}/pools/{dist}/{main}/pool"
             if path.isdir(pooldir):
                 sh___(F"{docker} cp {pooldir}  {cname}:/srv/repo/ubuntu/")
                 base = main
         if base == main:
-            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/ubuntu-repo/{base}:{ubuntu}")
-    sh___(F"{docker} tag {imagesrepo}/ubuntu-repo/{base}:{ubuntu} {imagesrepo}/ubuntu-repo:{ubuntu}")
+            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{ubuntu}")
+    sh___(F"{docker} tag {imagesrepo}/{distro}-repo/{base}:{ubuntu} {imagesrepo}/{distro}-repo:{ubuntu}")
     sh___(F"{docker} rm --force {cname}")
-    sx___(F"{docker} rmi {imagesrepo}/ubuntu-repo/base:{ubuntu}")  # untag base image
+    sx___(F"{docker} rmi {imagesrepo}/{distro}-repo/base:{ubuntu}")  # untag base image
 
 def ubuntu_test() -> None:
     distro = DISTRO
@@ -452,7 +452,11 @@ def commands() -> str:
     return "|".join(cmds)
 
 def UBUNTU_set(ubuntu: str) -> str:
-    global UBUNTU
+    global UBUNTU, DISTRO
+    distro = ""
+    if ":" in ubuntu:
+        distro, ubuntu = ubuntu.split(":", 1)
+        DISTRO = distro
     if len(ubuntu) <= 2:
         UBUNTU = max([os for os in DIST if os.startswith(ubuntu)])
         logg.info(F"UBUNTU:={UBUNTU} (max {ubuntu})")
