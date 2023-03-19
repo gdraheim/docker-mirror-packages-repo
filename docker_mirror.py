@@ -29,7 +29,7 @@ ADDEPEL = False
 UPDATES = False
 UNIVERSE = False
 
-MAXWAIT = 5
+MAXWAIT = 6
 
 LEAP = "opensuse/leap"
 SUSE = "opensuse"
@@ -661,20 +661,38 @@ class DockerMirrorPackagesRepo:
         else:
             return json.dumps(mirrors, indent=2)
     def wait_mirrors(self, hosts):
+        results = {}
         for url, addr in hosts.items():
+            if not addr:
+                continue
+            results[url] = 0
             if "alma" in url or "epel" in url:
                 logg.debug("wait %s:443 (%ss)", url, MAXWAIT)
-                for attempt in xrange(MAXWAIT):
+                for attempt in xrange(max(1, MAXWAIT)):
                     try:
                         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         sock.settimeout(2)
                         sock.connect((addr, 443))
-                        return True
+                        results[url] = 0
+                        break
                     except ConnectionRefusedError as e:
                         logg.info(" wait %s:443 = %s", url, e)
+                        results[url] += 1
                         time.sleep(1)
-                return False
-        return True
+            else:
+                logg.debug("wait %s:80 (%ss)", url, MAXWAIT)
+                for attempt in xrange(max(1, MAXWAIT - 2)):
+                    try:
+                        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        sock.settimeout(2)
+                        sock.connect((addr, 80))
+                        results[url] = 0
+                        break
+                    except ConnectionRefusedError as e:
+                        logg.info(" wait %s:80 = %s", url, e)
+                        results[url] += 1
+                        time.sleep(1)
+        return sum(results.values())
     def infos(self, image=None):
         image = self.detect(image)
         mirrors = self.info_containers(image)
