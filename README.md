@@ -50,13 +50,18 @@ Tested repos are
  * localhost:5000/mirror-packages/**almalinux-repo/main:9.1**    _(22.3GB)_
  * localhost:5000/mirror-packages/**almalinux-repo/plus:9.1**    _(23.1GB)_
  * localhost:5000/mirror-packages/**epel-repo:7.x.1910**         _(39.4GB)_
+ * localhost:5000/mirror-packages/**epel-repo:7.x.2012**         _(48.9GB)_
+ * localhost:5000/mirror-packages/**epel-repo:8.x.2012**         _(20.6GB)_
+ * localhost:5000/mirror-packages/**epel-repo:9.x.2303**         _(29.3GB)_
  * localhost:5000/mirror-packages/**opensuse-repo:42.3**         _(38.6GB)_
  * localhost:5000/mirror-packages/**opensuse-repo:15.0**         _(48.9GB)_
  * localhost:5000/mirror-packages/**opensuse-repo:15.1**         _(54.6GB)_
  * localhost:5000/mirror-packages/**opensuse-repo/main:15.2**    _(93.1GB)_
  * localhost:5000/mirror-packages/**opensuse-repo/update:15.2**   _(118GB)_
  * localhost:5000/mirror-packages/**opensuse-repo/main:15.3**    _(69.9GB)_
- * localhost:5000/mirror-packages/**opensuse-repo/update:15.3**   _(70.1GB)_
+ * localhost:5000/mirror-packages/**opensuse-repo/update:15.3**  _(70.1GB)_
+ * localhost:5000/mirror-packages/**opensuse-repo/main:15.4**    _(94.3GB)_
+ * localhost:5000/mirror-packages/**opensuse-repo/update:15.4**  _(94.3GB)_
  * localhost:5000/mirror-packages/**ubuntu-repo:16.04**          _(74.7GB)_
  * localhost:5000/mirror-packages/**ubuntu-repo:18.04**          _(19.5GB)_
  * localhost:5000/mirror-packages/**ubuntu-repo/main:16.04**     _(74.7GB)_
