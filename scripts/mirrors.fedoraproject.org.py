@@ -99,6 +99,8 @@ class MyHandler(SimpleHTTPRequestHandler):
                 use = "%s/%s/" % ("8/Everything", arch)
             elif repo in ["epel-modular-8"]:
                 use = "%s/%s/" % ("8/Modular", arch)
+            elif repo in ["epel-9"]:
+                use = "%s/%s/" % ("9/Everything", arch)
             else:
                 use = "%s/%s/" % (repo, arch)
             url = "%s/%s" % (SSL or URL, use)
