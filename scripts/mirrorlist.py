@@ -63,7 +63,7 @@ class MyHandler(SimpleHTTPRequestHandler):
             infra = values.get("infra", "")
             if infra in ["container"]:
                 infra = "os"
-            if release in ["8","9"]:
+            if release in ["8", "9"]:
                 text = "%s/%s/%s/%s/%s/\n" % (SSL or URL, release, repo, arch, infra)
             else:
                 text = "%s/%s/%s/%s/\n" % (SSL or URL, release, repo, arch)
