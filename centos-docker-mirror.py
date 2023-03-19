@@ -390,9 +390,13 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
         baseversion = BASEVERSIONS[baseversion]
     out, end = output2(F"./docker_mirror.py start {baseimage}:{baseversion} -a")
     addhosts = out.strip()
+    PORT = centos_epel_port(distro, centos)
+    CMD = str(centos_epel_cmd(distro, centos)).replace("'", '"')
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} run --name={cname} {addhosts} --detach {baseimage}:{baseversion} sleep 9999")
-    sh___(F"{docker} exec {cname} yum install -y openssl")
+    if PORT != 80:
+        sh___(F"{docker} exec {cname} bash -c 'echo sslverify=false >> /etc/yum.conf'")
+        sh___(F"{docker} exec {cname} yum install -y openssl")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/epel/{epel}")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
     if False:
@@ -401,8 +405,6 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
             sh___(F"{docker} exec {cname} sed -i s:/usr/bin/python:/usr/libexec/platform-python: /srv/scripts/{script}")
             sh___(F"{docker} exec {cname} chmod +x /srv/scripts/{script}")
     base = "base"
-    PORT = centos_epel_port(distro, centos)
-    CMD = str(centos_epel_cmd(distro, centos)).replace("'", '"')
     repo = IMAGESREPO
     yymm = datetime.date.today().strftime("%y%m")
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{epel}.x.{yymm}")
