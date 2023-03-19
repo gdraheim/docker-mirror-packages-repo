@@ -258,7 +258,7 @@ class DockerMirrorPackagesRepo:
             mirrors = self.get_opensuse_docker_mirrors(image)
         if image.startswith("ubuntu:"):
             mirrors = self.get_ubuntu_docker_mirrors(image)
-        logg.info(" %s -> %s", image, " ".join([mirror.cname for mirror in mirrors]))
+        logg.info("     mirrors for %s -> %s", image, " ".join([mirror.cname for mirror in mirrors]))
         return mirrors
     def get_ubuntu_latest(self, image, default=None):
         if image.startswith("ubuntu:"):
@@ -361,7 +361,7 @@ class DockerMirrorPackagesRepo:
         rmi = "localhost:5000/mirror-packages"
         rep = F"{distro}-repo"
         ver = self.get_centos_latest_version(onlyversion(image))
-        logg.info("mirror for %s (%s)", ver, image)
+        logg.debug("    mirror for %s (%s)", ver, image)
         if "alma" in distro:
             return self.docker_mirror(rmi, rep, ver, "mirrors.almalinux.org")
         else:
@@ -448,7 +448,7 @@ class DockerMirrorPackagesRepo:
         yymm = re.match("\\d+[.]\\d+-22(\\d\\d\\d\\d)\\d*", version)
         if yymm:
             released = yymm.group(1)
-        logg.info("%s -> epel %s", version, released)
+        logg.debug("      detected %s -> epel %s", version, released)
         later = ""
         before = ""
         # and then check for actual images around
@@ -482,14 +482,14 @@ class DockerMirrorPackagesRepo:
         out, err, rc = output3(cmd.format(**locals()))
         if rc:
             logg.info("%s : %s", cmd, err)
-            logg.debug("no address for %s", name)
+            logg.debug("no addr for %s", name)
             return None
         values = json.loads(out)
         if not values or "NetworkSettings" not in values[0]:
             logg.critical(" docker inspect %s => %s ", name, values)
         addr = values[0]["NetworkSettings"]["IPAddress"]
         assert isinstance(addr, basestring)
-        logg.debug("address %s for %s", addr, name)
+        logg.debug("::::                %s -> %s", name, addr)
         return addr
     def start_containers(self, image):
         mirrors = self.get_docker_mirrors(image)
@@ -504,14 +504,14 @@ class DockerMirrorPackagesRepo:
         out, err, ok = output3(cmd.format(**locals()))
         image_found = json.loads(out)
         if not image_found:
-            logg.info("image not found: %s", image)
+            logg.info("    image not found: %s", image)
             return None
         cmd = "{docker} inspect {container}"
         out, err, rc = output3(cmd.format(**locals()))
         container_found = json.loads(out)
         if not rc and container_found:
             container_status = container_found[0]["State"]["Status"]
-            logg.info("::: %s -> %s", container, container_status)
+            logg.debug("::::                %s -> %s", container, container_status)
             latest_image_id = image_found[0]["Id"]
             container_image_id = container_found[0]["Image"]
             if latest_image_id != container_image_id or container_status not in ["running"]:
@@ -526,7 +526,7 @@ class DockerMirrorPackagesRepo:
             if rc:
                 logg.error("%s : %s", cmd, err)
         addr = self.ip_container(container)
-        logg.info("%s : %s", container, addr)
+        logg.info(" ---> %s : %s", container, addr)
         return addr
     def stop_containers(self, image):
         mirrors = self.get_docker_mirrors(image)
@@ -578,7 +578,7 @@ class DockerMirrorPackagesRepo:
         args = []
         for mirror in mirrors:
             name = mirror.cname
-            logg.info("name = %s (%s)", name, done)
+            logg.debug(" repo container %s   (%s)", name, done)
             if name in done:
                 addr = done[name]
                 if addr:
@@ -647,6 +647,11 @@ class DockerMirrorPackagesRepo:
         image = self.detect(image)
         logg.debug("starts image = %s", image)
         mirrors = self.start_containers(image)
+        if LOCAL:
+            notfound = [mirror for mirror, addr in mirrors.items() if addr is None]
+            if notfound:
+                logg.error("   no docker mirror image for %s" % (" ".join(notfound)))
+                sys.exit(1)
         self.wait_mirrors(mirrors)
         if ADDHOSTS:
             return " ".join(self.add_hosts(image, mirrors))
@@ -751,6 +756,8 @@ if __name__ == "__main__":
                     help="addhosts using universe variant [%(default)s]")
     _o.add_argument("-f", "--file", metavar="DOCKERFILE", default=None,
                     help="default to image FROM the dockerfile [%(default)s]")
+    _o.add_argument("-l", "--local", "--localmirrors", action="count", default=0,
+                    help="fail if a local mirror was not found [%(default)s]")
     commands = ["help", "detect", "image", "repo", "info", "facts", "start", "stop"]
     _o.add_argument("command", nargs="?", default="detect", help="|".join(commands))
     _o.add_argument("image", nargs="?", default=None, help="defaults to image name of the local host system")
@@ -760,6 +767,7 @@ if __name__ == "__main__":
     ADDEPEL = opt.epel  # centos epel-repo
     UPDATES = opt.updates
     UNIVERSE = opt.universe  # ubuntu universe repo
+    LOCAL = opt.local
     command = opt.command or "detect"
     repo = DockerMirrorPackagesRepo()
     if not opt.image and opt.file:
