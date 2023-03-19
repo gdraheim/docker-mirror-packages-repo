@@ -574,8 +574,25 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{mirror} start {image} --add-hosts".format(**locals()))
         add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
         sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
-        # sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals())) # all /extras are now in epel
         sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
+        if not KEEP:
+            sx____("{docker} rm -f test-box1".format(**locals()))
+            sh____("{mirror} stop {image} --add-host".format(**locals()))
+    def test_2091_centos(self) -> None:
+        docker = DOCKER
+        mirror = _docker_mirror
+        image = "almalinux:9.1"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
+        retry="--connect-timeout 5 --retry 3 --retry-connrefused"
+        sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >>/etc/yum.conf'".format(**locals()))
+        sh____("{docker} exec test-box1 curl -k {retry} https://mirrors.almalinux.org".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y python3-numpy".format(**locals()))
         if not KEEP:
             sx____("{docker} rm -f test-box1".format(**locals()))
             sh____("{mirror} stop {image} --add-host".format(**locals()))
