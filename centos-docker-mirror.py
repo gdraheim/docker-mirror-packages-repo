@@ -554,6 +554,8 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
     if PORT != 80:
         sh___(F"{docker} exec {cname} yum install -y openssl")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{R}")
+    if R != centos:
+        sh___(F"{docker} exec {cname} ln -sv {R} /srv/repo/{centos}")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
     base = "base"
     repo = IMAGESREPO
