@@ -125,6 +125,45 @@ in the container and a sendfile will return the content. These are mostly
 
 For more information check the [centos-repo mirror info](./centos-repo-mirror.info.md)
 
+## ALMALINUX
+
+Mimics the default URL of http://mirrors.almalinux.org
+
+The default package repositories in AlmaLinux look like this:
+
+    # /etc/yum.repos.d/almalinux-baseos.repo
+    [baseos]
+    name=AlmaLinux $releasever - BaseOS
+    mirrorlist=https://mirrors.almalinux.org/mirrorlist/$releasever/baseos
+    # baseurl=https://repo.almalinux.org/almalinux/$releasever/BaseOS/$basearch/os/
+
+This looks similar to centos but actually it runs on https and the release and
+repo queries are not added as `?parameters` but as path parts. The new style has 
+been merged into the centos mirrorlist script.
+
+The same image does also server package requests on https. Be sure that your
+dockerfiles have a line `echo sslverify=false >> /etc/yum.conf`.
+
+Other than that, the AlmaLinux images are considered the default continuation
+of the CentOS image series. So `centos-docker-mirror.py 8.4` assumes centos
+while `centos-docker-mirror.py 8.9` assumes almalinux as the base image.
+
+## EPEL
+
+Mimics the default URL of http://mirrors.fedoraproject.org
+
+This is an extra yum repository that works on top of CentOS or AlmaLinux.
+
+Be sure to add "--epel" to the docker_mirror.py call to get it started as
+a second container, which will get included into the `--add-hosts` value
+result.
+
+Note that EPEL does not have a release series. You will always get some
+latest package from it. Instead the mirror images get an extension number
+which reflects the date when docker-mirror-packages-repo was created. The
+docker_mirror.py script knows the release dates of the CentOS or AlmaLinux
+release, so that it can find an epel-repo which is recent enough.
+
 ## OPENSUSE
 
 Mimics the default URL of http://download.opensuse.org
@@ -156,6 +195,21 @@ will return the content. These are mostly `*.deb` packages
 as well as some package index files.
 
 For more information check the [ubuntu-repo mirror info](./ubuntu-repo-mirror.info.md)
+
+# UBUNTU UNIVERSE
+
+Unlike with Redhat- and Suse-style extra repositories, the
+Ubuntu "universe" packages are hosted on the same server. That
+requires the "docker_mirror.py" script to start just one container
+when it sees the "--universe" option on the command line. It does
+try to find a "/universe" docker-mirror-packages-repo variant then.
+
+Since the universe mirror is bigger by a good factor, the default
+for docker_mirror.py is to not try to get a universe repo. Likewise
+the ubuntu-docker-mirror.py script will not try to sync and include
+the universe packages unless it sees the "--universe" option.
+
+There was not attempt made to include multiverse package.
 
 ## IMPLEMENTATION
 
