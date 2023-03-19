@@ -41,6 +41,10 @@ opt, args = ext.parse_args()
 URL = opt.url
 SSL = opt.ssl
 
+DEFAULT_REL1 = "9"
+DEFAULT_ARCH = "x86_64"
+DEFAULT_REPO = "os"
+
 if opt.data and opt.data != ".":
     os.chdir(opt.data)
 
@@ -53,13 +57,13 @@ class MyHandler(SimpleHTTPRequestHandler):
                 if "=" in param:
                     name, value = param.split("=")
                     values[name] = value
-            release = values.get("release", "0")
-            arch = values.get("arch", "x86_64")
-            repo = values.get("repo", "os")
+            release = values.get("release", "") or DEFAULT_REL1
+            arch = values.get("arch", "") or DEFAULT_ARCH
+            repo = values.get("repo", "") or DEFAULT_REPO
             infra = values.get("infra", "")
             if infra in ["container"]:
                 infra = "os"
-            if release in ["8"]:
+            if release in ["8","9"]:
                 text = "%s/%s/%s/%s/%s/\n" % (SSL or URL, release, repo, arch, infra)
             else:
                 text = "%s/%s/%s/%s/\n" % (SSL or URL, release, repo, arch)
@@ -73,22 +77,28 @@ class MyHandler(SimpleHTTPRequestHandler):
             self.wfile.write(data)
             return
         if self.path.startswith("/mirrorlist/"):
-            parts = self.path.split("/")
+            if "?" in self.path:
+                mirrorlist, parameters = self.path.split("?", 1)
+            else:
+                mirrorlist, parameters = self.path, ""
+            parts = mirrorlist.split("/")
             if parts[1] == "mirrorlist":
                 parts = parts[1:]
             mirrorlist = parts[0]
             if len(parts) >= 2:
-                release = parts[1]
+                release = parts[1] or DEFAULT_REL1
             else:
-                release = "9"
+                release = DEFAULT_REL1
             if len(parts) >= 3:
-                repo = parts[2]
+                repo = parts[2] or DEFAULT_REPO
             else:
-                repo = "os"
+                repo = DEFAULT_REPO
             mapped = {"appstream": "AppStream", "baseos": "BaseOS", "crb": "CRB"}
             if repo in mapped:
                 repo = mapped[repo]
-            text = "%s/%s/%s/%s/%s/\n" % (SSL or URL, release, repo, "$basearch", "os")
+            arch = "$basearch"  # generic :)
+            infra = "os"  # almalinux does not care
+            text = "%s/%s/%s/%s/%s/\n" % (SSL or URL, release, repo, arch, infra)
             print("SERVE", self.path)
             print("   AS", text.strip())
             data = text.encode("utf-8")
