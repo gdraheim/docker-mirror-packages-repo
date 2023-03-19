@@ -283,10 +283,9 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         cmd = "{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
         logg.warning("%s", cmd.format(**locals()))
         sh____(cmd.format(**locals()))
-        # sh____("{docker} exec test-box1 yum install -y python-docker-py") # all /extras are now in epel
         retry="--connect-timeout 5 --retry 3 --retry-connrefused"
-        sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >>/etc/yum.conf'".format(**locals()))
         sh____("{docker} exec test-box1 curl -k {retry} https://mirrors.almalinux.org".format(**locals()))
+        sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >>/etc/yum.conf'".format(**locals()))
         sh____("{docker} exec test-box1 yum install -y python3-numpy".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
@@ -586,12 +585,10 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         repo_image = output("{mirror} repo {image}".format(**locals()))
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
         sx____("{docker} rm -f test-box1".format(**locals()))
-        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts -v".format(**locals()))
         add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
         sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
-        retry="--connect-timeout 5 --retry 3 --retry-connrefused"
         sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >>/etc/yum.conf'".format(**locals()))
-        sh____("{docker} exec test-box1 curl -k {retry} https://mirrors.almalinux.org".format(**locals()))
         sh____("{docker} exec test-box1 yum install -y python3-numpy".format(**locals()))
         if not KEEP:
             sx____("{docker} rm -f test-box1".format(**locals()))
