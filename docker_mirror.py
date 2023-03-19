@@ -15,6 +15,8 @@ import logging
 import subprocess
 import tempfile
 import shutil
+import socket
+import time
 
 if sys.version[0] != '2':
     xrange = range
@@ -26,6 +28,8 @@ ADDHOSTS = False
 ADDEPEL = False
 UPDATES = False
 UNIVERSE = False
+
+MAXWAIT = 5
 
 LEAP = "opensuse/leap"
 SUSE = "opensuse"
@@ -642,19 +646,35 @@ class DockerMirrorPackagesRepo:
     def starts(self, image=None):
         image = self.detect(image)
         logg.debug("starts image = %s", image)
-        done = self.start_containers(image)
+        mirrors = self.start_containers(image)
+        self.wait_mirrors(mirrors)
         if ADDHOSTS:
-            return " ".join(self.add_hosts(image, done))
+            return " ".join(self.add_hosts(image, mirrors))
         else:
-            return json.dumps(done, indent=2)
+            return json.dumps(mirrors, indent=2)
     def stops(self, image=None):
         image = self.detect(image)
-        done = self.stop_containers(image)
+        mirrors = self.stop_containers(image)
         if ADDHOSTS:
-            names = sorted(done.keys())
+            names = sorted(mirrors.keys())
             return " ".join(names)
         else:
-            return json.dumps(done, indent=2)
+            return json.dumps(mirrors, indent=2)
+    def wait_mirrors(self, hosts):
+        for url, addr in hosts.items():
+            if "alma" in url or "epel" in url:
+                logg.debug("wait %s:443 (%ss)", url, MAXWAIT)
+                for attempt in xrange(MAXWAIT):
+                    try:
+                        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        sock.settimeout(2)
+                        sock.connect((addr, 443))
+                        return True
+                    except ConnectionRefusedError as e:
+                        logg.info(" wait %s:443 = %s", url, e)
+                        time.sleep(1)
+                return False
+        return True
     def infos(self, image=None):
         image = self.detect(image)
         done = self.info_containers(image)
