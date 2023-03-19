@@ -677,25 +677,25 @@ class DockerMirrorPackagesRepo:
         return True
     def infos(self, image=None):
         image = self.detect(image)
-        done = self.info_containers(image)
+        mirrors = self.info_containers(image)
         if ADDHOSTS:
-            return " ".join(self.add_hosts(image, done))
+            return " ".join(self.add_hosts(image, mirrors))
         else:
-            return json.dumps(done, indent=2)
+            return json.dumps(mirrors, indent=2)
     def containers(self, image=None):
         image = self.detect(image)
-        done = self.get_containers(image)
+        mirrors = self.get_containers(image)
         if ADDHOSTS:
-            return " ".join(done)
+            return " ".join(mirrors)
         else:
-            return json.dumps(done, indent=2)
+            return json.dumps(mirrors, indent=2)
     def inspects(self, image=None):
         image = self.detect(image)
-        done = self.inspect_containers(image)
+        mirrors = self.inspect_containers(image)
         if ADDHOSTS:
-            return " ".join(self.add_hosts(image, done))
+            return " ".join(self.add_hosts(image, mirrors))
         else:
-            return json.dumps(done, indent=2)
+            return json.dumps(mirrors, indent=2)
     def from_dockerfile(self, dockerfile, defaults=None):
         if os.path.isdir(dockerfile):
             dockerfile = os.path.join(dockerfile, "Dockerfile")
