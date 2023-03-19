@@ -901,6 +901,21 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         if not KEEP:
             sx____("{docker} rm -f test-box1".format(**locals()))
             sh____("{mirror} stop {image} --add-host".format(**locals()))
+    def test_32204_ubuntu_universe(self) -> None:
+        docker = DOCKER
+        mirror = _docker_mirror
+        image = "ubuntu:22.04"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        repo_image = output("{mirror} repo {image} --universe".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
+        sh____("{docker} exec test-box1 apt-get update".format(**locals()))
+        sh____("{docker} exec test-box1 apt-get install -y mypy".format(**locals()))
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
 ##
     def test_99999_hello(self) -> None:
         print("... finished the testsuite ...")
