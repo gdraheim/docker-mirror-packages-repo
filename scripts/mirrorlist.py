@@ -60,9 +60,9 @@ class MyHandler(SimpleHTTPRequestHandler):
             if infra in ["container"]:
                 infra = "os"
             if release in ["8"]:
-                text = "%s/%s/%s/%s/%s/\n" % (URL, release, repo, arch, infra)
+                text = "%s/%s/%s/%s/%s/\n" % (SSL or URL, release, repo, arch, infra)
             else:
-                text = "%s/%s/%s/%s/\n" % (URL, release, repo, arch)
+                text = "%s/%s/%s/%s/\n" % (SSL or URL, release, repo, arch)
             print("SERVE", self.path)
             print("   AS", text.strip())
             data = text.encode("utf-8")
@@ -77,20 +77,18 @@ class MyHandler(SimpleHTTPRequestHandler):
             if parts[1] == "mirrorlist":
                 parts = parts[1:]
             mirrorlist = parts[0]
-            if len(parts) >= 2
-            release = parts[1]
+            if len(parts) >= 2:
+                release = parts[1]
             else:
                 release = "9"
             if len(parts) >= 3:
-                rep = parts[2]
+                repo = parts[2]
             else:
                 repo = "os"
-            for stream in ["AppStream", "BaseOS", "CRB"]
-            if repo == stream.lower():
-                    stream = "AppStream"
-                    text = "%s/%s/%s/%s/\n" % (URL, release, stream, "$basearch", "os")
-            if not text:
-                text = "%s/%s/%s/%s/\n" % (URL, release, repo, "$basearch", "os")
+            mapped = {"appstream": "AppStream", "baseos": "BaseOS", "crb": "CRB"}
+            if repo in mapped:
+                repo = mapped[repo]
+            text = "%s/%s/%s/%s/%s/\n" % (SSL or URL, release, repo, "$basearch", "os")
             print("SERVE", self.path)
             print("   AS", text.strip())
             data = text.encode("utf-8")
