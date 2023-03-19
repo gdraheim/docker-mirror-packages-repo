@@ -283,7 +283,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         cmd = "{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
         logg.warning("%s", cmd.format(**locals()))
         sh____(cmd.format(**locals()))
-        retry="--connect-timeout 5 --retry 3 --retry-connrefused"
+        retry = "--connect-timeout 5 --retry 3 --retry-connrefused"
         sh____("{docker} exec test-box1 curl -k {retry} https://mirrors.almalinux.org".format(**locals()))
         sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >>/etc/yum.conf'".format(**locals()))
         sh____("{docker} exec test-box1 yum install -y python3-numpy".format(**locals()))
@@ -822,7 +822,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} start {image} --add-hosts --epel".format(**locals()))
         add_host = output("{mirror} start {image} --add-hosts --epel".format(**locals())).strip()
-        retry="--connect-timeout 5 --retry 3 --retry-connrefused"
+        retry = "--connect-timeout 5 --retry 3 --retry-connrefused"
         sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >> /etc/yum.conf'".format(**locals()))
         sh____("{docker} exec test-box1 curl -k {retry} https://mirrors.almalinux.org".format(**locals()))
