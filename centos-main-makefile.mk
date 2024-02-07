@@ -5,8 +5,9 @@
 # however it doubles the required disk #
 # space to get a centos-repo:x image!! #
 
-ALMALINUX = 9.1
+ALMALINUX = 9.3
 CENTOS = 8.4
+DISTRO = centos
 
 centos:
 	$(MAKE) centossync
@@ -18,7 +19,7 @@ centos:
 
 centoshelp: ; ./centos-docker-mirror.py $(CENTOS) --help
 centospull: ; ./centos-docker-mirror.py $(CENTOS) pull -v
-centossync: ; ./centos-docker-mirror.py $(CENTOS) sync -v
+centossync: ; ./centos-docker-mirror.py -V $(DISTRO):$(CENTOS) sync -v
 centosrepo: ; ./centos-docker-mirror.py $(CENTOS) repo -v
 centostest: ; ./centos-docker-mirror.py $(CENTOS) test -v
 centoscheck: ; ./centos-docker-mirror.py $(CENTOS) check -v
@@ -36,7 +37,12 @@ centosbash:
 ### centos versions
 almapull.9.1: ; $(MAKE) centospull CENTOS=9.1
 
-almasync.9.1: ; $(MAKE) centossync CENTOS=9.1
+almasync.9.3: ; $(MAKE) centossync CENTOS=9.3 DISTRO=almalinux
+almasync.9.2: ; $(MAKE) centossync CENTOS=9.2 DISTRO=almalinux
+almasync.9.1: ; $(MAKE) centossync CENTOS=9.1 DISTRO=almalinux
+almarepo.9.3: ; $(MAKE) centosrepo CENTOS=9.3 DISTRO=almalinux
+almarepo.9.2: ; $(MAKE) centosrepo CENTOS=9.2 DISTRO=almalinux
+almarepo.9.1: ; $(MAKE) centosrepo CENTOS=9.1 DISTRO=almalinux
 centossync.8.5 centossync.8.5.2111: ; $(MAKE) centossync CENTOS=8.5.2111
 centossync.8.4 centossync.8.4.2105: ; $(MAKE) centossync CENTOS=8.4.2105
 centossync.8.3 centossync.8.2.2011: ; $(MAKE) centossync CENTOS=8.3.2011

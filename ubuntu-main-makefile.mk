@@ -27,6 +27,8 @@ ubuntubash:
 
 ### ubuntu versions
 
+ubuntu.24.04: ;	$(MAKE) ubuntudir UBUNTU=24.04
+ubuntu.23.10: ;	$(MAKE) ubuntudir UBUNTU=23.10
 ubuntu.23.04: ;	$(MAKE) ubuntudir UBUNTU=23.04
 ubuntu.22.10: ;	$(MAKE) ubuntudir UBUNTU=22.10
 ubuntu.22.04: ;	$(MAKE) ubuntudir UBUNTU=22.04
@@ -37,6 +39,8 @@ ubuntu.20.04: ;	$(MAKE) ubuntudir UBUNTU=20.04
 ubuntu.19.10: ;	$(MAKE) ubuntudir UBUNTU=19.10
 ubuntu.18.04: ;	$(MAKE) ubuntudir UBUNTU=18.04
 ubuntu.16.04: ; $(MAKE) ubuntudir UBUNTU=16.04
+ubuntusync.24.04: ; $(MAKE) ubuntusync UBUNTU=24.04
+ubuntusync.23.10: ; $(MAKE) ubuntusync UBUNTU=23.10
 ubuntusync.23.04: ; $(MAKE) ubuntusync UBUNTU=23.04
 ubuntusync.22.10: ; $(MAKE) ubuntusync UBUNTU=22.10
 ubuntusync.22.04: ; $(MAKE) ubuntusync UBUNTU=22.04
@@ -48,6 +52,8 @@ ubuntusync.19.10: ; $(MAKE) ubuntusync UBUNTU=19.10
 ubuntusync.18.04: ; $(MAKE) ubuntusync UBUNTU=18.04
 ubuntusync.16.04: ; $(MAKE) ubuntusync UBUNTU=16.04
 # -
+ubunturepo.24.04: ; $(MAKE) ubunturepo UBUNTU=24.04
+ubunturepo.23.10: ; $(MAKE) ubunturepo UBUNTU=23.10
 ubunturepo.23.04: ; $(MAKE) ubunturepo UBUNTU=23.04
 ubunturepo.22.10: ; $(MAKE) ubunturepo UBUNTU=22.10
 ubunturepo.22.04: ; $(MAKE) ubunturepo UBUNTU=22.04
@@ -58,6 +64,8 @@ ubunturepo.20.04: ; $(MAKE) ubunturepo UBUNTU=20.04
 ubunturepo.19.10: ; $(MAKE) ubunturepo UBUNTU=19.10
 ubunturepo.18.04: ; $(MAKE) ubunturepo UBUNTU=18.04
 ubunturepo.16.04: ; $(MAKE) ubunturepo UBUNTU=16.04
+ubuntu-24.04: ; $(MAKE) ubuntu UBUNTU=24.04
+ubuntu-23.10: ; $(MAKE) ubuntu UBUNTU=23.10
 ubuntu-23.04: ; $(MAKE) ubuntu UBUNTU=23.04
 ubuntu-22.10: ; $(MAKE) ubuntu UBUNTU=22.10
 ubuntu-22.04: ; $(MAKE) ubuntu UBUNTU=22.04
@@ -70,6 +78,8 @@ ubuntu-18.04: ; $(MAKE) ubuntu UBUNTU=18.04
 ubuntu-16.04: ; $(MAKE) ubuntu UBUNTU=16.04
 
 universesync: ; $(MAKE) REPOS=universe
+universesync.24.04: ; $(MAKE) ubuntusync UBUNTU=24.04 UBUNTU_REPOS=--universe
+universesync.23.10: ; $(MAKE) ubuntusync UBUNTU=23.10 UBUNTU_REPOS=--universe
 universesync.23.04: ; $(MAKE) ubuntusync UBUNTU=23.04 UBUNTU_REPOS=--universe
 universesync.22.10: ; $(MAKE) ubuntusync UBUNTU=22.10 UBUNTU_REPOS=--universe
 universesync.22.04: ; $(MAKE) ubuntusync UBUNTU=22.04 UBUNTU_REPOS=--universe
@@ -81,6 +91,8 @@ universesync.19.10: ; $(MAKE) ubuntusync UBUNTU=19.10 UBUNTU_REPOS=--universe
 universesync.18.04: ; $(MAKE) ubuntusync UBUNTU=18.04 UBUNTU_REPOS=--universe
 universesync.16.04: ; $(MAKE) ubuntusync UBUNTU=16.04 UBUNTU_REPOS=--universe
 # -
+universerepo.24.04: ; $(MAKE) ubunturepo UBUNTU=24.04 UBUNTU_REPOS=--universe
+universerepo.23.10: ; $(MAKE) ubunturepo UBUNTU=23.10 UBUNTU_REPOS=--universe
 universerepo.23.04: ; $(MAKE) ubunturepo UBUNTU=23.04 UBUNTU_REPOS=--universe
 universerepo.22.10: ; $(MAKE) ubunturepo UBUNTU=22.10 UBUNTU_REPOS=--universe
 universerepo.22.04: ; $(MAKE) ubunturepo UBUNTU=22.04 UBUNTU_REPOS=--universe
@@ -92,7 +104,8 @@ universerepo.19.10: ; $(MAKE) ubunturepo UBUNTU=19.10 UBUNTU_REPOS=--universe
 universerepo.18.04: ; $(MAKE) ubunturepo UBUNTU=18.04 UBUNTU_REPOS=--universe
 universerepo.16.04: ; $(MAKE) ubunturepo UBUNTU=16.04 UBUNTU_REPOS=--universe
 
-ubuntudu: ubuntudu.16.04  ubuntudu.18.04  ubuntudu.20.04  ubuntudu.22.04 
+ubuntudu: ubuntudu.16.04  ubuntudu.18.04  ubuntudu.20.04  ubuntudu.22.04  ubuntu.24.04
+ubuntudu.24.04: ; ./ubuntu-docker-mirror.py 24.04 du -v
 ubuntudu.22.04: ; ./ubuntu-docker-mirror.py 22.04 du -v
 ubuntudu.20.04: ; ./ubuntu-docker-mirror.py 20.04 du -v
 ubuntudu.18.04: ; ./ubuntu-docker-mirror.py 18.04 du -v

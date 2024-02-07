@@ -46,8 +46,11 @@ BASE["15.1"] = "opensuse/leap"
 BASE["15.2"] = "opensuse/leap"
 BASE["15.3"] = "opensuse/leap"
 BASE["15.4"] = "opensuse/leap"
+BASE["15.5"] = "opensuse/leap"
+BASE["15.6"] = "opensuse/leap"
+BASE["16.0"] = "opensuse/leap"
 XXLEAP: List[str] = []  # ["15.2"] # obsolete, using repodata-fix.py now
-LEAP: str = "15.3"
+LEAP: str = "15.5"
 
 RSYNC_SUSE = "rsync://suse.uni-leipzig.de/opensuse-full/opensuse"
 RSYNC_SUSE2 = "rsync://ftp.tu-chemnitz.de/pub/linux/opensuse"
