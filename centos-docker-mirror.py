@@ -403,7 +403,7 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
     if False:
         # instead we use an explicit epelrepo8_CMD
         for script in os.listdir(F"{scripts}/."):
-            sh___(F"{docker} exec {cname} sed -i s:/usr/bin/python:/usr/libexec/platform-python: /srv/scripts/{script}")
+            sh___(F"{docker} exec {cname} sed -i s:/usr/bin/python3:/usr/libexec/platform-python: /srv/scripts/{script}")
             sh___(F"{docker} exec {cname} chmod +x /srv/scripts/{script}")
     base = "base"
     repo = IMAGESREPO
