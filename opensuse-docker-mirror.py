@@ -60,6 +60,7 @@ DISTRO = "opensuse"
 MIRRORS: Dict[str, List[str]] = {}
 MIRRORS["opensuse"] = [RSYNC_SUSE, RSYNC_SUSE2, RSYNC_SUSE3]
 
+PYTHON = "python3"
 RSYNC = "rsync"
 DOCKER = "docker"
 LAYER = "base"
@@ -68,6 +69,14 @@ RETRY = 3
 BASEVERSION: Dict[str, str] = {}
 BASEVERSION["15.4"] = "15.3"  # image:opensuse/base
 
+SUBDIRS15: Dict[str, List[str]] = OrderedDict()
+SUBDIRS15["distribution"] = ["oss", "non-oss"]
+SUBDIRS15["update"] = ["oss", "non-oss", "backports", "sle"]
+
+FILTERS15: Dict[str, List[str]] = OrderedDict()
+FILTERS15["non-oss"] = ["x86_64", "noarch", "strc", "nosrc"]
+FILTERS15["sle"] = ["kernel-*", "eclipse-*", "cross-*"]
+
 def opensuse_make() -> None:
     opensuse_sync()
     opensuse_repo()
@@ -75,10 +84,16 @@ def opensuse_make() -> None:
 
 def opensuse_sync() -> None:
     opensuse_dir()
-    opensuse_sync_1()
-    opensuse_sync_2()
-    opensuse_sync_3()
-    opensuse_sync_4()
+    for dist in SUBDIRS15:
+        for repo in SUBDIRS15[dist]:
+            if repo in FILTERS15:
+                filters = FILTERS15[repo]
+            else:
+                filters = []
+            if dist in ["distribution"]:
+                opensuse_sync_repo_(dist, repo, filters)
+            else:
+                opensuse_sync_pack_(dist, repo, filters) # repo may not exist (yet)
 
 def opensuse_dir(suffix: str = "") -> str:
     distro = DISTRO
@@ -138,15 +153,6 @@ def opensuse_save() -> None:
 skipdirs = [
     "boot", "EFI", "160.3-boot", "20.8-boot", "24.5-boot",
     "aarch64", "s390x", "ppc", "ppc64le", ]
-
-def opensuse_sync_1() -> None:
-    opensuse_sync_repo_("distribution", "oss")
-def opensuse_sync_2() -> None:
-    opensuse_sync_repo_("distribution", "non-oss")
-def opensuse_sync_3() -> None:
-    opensuse_sync_pack_("update", "non-oss")
-def opensuse_sync_4() -> None:
-    opensuse_sync_pack_("update", "non-oss", ["x86_64", "noarch", "strc", "nosrc"])
 
 def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
     distro = DISTRO
@@ -224,9 +230,10 @@ def opensuse_games(suffix: str = "") -> None:
         json.dump(games, open(gameslist, "w"), indent=2, ensure_ascii=False, sort_keys=True)
         logg.info("found %s games, written to %s", len(games), gameslist)
 
-opensuserepo_CMD = ["/usr/bin/python", "/srv/scripts/filelist.py", "--data", "/srv/repo"]
+opensuserepo_CMD = [F"/usr/bin/{PYTHON}", "/srv/scripts/filelist.py", "--data", "/srv/repo"]
 opensuserepo_PORT = "80"
 def opensuse_repo() -> None:
+    python = PYTHON
     docker = DOCKER
     distro = DISTRO
     leap = LEAP
@@ -253,8 +260,8 @@ def opensuse_repo() -> None:
         oss = "local-repo"
         sh___(F"{docker} exec {cname} zypper ar --no-gpgcheck file:///base-repo {oss}")
     if True:
-        sh___(F"{docker} exec {cname} zypper install -y -r {oss} python")
-        sh___(F"{docker} exec {cname} zypper install -y -r {oss} python-xml")
+        sh___(F"{docker} exec {cname} zypper install -y -r {oss} {python}")
+        sh___(F"{docker} exec {cname} zypper install -y -r {oss} {python}-xml")
     if leap in XXLEAP:
         sh___(F"{docker} exec {cname} zypper install -y -r {oss} createrepo")
     if bind_repo:
@@ -293,7 +300,7 @@ def opensuse_repo() -> None:
             elif path.isdir(pooldir):
                 sh___(F"{docker} cp {pooldir} {cname}:/srv/repo/")
                 base = dist
-                sh___(F"{docker} exec {cname} bash -c \"find /srv/repo/{subdir} -name repomd.xml -exec python /srv/scripts/repodata-fix.py {{}} -v ';'\" ")
+                sh___(F"{docker} exec {cname} bash -c \"find /srv/repo/{subdir} -name repomd.xml -exec {python} /srv/scripts/repodata-fix.py {{}} -v ';'\" ")
         if dist in ["update"]:
             # sh___("{docker} exec {cname} rm -r /srv/repo/{dist}/{leap}".format(**locals()))
             sh___(F"{docker} exec {cname} ln -s /srv/repo/{dist}/leap/{leap}/oss /srv/repo/{dist}/{leap}")
