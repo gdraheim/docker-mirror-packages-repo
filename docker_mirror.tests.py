@@ -4,10 +4,10 @@
    (so that "./testsuite.py -v test_107" will run the tests from test_1070 to test_1079).
 """
 
-__copyright__ = "(C) 2018-2023 Guido Draheim"
+__copyright__ = "(C) 2018-2024 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.7.5117"
+__version__ = "1.7.6065"
 
 from typing import Union, Optional, List, cast
 import sys

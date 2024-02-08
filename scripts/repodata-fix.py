@@ -1,9 +1,9 @@
 #! /usr/bin/python3
 
-__copyright__ = "(C) 2018-2023 Guido Draheim"
+__copyright__ = "(C) 2018-2024 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.7.5117"
+__version__ = "1.7.6065"
 
 import xml.dom.minidom as minidom
 import os.path as path
