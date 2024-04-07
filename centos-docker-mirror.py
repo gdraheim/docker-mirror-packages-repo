@@ -95,6 +95,9 @@ EPEL = "epel"
 ALMALINUX = "almalinux"
 
 _SUBDIRS: Dict[str, List[str]] = {}
+_SUBDIRS["9.3"] = ["AppStream", "BaseOS", "devel", "extras", "plus", "CRB",
+                   "cloud", "HighAvailibility",
+                   "NFV", "RT", "ResilientStorage", "SAP", "SAPHANA", "rasperrypi", "synergy"]
 _SUBDIRS["8.5"] = ["AppStream", "BaseOS", "Devel", "extras", "PowerTools", "centosplus",
                    "cloud", "configmanagement", "cr", "fasttrack", "HighAvailibility",
                    "infra", "messages", "nfv", "opstools", "storage", "virt", ]
@@ -106,7 +109,7 @@ _SUBDIRS["7.9"] = ["os", "updates", "extras", "sclo", "centosplus", "atomic",
 
 SUBDIRS9: Dict[str, List[str]] = OrderedDict()
 SUBDIRS9["main"] = ["BaseOS", "AppStream", "extras"]
-SUBDIRS9["plus"] = ["plus"]  # ALMALINUX
+SUBDIRS9["plus"] = ["CRB", "plus"]  # ALMALINUX
 #SUBDIRS9["dev"] = ["devel", "HighAvailibility"]
 
 SUBDIRS8: Dict[str, List[str]] = OrderedDict()
