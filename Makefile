@@ -55,10 +55,22 @@ build:
 	$(TWINE) check dist/*
 	: $(TWINE) upload dist/*
 
+# ------------------------------------------------------------
+PIP3=pip3
+install:
+	$(MAKE) setup.py README
+	trap "rm -v setup.py README" SIGINT SIGTERM ERR EXIT ; \
+	$(PIP3) install .
+	$(MAKE) showfiles | grep /.local/
+uninstall:
+	$(PIP3) uninstall -y `sed -e '/name *=/!d' -e 's/name *= *//' setup.cfg`
+showfiles:
+	@ $(PIP3) show --files `sed -e '/name *=/!d' -e 's/name *= *//' setup.cfg` \
+	| sed -e "s:[^ ]*/[.][.]/\\([a-z][a-z]*\\)/:~/.local/\\1/:"
 re reinstall:
-	- pip3 uninstall docker-mirror-packages-repo
-	pip3 install dist/docker-mirror-packages-repo-*.tar.gz
-	pip3 show docker-mirror-packages-repo --files
+	- $(MAKE) uninstall
+	$(MAKE) install
+# ------------------------------------------------------------
 
 ####### retype + stubgen
 PY_RETYPE = ../retype
