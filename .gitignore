@@ -33,3 +33,4 @@ tmp.*
 .mypy_cache/
 dist
 *.egg-info
+.vscode/settings.json
