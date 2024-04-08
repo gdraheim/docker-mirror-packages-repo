@@ -34,3 +34,4 @@ tmp.*
 dist
 *.egg-info
 .vscode/settings.json
+build
