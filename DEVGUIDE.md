@@ -91,6 +91,9 @@ For each of the three realms, check for newer versions of distros.
 For each new distro version
 * update the image sizes in "README.md"
 
+For each new distro version
+* extend the docker_mirror.tests.py by duplicate-changing the old distro version
+
 ### make release
 * `make type`
 * `make style`
