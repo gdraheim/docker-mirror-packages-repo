@@ -1,4 +1,6 @@
 #! /usr/bin/python3
 
-class MyHandler(SimpleHTTPRequestHandler):
+from http.server import SimpleHTTPRequestHandler
+
+class MyHandler(SimpleHTTPRequestHandler): # type: ignore[return]
     def do_GET(self) -> None: ...
