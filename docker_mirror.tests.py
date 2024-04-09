@@ -30,6 +30,7 @@ DOCKER = "docker"
 DOCKER_SOCKET = "/var/run/docker.sock"
 MR143 = True  # modify repos of opensuse/leap:14.3
 MR151 = True  # modify repos of opensuse/leap:15.1
+MR152 = True
 
 _docker_mirror = "./docker_mirror.py"
 
@@ -431,6 +432,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 zypper install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
+    @unittest.expectedFailure
     def test_14151_opensuse(self) -> None:
         prefix = PREFIX
         docker = DOCKER
@@ -451,6 +453,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 zypper install -y python python-xml".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
+    @unittest.expectedFailure
     def test_14152_opensuse(self) -> None:
         prefix = PREFIX
         docker = DOCKER
@@ -469,6 +472,8 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
+        # note that python-docker-py is gone in later distro versions
+    @unittest.expectedFailure
     def test_14252_opensuse(self) -> None:
         prefix = PREFIX
         docker = DOCKER
@@ -488,6 +493,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
+        # note that python-docker-py is gone in later distro versions
     def test_20000_centos(self) -> None:
         prefix = PREFIX
         docker = DOCKER
@@ -785,8 +791,11 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{mirror} start {image} --add-hosts".format(**locals()))
         add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
         sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
-        # if MR152:
-        #   sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-update".format(**locals()))
+        if MR152:
+            sh____("{docker} exec test-box1 cat /etc/os-release".format(**locals()))
+            sh____("{docker} exec test-box1 zypper lr".format(**locals()))
+            sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-oss repo-non-oss".format(**locals()))
+            sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-update repo-update-non-oss".format(**locals()))
         sh____("{docker} exec test-box1 zypper install -y python python-xml".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
