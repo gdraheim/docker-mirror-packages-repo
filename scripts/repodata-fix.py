@@ -15,7 +15,7 @@ import logging
 logg = logging.getLogger("FIX")
 
 
-def fix(datafile):
+def fix(datafile: str) -> None:
     logg.info("reading %s", datafile)
     repodatadir = path.dirname(datafile)
     repodata = path.basename(repodatadir)
@@ -52,13 +52,13 @@ def fix(datafile):
                 a = data.getElementsByTagName("location")
                 a[0].setAttribute("href", newhref)
                 b = data.getElementsByTagName("checksum")
-                b[0].firstChild.replaceWholeText(checksum_gz)
+                b[0].firstChild.replaceWholeText(checksum_gz)  # type: ignore[union-attr]
                 c = data.getElementsByTagName("size")
-                c[0].firstChild.replaceWholeText(str(len(xmlgz)))
+                c[0].firstChild.replaceWholeText(str(len(xmlgz)))  # type: ignore[union-attr]
                 d = data.getElementsByTagName("open-size")
-                d[0].firstChild.replaceWholeText(str(len(xml)))
+                d[0].firstChild.replaceWholeText(str(len(xml)))  # type: ignore[union-attr]
                 e = data.getElementsByTagName("open-checksum")
-                e[0].firstChild.replaceWholeText(checksum_xml)
+                e[0].firstChild.replaceWholeText(checksum_xml)  # type: ignore[union-attr]
                 fixes += 1
     if fixes:
         logg.debug("done %i fixes -> overwrite repomd.xml", fixes)
