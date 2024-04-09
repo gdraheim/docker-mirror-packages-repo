@@ -94,7 +94,7 @@ def opensuse_sync() -> None:
             if dist in ["distribution"]:
                 opensuse_sync_repo_(dist, repo, filters)
             else:
-                opensuse_sync_pack_(dist, repo, filters) # repo may not exist (yet)
+                opensuse_sync_pack_(dist, repo, filters)  # repo may not exist (yet)
 
 def opensuse_dir(suffix: str = "") -> str:
     distro = DISTRO
