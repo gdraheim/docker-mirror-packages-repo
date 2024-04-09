@@ -44,6 +44,9 @@ Implant the paths to those tools into the workspace settings = `.vscode/settings
         ]
     }
 
+Hint: the mypy plugins likes the git workspace folder to be "docker_mirror_packages_repo"
+(otherweise it says that "docker-mirror-packages-repo" is not a valid package name)
+
 ### Makefile setup
 
 Make sure that you have `docker` installed and the service is running.
