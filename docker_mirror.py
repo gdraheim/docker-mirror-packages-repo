@@ -30,6 +30,8 @@ UPDATES = False
 UNIVERSE = False
 
 MAXWAIT = 6
+WAXWAIT = ""
+
 
 LEAP = "opensuse/leap"
 SUSE = "opensuse"
