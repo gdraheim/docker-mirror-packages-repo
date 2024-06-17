@@ -68,7 +68,6 @@ RETRY = 3
 
 BASEVERSION: Dict[str, str] = {}
 BASEVERSION["15.4"] = "15.3"  # image:opensuse/base
-BASEVERSION["15.6"] = "15.5"  # image:opensuse/base
 
 SUBDIRS15: Dict[str, List[str]] = OrderedDict()
 SUBDIRS15["distribution"] = ["oss", "non-oss"]
