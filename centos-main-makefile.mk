@@ -5,7 +5,7 @@
 # however it doubles the required disk #
 # space to get a centos-repo:x image!! #
 
-ALMALINUX = 9.3
+ALMALINUX = 9.4
 CENTOS = 8.4
 DISTRO = centos
 
@@ -35,11 +35,13 @@ centosbash:
 	docker exec -it centos-bash-$(CENTOS) bash
 
 ### centos versions
-almapull.9.1: ; $(MAKE) centospull CENTOS=9.1
+almapull.9.1: ; $(MAKE) centospull CENTOS=$(ALMALINUX) DISTRO=almalinux
 
+almasync.9.4: ; $(MAKE) centossync CENTOS=9.4 DISTRO=almalinux
 almasync.9.3: ; $(MAKE) centossync CENTOS=9.3 DISTRO=almalinux
 almasync.9.2: ; $(MAKE) centossync CENTOS=9.2 DISTRO=almalinux
 almasync.9.1: ; $(MAKE) centossync CENTOS=9.1 DISTRO=almalinux
+almarepo.9.4: ; $(MAKE) centosrepo CENTOS=9.4 DISTRO=almalinux
 almarepo.9.3: ; $(MAKE) centosrepo CENTOS=9.3 DISTRO=almalinux
 almarepo.9.2: ; $(MAKE) centosrepo CENTOS=9.2 DISTRO=almalinux
 almarepo.9.1: ; $(MAKE) centosrepo CENTOS=9.1 DISTRO=almalinux
