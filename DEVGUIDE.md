@@ -97,6 +97,7 @@ For each new distro version
 ### make release
 * `make type`
 * `make style`
+*  check docker_mirror.tests.py if new distro versions were added
 * `make check` # unittests for docker_mirror.py and dockerdir.py
 * `make uninstall` # may fail as "not installed"
 * `make install` 
