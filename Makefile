@@ -29,7 +29,7 @@ include ubuntu-main-makefile.mk
 include opensuse-main-makefile.mk
 
 K=
-test_%: ; ./docker_mirror.tests.py $@ -v $K
+test_%: ; ./docker_mirror.tests.py $@ -vv $K
 check: ; ./docker_mirror.tests.py -vv $K
 
 tests: ; $(PYTHON3) dockerdir-tests.py $K
