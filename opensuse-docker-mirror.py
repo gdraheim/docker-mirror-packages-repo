@@ -154,7 +154,7 @@ skipdirs = [
     "boot", "EFI", "160.3-boot", "20.8-boot", "24.5-boot",
     "aarch64", "s390x", "ppc", "ppc64le", ]
 
-skipfiles =[
+skipfiles = [
     "*.src.rpm", "*.29041k"
 ]
 
