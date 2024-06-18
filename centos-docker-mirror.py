@@ -386,6 +386,28 @@ def centos_epelrepo8(distro: str = NIX, centos: str = NIX) -> None:
     dists["plus"] = ["Modular"]
     distro_epelrepos(distro, centos, dists)
 
+def centos_epeldate(distro: str = "", centos: str = "", repodir: str = "") -> Optional[datetime.datetime]:
+    distro = distro or EPEL
+    centos = centos or CENTOS
+    epel = major(centos)
+    repodir = repodir or REPODIR
+    epeldir = F"{repodir}/{distro}.{epel}/{epel}"
+    latest = None
+    for root, dirs, files in os.walk(epeldir):
+        for name in files:
+            filename = os.path.join(root, name)
+            changed = os.path.getmtime(filename)
+            if not latest:
+                latest = changed
+            elif latest < changed:
+                latest = changed
+    if not latest:
+        return None
+    else:
+        epeldate = datetime.datetime.fromtimestamp(latest)
+        logg.info("epeldate = %s", epeldate)
+        return epeldate
+
 def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> None:
     distro = distro or EPEL
     centos = centos or CENTOS
@@ -417,7 +439,8 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
             sh___(F"{docker} exec {cname} chmod +x /srv/scripts/{script}")
     base = "base"
     repo = IMAGESREPO
-    yymm = datetime.date.today().strftime("%y%m")
+    latest = centos_epeldate(distro, centos, repodir) or datetime.date.today()
+    yymm = latest.strftime("%y%m")
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{epel}.x.{yymm}")
     for dist in dists:
         sx___(F"{docker} rm --force {cname}")
@@ -460,7 +483,8 @@ def centos_epelrepo7(distro: str = NIX, centos: str = NIX) -> None:
         sh___(F"{docker} exec {cname} chmod +x /srv/scripts/{script}")
     #
     repo = IMAGESREPO
-    yymm = datetime.date.today().strftime("%y%m")
+    latest = centos_epeldate(distro, centos, repodir) or datetime.date.today()
+    yymm = latest.strftime("%y%m")
     sh___(F"{docker} cp {repodir}/{distro}.{epel}/{epel} {cname}:/srv/repo/epel/")
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/{distro}-repo:{epel}.x.{yymm}")
     sh___(F"{docker} rm --force {cname}")
