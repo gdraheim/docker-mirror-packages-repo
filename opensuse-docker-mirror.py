@@ -154,6 +154,10 @@ skipdirs = [
     "boot", "EFI", "160.3-boot", "20.8-boot", "24.5-boot",
     "aarch64", "s390x", "ppc", "ppc64le", ]
 
+skipfiles =[
+    "*.src.rpm", "*.29041k"
+]
+
 def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
     distro = DISTRO
     leap = LEAP
@@ -162,7 +166,8 @@ def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
     rsync = RSYNC
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
-    excludes += """ --size-only --filter="exclude *.src.rpm" """
+    excludes += "".join(["""--filter="exclude %s" """ % name for name in skipfiles])
+    excludes += """ --size-only """
     leaprepo = F"{repodir}/{distro}.{leap}/{dist}/leap/{leap}/repo"
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     # retry:
@@ -183,7 +188,8 @@ def opensuse_sync_pack_(dist: str, repo: str, filters: List[str] = []) -> None:
     rsync = RSYNC
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
-    excludes += """ --size-only --filter="exclude *.src.rpm" """
+    excludes += "".join(["""--filter="exclude %s" """ % name for name in skipfiles])
+    excludes += """ --size-only """
     leaprepo = F"{repodir}/{distro}.{leap}/{dist}/leap/{leap}"
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     # retry:
