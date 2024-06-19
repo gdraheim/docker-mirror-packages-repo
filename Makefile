@@ -57,9 +57,18 @@ rebuild3:
 universe:
 	cd repo.d/. || exit 1 ; for i in ubuntu*; do du -sh "$$i/."; done
 
+size:
+	@ echo "| docker image                          | size"
+	@ echo "| ------------------------------------- | ----"
+	@ docker images --format "{{.Repository}}:{{.Tag}}\t| {{.Size}}" \
+	| sed -e "/mirror-packages/!d" -e "s:.*/mirror-packages/:| mirror-packages/:" -e "/repo:/!d" -e "/:latest/d" \
+	| sed -e "/centos-repo:.[.].[.]/d" -e "/centos-repo:7\\t/d"
 sizes:
-	@ docker images --format "{{.Repository}}:{{.Tag}}\t{{.Size}}" \
-	| sed -e "/mirror-packages/!d" -e "s:.*/mirror-packages/::" -e /repo:/d -e /:latest/d
+	@ echo "| docker image                                  | size"
+	@ echo "| --------------------------------------------- | ----"
+	@ docker images --format "{{.Repository}}:{{.Tag}}\t| {{.Size}}" \
+	| sed -e "/mirror-packages/!d" -e "s:.*/mirror-packages/:| mirror-packages/:" -e "/repo:/d" -e "/:latest/d" \
+	| sed -e "/\\/http/d" 
 nonmain:
 	@ docker images --format "{{.Repository}}:{{.Tag}}\t{{.Size}}" \
 	| sed -e "/mirror-packages/!d" -e "s:.*/mirror-packages/::" -e /repo:/d -e "/\\/main/d" -e "/-repo\\//!d"
