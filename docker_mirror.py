@@ -33,26 +33,79 @@ UNIVERSE = False
 MAXWAIT = 6
 WAXWAIT = ""
 
+BASE = {}
+BASE["8.5.2111"] = "8.5"
+BASE["8.4.2105"] = "8.4"
+BASE["8.3.2011"] = "8.3"
+BASE["8.2.2004"] = "8.2"
+BASE["8.1.1911"] = "8.1"
+BASE["8.0.1905"] = "8.0"
+BASE["7.9.2009"] = "7.9"
+BASE["7.8.2003"] = "7.8"
+BASE["7.7.1908"] = "7.7"
+BASE["7.6.1810"] = "7.6"
+BASE["7.5.1804"] = "7.5"
+BASE["7.4.1708"] = "7.4"
+BASE["7.3.1611"] = "7.3"
+BASE["7.2.1511"] = "7.2"
+BASE["7.1.1503"] = "7.1"
+BASE["7.0.1406"] = "7.0"
 
-LEAP = "opensuse/leap"
-SUSE = "opensuse"
-OPENSUSE = {"42.2": SUSE, "42.3": SUSE, "15.0": LEAP, "15.1": LEAP,  # ..
-                     "15.2": LEAP, "15.3": LEAP, "15.4": LEAP, "15.5": LEAP, "15.6": LEAP,
-                     "16.0": LEAP}
-UBUNTU_LTS = {"16": "16.04", "18": "18.04", "20": "20.04", "22": "22.04", "24": "24.04"}
-DIST = {"12.04": "precise", "14.04": "trusty", "16.04": "xenial", "17.10": "artful",
-                   "18.04": "bionic", "18.10": "cosmic", "19.04": "disco", "19.10": "eoan",
-                   "20.04": "focal", "20.10": "groovy", "21.04": "hirsute", "21.10": "impish",
-                   "22.04": "jammpy", "22.10": "kinetic", "23.04": "lunatic", "23.10": "mantic",
-                   "24.04": "noble"}
-BASE = {"7.0": "7.0.1406", "7.1": "7.1.1503", "7.2": "7.2.1511", "7.3": "7.3.1611",
-                   "7.4": "7.4.1708", "7.5": "7.5.1804", "7.6": "7.6.1810", "7.7": "7.7.1908",
-                   "7.8": "7.8.2003", "7.9": "7.9.2009",
-                   "8.0": "8.0.1905", "8.1": "8.1.1911", "8.2": "8.2.2004", "8.3": "8.3.2011",
-                   "8.4": "8.4.2105"}
-ALMA = {"9.0-20221001": "9.0", "9.0-20220901": "9.0", "9.0-20220706": "9.0",
-                 "9.1-20230222": "9.1", "9.1-20221201": "9.1", "9.1-20221117": "9.1",
-                 "9.3-20231124": "9.3"}
+ALMA = {}
+ALMA["8.8-20230524"] = "8.8"
+ALMA["8.8-20230718"] = "8.8"
+ALMA["8.9-20231124"] = "8.9"
+ALMA["8.9-20240410"] = "8.9"
+ALMA["8.10-20240528"] = "8.10"
+ALMA["9.0-20220706"] = "9.0"
+ALMA["9.0-20220901"] = "9.0"
+ALMA["9.0-20221001"] = "9.0"
+ALMA["9.0-20221102"] = "9.0"
+ALMA["9.1-20221117"] = "9.1"
+ALMA["9.1-20221201"] = "9.1"
+ALMA["9.1-20230222"] = "9.1"
+ALMA["9.1-20230407"] = "9.1"
+ALMA["9.2-20230512"] = "9.2"
+ALMA["9.2-20230718"] = "9.2"
+ALMA["9.3-20231124"] = "9.3"
+ALMA["9.3-20240410"] = "9.3"
+ALMA["9.4-20240506"] = "9.4"
+ALMA["9.4-20240530"] = "9.4"
+
+DIST = {}
+DIST["12.04"] = "precise"  # Precise Pangolin
+DIST["12.10"] = "quantal"  # Quntal Quetzal
+DIST["14.04"] = "trusty"   # Trusty Tahr LTS    (April 2022)
+DIST["14.10"] = "utopic"   # Utopic Unicorn
+DIST["16.04"] = "xenial"   # Xenial Xerus LTS   (April 2024)
+DIST["16.10"] = "yaketty"  # Yaketty Yak
+DIST["17.10"] = "artful"   # Artful Aardvark
+DIST["18.04"] = "bionic"   # Bionic Beaver LTS  (April 2028)
+DIST["18.10"] = "cosmic"   # Cosmic Cuttlefish  (x)
+DIST["19.04"] = "disco"    # Disco Dingo
+DIST["19.10"] = "eoan"     # Eoan Ermine
+DIST["20.04"] = "focal"    # Focal Fossa LTS    (April 2030)
+DIST["20.10"] = "groovy"   # Groovy Gorilla
+DIST["21.04"] = "hirsute"  # Hirsute Hippo
+DIST["21.10"] = "impish"   # Impish Indri
+DIST["22.04"] = "jammy"    # Jammy Jellyfish    (April 2027)
+DIST["22.10"] = "kinetic"  # Kinetic Kudu
+DIST["23.04"] = "lunatic"  # Lunatic Lobster
+DIST["23.10"] = "mantic"   # Mantic Minotaur
+DIST["24.04"] = "noble"    # Noble Numbat       (April 2029)
+
+OPENSUSE = {}
+OPENSUSE["13.2"] = "opensuse" # no docker image
+OPENSUSE["42.2"] = "opensuse/leap" # docker image removed
+OPENSUSE["42.3"] = "opensuse/leap"
+OPENSUSE["15.0"] = "opensuse/leap"
+OPENSUSE["15.1"] = "opensuse/leap"
+OPENSUSE["15.2"] = "opensuse/leap"
+OPENSUSE["15.3"] = "opensuse/leap"
+OPENSUSE["15.4"] = "opensuse/leap"
+OPENSUSE["15.5"] = "opensuse/leap"
+OPENSUSE["15.6"] = "opensuse/leap"
+OPENSUSE["16.0"] = "opensuse/leap"
 
 XDG_CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME", "~/.config")
 DOCKER_MIRROR_CONFIG = os.environ.get("DOCKER_MIRROR_CONFIG", os.path.join(XDG_CONFIG_HOME, "docker_mirror.ini"))
@@ -369,17 +422,16 @@ class DockerMirrorPackagesRepo:
             latest = ""
             for release in BASE:
                 if release.startswith(ver):
-                    fullrelease = BASE[release]
-                    logg.debug("release %s (%s)", release, fullrelease)
-                    if latest < fullrelease:
-                        latest = fullrelease
-            for release in ALMA:
-                if release.startswith(ver):
-                    # fullrelease = ALMA_VERSIONS[release]
                     mainrelease = BASE[release]
                     logg.debug("release %s (%s)", release, mainrelease)
-                    if latest < mainrelease:
-                        latest = mainrelease
+                    if latest < release:
+                        latest = release
+            for release in ALMA:
+                if release.startswith(ver):
+                    mainrelease = BASE[release]
+                    logg.debug("release %s (%s)", release, mainrelease)
+                    if latest < release:
+                        latest = release
             if latest:
                 ver = latest
         if ver in BASE:
