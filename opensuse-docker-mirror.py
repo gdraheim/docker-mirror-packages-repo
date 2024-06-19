@@ -40,7 +40,8 @@ DATADIRS = [REPODATADIR,
             "/dock/docker-mirror-packages"]
 
 OPENSUSE: Dict[str, str] = {}
-OPENSUSE["42.2"] = "opensuse/leap"
+OPENSUSE["13.2"] = "opensuse" # no docker image
+OPENSUSE["42.2"] = "opensuse/leap" # docker image removed
 OPENSUSE["42.3"] = "opensuse/leap"
 OPENSUSE["15.0"] = "opensuse/leap"
 OPENSUSE["15.1"] = "opensuse/leap"
