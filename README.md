@@ -40,6 +40,9 @@ Tested repos are
 
 | docker image                                  | size
 | --------------------------------------------- | ----
+| mirror-packages/epel-repo:9.x.2406	| 44.9GB
+| mirror-packages/epel-repo:8.x.2012	| 20.6GB
+| mirror-packages/epel-repo:7.x.2012	| 49GB
 | mirror-packages/ubuntu-repo/universe:24.04	| 134GB
 | mirror-packages/ubuntu-repo/restricted:24.04	| 30.6GB
 | mirror-packages/ubuntu-repo/main:24.04	| 27GB
@@ -54,9 +57,6 @@ Tested repos are
 | mirror-packages/ubuntu-repo/universe:16.04	| 186GB
 | mirror-packages/ubuntu-repo/restricted:16.04	| 45.4GB
 | mirror-packages/ubuntu-repo/main:16.04	| 44.4GB
-| mirror-packages/epel-repo:9.x.2303	| 29.3GB
-| mirror-packages/epel-repo:8.x.2012	| 20.6GB
-| mirror-packages/epel-repo:7.x.2012	| 48.9GB
 | mirror-packages/almalinux-repo/plus:9.3	| 59.6GB
 | mirror-packages/almalinux-repo/main:9.3	| 26.1GB
 | mirror-packages/almalinux-repo/plus:9.1	| 23.1GB
