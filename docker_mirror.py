@@ -430,8 +430,8 @@ class DockerMirrorPackagesRepo:
                 if release.startswith(ver):
                     mainrelease = BASE[release]
                     logg.debug("release %s (%s)", release, mainrelease)
-                    if latest < release:
-                        latest = release
+                    if latest < mainrelease:
+                        latest = mainrelease
             if latest:
                 ver = latest
         if ver in BASE:
