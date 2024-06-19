@@ -41,22 +41,22 @@ DATADIRS = [REPODATADIR,
             "/dock/docker-mirror-packages"]
 
 OS: Dict[str, str] = {}
-OS["8.5"] = "8.5.2111"
-OS["8.4"] = "8.4.2105"
-OS["8.3"] = "8.3.2011"
-OS["8.2"] = "8.2.2004"
-OS["8.1"] = "8.1.1911"
-OS["8.0"] = "8.0.1905"
-OS["7.9"] = "7.9.2009"
-OS["7.8"] = "7.8.2003"
-OS["7.7"] = "7.7.1908"
-OS["7.6"] = "7.6.1810"
-OS["7.5"] = "7.5.1804"
-OS["7.4"] = "7.4.1708"
-OS["7.3"] = "7.3.1611"
-OS["7.2"] = "7.2.1511"
-OS["7.1"] = "7.1.1503"
-OS["7.0"] = "7.0.1406"
+OS["8.5.2111"] = "8.5"
+OS["8.4.2105"] = "8.4"
+OS["8.3.2011"] = "8.3"
+OS["8.2.2004"] = "8.2"
+OS["8.1.1911"] = "8.1"
+OS["8.0.1905"] = "8.0"
+OS["7.9.2009"] = "7.9"
+OS["7.8.2003"] = "7.8"
+OS["7.7.1908"] = "7.7"
+OS["7.6.1810"] = "7.6"
+OS["7.5.1804"] = "7.5"
+OS["7.4.1708"] = "7.4"
+OS["7.3.1611"] = "7.3"
+OS["7.2.1511"] = "7.2"
+OS["7.1.1503"] = "7.1"
+OS["7.0.1406"] = "7.0"
 
 ALMA: Dict[str, str] = {}
 ALMA["8.8-20230524"] = "8.8"
@@ -138,7 +138,6 @@ SUBDIRS6: Dict[str, List[str]] = OrderedDict()
 SUBDIRS6["main"] = ["os", "updates"]
 SUBDIRS6["sclo"] = ["sclo"]
 
-BASEVERSION = ""
 BASEVERSIONS: Dict[str, str] = {}
 BASEVERSIONS["8.5.2111"] = "8.4.2105"  # image:centos/base
 
@@ -173,10 +172,10 @@ def centos_make() -> None:
 def centos_baseversion(distro: str = NIX, centos: str = NIX) -> str:
     distro = distro or DISTRO
     centos = centos or CENTOS
-    if BASEVERSION:
-        return BASEVERSION
     if centos in OS:
-        return OS[centos]
+        return centos
+    if centos in OS.values():
+        return max([os for os in OS if OS[os] == centos])
     if centos in ALMA.values():
         return max([os for os in ALMA if ALMA[os] == centos])
     return centos
@@ -782,7 +781,7 @@ def centos_image(distro: str = NIX, centos: str = NIX) -> str:
 def centos_baseimage(distro: str = NIX, centos: str = NIX) -> str:
     distro = distro or DISTRO
     centos = centos or CENTOS
-    baseversion = BASEVERSION or centos
+    baseversion = centos
     if baseversion in BASEVERSIONS:
         baseversion = BASEVERSIONS[baseversion]
     return F"{distro}:{baseversion}"
@@ -794,20 +793,22 @@ def CENTOS_set(centos: str) -> str:
         distro, centos = centos.split(":", 1)
         DISTRO = distro
     if centos in OS:
-        BASEVERSION = centos
-        CENTOS = OS[centos]
-        logg.info("CENT1: %s %s", DISTRO, CENTOS)
+        CENTOS = centos
+        logg.debug("SET CENT1: %s %s [%s]", DISTRO, CENTOS, centos)
+        return CENTOS
+    if centos in OS.values():
+        CENTOS = max([os for os in OS if OS[os] == centos])
+        logg.debug("SET CENT2: %s %s [%s]", DISTRO, CENTOS, centos)
         return CENTOS
     if centos in ALMA:
-        BASEVERSION = centos
-        CENTOS = ALMA[centos]
+        CENTOS = centos
         DISTRO = distro or ALMALINUX
-        logg.info("ALMA1: %s %s", DISTRO, CENTOS)
+        logg.debug("SET ALMA1: %s %s [%s]", DISTRO, CENTOS, centos)
         return CENTOS
     if centos in ALMA.values():
+        CENTOS = max([os for os in ALMA if ALMA[os] == centos])
         DISTRO = distro or ALMALINUX
-        CENTOS = centos
-        logg.info("ALMA2: %s %s", DISTRO, CENTOS)
+        logg.debug("SET ALMA2: %s %s [%s]", DISTRO, CENTOS, centos)
         return CENTOS
     if len(centos) <= 2:
         last = [os for os in OS if os.startswith(centos)]
@@ -820,7 +821,7 @@ def CENTOS_set(centos: str) -> str:
             DISTRO = distro or ALMALINUX
         return CENTOS
     if centos not in OS.values():
-        logg.warning("%s is not a known os version", centos)
+        logg.warning("SET: %s is not a known os version", centos)
     CENTOS = centos
     return CENTOS
 
