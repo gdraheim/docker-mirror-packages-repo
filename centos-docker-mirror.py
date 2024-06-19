@@ -59,6 +59,11 @@ OS["7.1"] = "7.1.1503"
 OS["7.0"] = "7.0.1406"
 
 ALMA: Dict[str, str] = {}
+ALMA["8.8-20230524"] = "8.8"
+ALMA["8.8-20230718"] = "8.8"
+ALMA["8.9-20231124"] = "8.9"
+ALMA["8.9-20240410"] = "8.9"
+ALMA["8.10-20240528"] = "8.10"
 ALMA["9.0-20220706"] = "9.0"
 ALMA["9.0-20220901"] = "9.0"
 ALMA["9.0-20221001"] = "9.0"
@@ -417,16 +422,13 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
     arch = ARCH
     scripts = repo_scripts()
     cname = F"{distro}-repo-{epel}"
-    baseimage = DISTRO
-    baseversion = BASEVERSION or centos
-    if baseversion in BASEVERSIONS:
-        baseversion = BASEVERSIONS[baseversion]
-    out, end = output2(F"./docker_mirror.py start {baseimage}:{baseversion} -a")
+    baseimage = centos_baseimage(DISTRO, centos)
+    out, end = output2(F"./docker_mirror.py start {baseimage} -a")
     addhosts = out.strip()
     PORT = centos_epel_port(distro, centos)
     CMD = str(centos_epel_cmd(distro, centos)).replace("'", '"')
     sx___(F"{docker} rm --force {cname}")
-    sh___(F"{docker} run --name={cname} {addhosts} --detach {baseimage}:{baseversion} sleep 9999")
+    sh___(F"{docker} run --name={cname} {addhosts} --detach {baseimage} sleep 9999")
     if PORT != 80:
         sh___(F"{docker} exec {cname} bash -c 'echo sslverify=false >> /etc/yum.conf'")
         sh___(F"{docker} exec {cname} yum install -y openssl")
@@ -577,17 +579,13 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
     repodir = REPODIR
     centos_restore()
     centos_cleaner()
-    # image version
-    version = centos
-    if centos in BASEVERSIONS:
-        version = BASEVERSIONS[centos]
-    baseimage = distro
+    baseimage = centos_baseimage(distro, centos)
     scripts = repo_scripts()
     cname = F"{distro}-repo-{centos}"
     PORT = centos_main_port(distro, centos)
     CMD = str(centos_main_cmd(distro, centos)).replace("'", '"')
     sx___(F"{docker} rm --force {cname}")
-    sh___(F"{docker} run --name={cname} --detach {baseimage}:{version} sleep 9999")
+    sh___(F"{docker} run --name={cname} --detach {baseimage} sleep 9999")
     if PORT != 80:
         sh___(F"{docker} exec {cname} yum install -y openssl")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{R}")
@@ -777,6 +775,18 @@ def commands() -> str:
                 cmds += [cmd]
     return "|".join(cmds)
 
+def centos_image(distro: str = NIX, centos: str = NIX) -> str:
+    distro = distro or DISTRO
+    centos = centos or CENTOS
+    return F"{distro}:{centos}"
+def centos_baseimage(distro: str = NIX, centos: str = NIX) -> str:
+    distro = distro or DISTRO
+    centos = centos or CENTOS
+    baseversion = BASEVERSION or centos
+    if baseversion in BASEVERSIONS:
+        baseversion = BASEVERSIONS[baseversion]
+    return F"{distro}:{baseversion}"
+
 def CENTOS_set(centos: str) -> str:
     global CENTOS, DISTRO, BASEVERSION
     distro = ""
@@ -800,7 +810,14 @@ def CENTOS_set(centos: str) -> str:
         logg.info("ALMA2: %s %s", DISTRO, CENTOS)
         return CENTOS
     if len(centos) <= 2:
-        CENTOS = max([os for os in OS if os.startswith(centos)])
+        last = [os for os in OS if os.startswith(centos)]
+        if last:
+            CENTOS = max(last)
+            # DISTRO = "centos"
+        last = [os for os in ALMA if os.startswith(centos)]
+        if last:
+            CENTOS = max(last)
+            DISTRO = distro or ALMALINUX
         return CENTOS
     if centos not in OS.values():
         logg.warning("%s is not a known os version", centos)

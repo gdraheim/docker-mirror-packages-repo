@@ -26,6 +26,7 @@ if sys.version[0] == '3':
     basestring = str
     xrange = range
 
+NIX = ""
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
 REPODIR = os.environ.get("REPODIR", "repo.d")
@@ -291,16 +292,13 @@ def ubuntu_repo() -> None:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    image = distro
+    baseimage = ubuntu_baseimage(distro, ubuntu)
     imagesrepo = IMAGESREPO
-    baseversion = ubuntu
-    if baseversion in BASEVERSION:
-        baseversion = BASEVERSION[baseversion]
     python = PYTHON
     scripts = repo_scripts()
     cname = F"{distro}-repo-{ubuntu}"  # container name
     sx___(F"{docker} rm --force {cname}")
-    sh___(F"{docker} run --name={cname} --detach {image}:{baseversion} sleep 9999")
+    sh___(F"{docker} run --name={cname} --detach {baseimage} sleep 9999")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
@@ -450,6 +448,17 @@ def commands() -> str:
                 cmd = name.replace("ubuntu_", "")
                 cmds += [cmd]
     return "|".join(cmds)
+
+def ubuntu_image(distro: str = NIX, ubuntu: str = NIX) -> str:
+    image = distro or DISTRO
+    version = ubuntu or UBUNTU
+    return F"{image}:{version}"
+def ubuntu_baseimage(distro: str = NIX, ubuntu: str = NIX) -> str:
+    image = distro or DISTRO
+    version = ubuntu or UBUNTU
+    if version in BASEVERSION:
+        version = BASEVERSION[version]
+    return F"{image}:{version}"
 
 def UBUNTU_set(ubuntu: str) -> str:
     global UBUNTU, DISTRO

@@ -28,6 +28,7 @@ if sys.version[0] == '3':
     basestring = str
     xrange = range
 
+NIX = ""
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
 REPODIR = os.environ.get("REPODIR", "repo.d")
@@ -38,17 +39,17 @@ DATADIRS = [REPODATADIR,
             "/data/docker-centos-repo-mirror",
             "/dock/docker-mirror-packages"]
 
-BASE: Dict[str, str] = {}
-BASE["42.2"] = "opensuse/leap"
-BASE["42.3"] = "opensuse/leap"
-BASE["15.0"] = "opensuse/leap"
-BASE["15.1"] = "opensuse/leap"
-BASE["15.2"] = "opensuse/leap"
-BASE["15.3"] = "opensuse/leap"
-BASE["15.4"] = "opensuse/leap"
-BASE["15.5"] = "opensuse/leap"
-BASE["15.6"] = "opensuse/leap"
-BASE["16.0"] = "opensuse/leap"
+OPENSUSE: Dict[str, str] = {}
+OPENSUSE["42.2"] = "opensuse/leap"
+OPENSUSE["42.3"] = "opensuse/leap"
+OPENSUSE["15.0"] = "opensuse/leap"
+OPENSUSE["15.1"] = "opensuse/leap"
+OPENSUSE["15.2"] = "opensuse/leap"
+OPENSUSE["15.3"] = "opensuse/leap"
+OPENSUSE["15.4"] = "opensuse/leap"
+OPENSUSE["15.5"] = "opensuse/leap"
+OPENSUSE["15.6"] = "opensuse/leap"
+OPENSUSE["16.0"] = "opensuse/leap"
 XXLEAP: List[str] = []  # ["15.2"] # obsolete, using repodata-fix.py now
 LEAP: str = "15.5"
 
@@ -244,12 +245,9 @@ def opensuse_repo() -> None:
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
-    baseversion = leap
-    if baseversion in BASEVERSION:
-        baseversion = BASEVERSION[baseversion]
+    baseimage = opensuse_baseimage(distro, leap)
     scripts = repo_scripts()
     cname = F"{distro}-repo-{leap}"
-    image = BASE[LEAP]
     imagesrepo = IMAGESREPO
     bind_repo = ""
     base_repo = F"{repodir}/{distro}.{leap}/distribution/leap/{leap}/repo/oss"
@@ -258,7 +256,7 @@ def opensuse_repo() -> None:
         base_repo_path = path.abspath(base_repo)
         bind_repo = F"-v {base_repo_path}:/base-repo"
     sx___(F"{docker} rm --force {cname}")
-    sh___(F"{docker} run --name={cname} {bind_repo} --detach {image}:{baseversion} sleep 9999")
+    sh___(F"{docker} run --name={cname} {bind_repo} --detach {baseimage} sleep 9999")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
     oss = "repo-oss"  # Opensuse 15.x main repo
@@ -428,12 +426,25 @@ def commands() -> str:
                 cmds += [cmd]
     return "|".join(cmds)
 
+def opensuse_image(distro: str = NIX, leap: str = NIX) -> str:
+    # distro is ignored
+    leap = leap or LEAP
+    image = OPENSUSE[leap]
+    return F"{image}:{leap}"
+def opensuse_baseimage(distro: str = NIX, leap: str = NIX) -> str:
+    # distro is ignored
+    leap = leap or LEAP
+    image = OPENSUSE[leap]
+    if leap in BASEVERSION:
+        leap = BASEVERSION[leap]
+    return F"{image}:{leap}"
+
 def LEAP_set(leap: str) -> str:
     global LEAP
     if len(leap) <= 2:
-        LEAP = max([os for os in BASE if os.startswith(leap) and not os.startswith("42")])
+        LEAP = max([os for os in OPENSUSE if os.startswith(leap) and not os.startswith("42")])
         return LEAP
-    if leap not in BASE:
+    if leap not in OPENSUSE:
         logg.warning("%s is not a known os version", leap)
     LEAP = leap
     return LEAP
@@ -493,7 +504,9 @@ if __name__ == "__main__":
         if funcname in globals():
             func = globals()[funcname]
             if callable(func):
-                func()
+                result = func()
+                if isinstance(result, str):
+                    print(result)
             else:
                 logg.error("%s is not callable", funcname)
                 sys.exit(1)
