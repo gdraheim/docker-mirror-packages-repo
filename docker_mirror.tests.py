@@ -7,7 +7,7 @@
 __copyright__ = "(C) 2018-2024 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.7.6152"
+__version__ = "1.7.6253"
 
 from typing import Union, Optional, List, cast
 import sys
