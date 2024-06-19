@@ -40,23 +40,23 @@ DATADIRS = [REPODATADIR,
             "/data/docker-centos-repo-mirror",
             "/dock/docker-mirror-packages"]
 
-OS: Dict[str, str] = {}
-OS["8.5.2111"] = "8.5"
-OS["8.4.2105"] = "8.4"
-OS["8.3.2011"] = "8.3"
-OS["8.2.2004"] = "8.2"
-OS["8.1.1911"] = "8.1"
-OS["8.0.1905"] = "8.0"
-OS["7.9.2009"] = "7.9"
-OS["7.8.2003"] = "7.8"
-OS["7.7.1908"] = "7.7"
-OS["7.6.1810"] = "7.6"
-OS["7.5.1804"] = "7.5"
-OS["7.4.1708"] = "7.4"
-OS["7.3.1611"] = "7.3"
-OS["7.2.1511"] = "7.2"
-OS["7.1.1503"] = "7.1"
-OS["7.0.1406"] = "7.0"
+BASE: Dict[str, str] = {}
+BASE["8.5.2111"] = "8.5"
+BASE["8.4.2105"] = "8.4"
+BASE["8.3.2011"] = "8.3"
+BASE["8.2.2004"] = "8.2"
+BASE["8.1.1911"] = "8.1"
+BASE["8.0.1905"] = "8.0"
+BASE["7.9.2009"] = "7.9"
+BASE["7.8.2003"] = "7.8"
+BASE["7.7.1908"] = "7.7"
+BASE["7.6.1810"] = "7.6"
+BASE["7.5.1804"] = "7.5"
+BASE["7.4.1708"] = "7.4"
+BASE["7.3.1611"] = "7.3"
+BASE["7.2.1511"] = "7.2"
+BASE["7.1.1503"] = "7.1"
+BASE["7.0.1406"] = "7.0"
 
 ALMA: Dict[str, str] = {}
 ALMA["8.8-20230524"] = "8.8"
@@ -172,10 +172,10 @@ def centos_make() -> None:
 def centos_baseversion(distro: str = NIX, centos: str = NIX) -> str:
     distro = distro or DISTRO
     centos = centos or CENTOS
-    if centos in OS:
+    if centos in BASE:
         return centos
-    if centos in OS.values():
-        return max([os for os in OS if OS[os] == centos])
+    if centos in BASE.values():
+        return max([os for os in BASE if BASE[os] == centos])
     if centos in ALMA.values():
         return max([os for os in ALMA if ALMA[os] == centos])
     return centos
@@ -787,17 +787,17 @@ def centos_baseimage(distro: str = NIX, centos: str = NIX) -> str:
     return F"{distro}:{baseversion}"
 
 def CENTOS_set(centos: str) -> str:
-    global CENTOS, DISTRO, BASEVERSION
+    global CENTOS, DISTRO
     distro = ""
     if ":" in centos:
         distro, centos = centos.split(":", 1)
         DISTRO = distro
-    if centos in OS:
+    if centos in BASE:
         CENTOS = centos
         logg.debug("SET CENT1: %s %s [%s]", DISTRO, CENTOS, centos)
         return CENTOS
-    if centos in OS.values():
-        CENTOS = max([os for os in OS if OS[os] == centos])
+    if centos in BASE.values():
+        CENTOS = max([os for os in BASE if BASE[os] == centos])
         logg.debug("SET CENT2: %s %s [%s]", DISTRO, CENTOS, centos)
         return CENTOS
     if centos in ALMA:
@@ -811,7 +811,7 @@ def CENTOS_set(centos: str) -> str:
         logg.debug("SET ALMA2: %s %s [%s]", DISTRO, CENTOS, centos)
         return CENTOS
     if len(centos) <= 2:
-        last = [os for os in OS if os.startswith(centos)]
+        last = [os for os in BASE if os.startswith(centos)]
         if last:
             CENTOS = max(last)
             # DISTRO = "centos"
@@ -820,7 +820,7 @@ def CENTOS_set(centos: str) -> str:
             CENTOS = max(last)
             DISTRO = distro or ALMALINUX
         return CENTOS
-    if centos not in OS.values():
+    if centos not in BASE.values():
         logg.warning("SET: %s is not a known os version", centos)
     CENTOS = centos
     return CENTOS
