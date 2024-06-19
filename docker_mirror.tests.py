@@ -277,11 +277,81 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
+    def test_10085_centos(self) -> None:
+        prefix = PREFIX
+        docker = DOCKER
+        repo_image = "centos-repo:8.5.2111"
+        box1_image = "centos:8.5.2111"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        if DRYRUN: return
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sx____("{docker} rm -f test-repo".format(**locals()))
+        cmd = "{docker} run -d --name test-repo {prefix}/{repo_image}"
+        logg.warning("%s", cmd.format(**locals()))
+        sh____(cmd.format(**locals()))
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host mirrorlist.centos.org:{mirror_ip}".format(**locals())
+        cmd = "{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
+        logg.warning("%s", cmd.format(**locals()))
+        sh____(cmd.format(**locals()))
+        # sh____("{docker} exec test-box1 yum install -y python-docker-py") # all /extras are now in epel
+        sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sx____("{docker} rm -f test-repo".format(**locals()))
     def test_10091_almalinux(self) -> None:
         prefix = PREFIX
         docker = DOCKER
         repo_image = "almalinux-repo:9.1"
         box1_image = "almalinux:9.1"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        if DRYRUN: return
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sx____("{docker} rm -f test-repo".format(**locals()))
+        cmd = "{docker} run -d --name test-repo {prefix}/{repo_image}"
+        logg.warning("%s", cmd.format(**locals()))
+        sh____(cmd.format(**locals()))
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host mirrors.almalinux.org:{mirror_ip}".format(**locals())
+        cmd = "{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
+        logg.warning("%s", cmd.format(**locals()))
+        sh____(cmd.format(**locals()))
+        retry = "--connect-timeout 5 --retry 3 --retry-connrefused"
+        sh____("{docker} exec test-box1 curl -k {retry} https://mirrors.almalinux.org".format(**locals()))
+        sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >>/etc/yum.conf'".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y python3-numpy".format(**locals()))
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sx____("{docker} rm -f test-repo".format(**locals()))
+    def test_10093_almalinux(self) -> None:
+        prefix = PREFIX
+        docker = DOCKER
+        repo_image = "almalinux-repo:9.3"
+        box1_image = "almalinux:9.3"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
+        if DRYRUN: return
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sx____("{docker} rm -f test-repo".format(**locals()))
+        cmd = "{docker} run -d --name test-repo {prefix}/{repo_image}"
+        logg.warning("%s", cmd.format(**locals()))
+        sh____(cmd.format(**locals()))
+        mirror_ip = ip_container("test-repo")
+        add_host = "--add-host mirrors.almalinux.org:{mirror_ip}".format(**locals())
+        cmd = "{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
+        logg.warning("%s", cmd.format(**locals()))
+        sh____(cmd.format(**locals()))
+        retry = "--connect-timeout 5 --retry 3 --retry-connrefused"
+        sh____("{docker} exec test-box1 curl -k {retry} https://mirrors.almalinux.org".format(**locals()))
+        sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >>/etc/yum.conf'".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y python3-numpy".format(**locals()))
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sx____("{docker} rm -f test-repo".format(**locals()))
+    def test_10094_almalinux(self) -> None:
+        prefix = PREFIX
+        docker = DOCKER
+        repo_image = "almalinux-repo:9.4"
+        box1_image = "almalinux:9.4"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
         if DRYRUN: return
@@ -684,6 +754,21 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
+    def test_20079_centos(self) -> None:
+        docker = DOCKER
+        mirror = _docker_mirror
+        image = "centos:7.9.2009"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
+        if DRYRUN: return
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y python-docker-py".format(**locals()))
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_20080_centos(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
@@ -720,6 +805,22 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         docker = DOCKER
         mirror = _docker_mirror
         image = "centos:8.3.2011"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
+        if DRYRUN: return
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
+        if not KEEP:
+            sx____("{docker} rm -f test-box1".format(**locals()))
+            sh____("{mirror} stop {image} --add-host".format(**locals()))
+    def test_20085_centos(self) -> None:
+        docker = DOCKER
+        mirror = _docker_mirror
+        image = "centos:8.5.2011"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         repo_image = output("{mirror} repo {image}".format(**locals()))
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
@@ -1092,10 +1193,68 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         if not KEEP:
             sx____("{docker} rm -f test-box1".format(**locals()))
             sh____("{mirror} stop {image} --add-host".format(**locals()))
+    def test_30085_centos_epel(self) -> None:
+        docker = DOCKER
+        mirror = _docker_mirror
+        image = "centos:8.5.2011"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
+        if DRYRUN: return
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts --epel".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts --epel".format(**locals())).strip()
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y epel-release".format(**locals()))
+        sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >> /etc/yum.conf'".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y python3-flask-sqlalchemy".format(**locals()))
+        if not KEEP:
+            sx____("{docker} rm -f test-box1".format(**locals()))
+            sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_30091_centos_epel(self) -> None:
         docker = DOCKER
         mirror = _docker_mirror
         image = "almalinux:9.1"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
+        if DRYRUN: return
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts --epel".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts --epel".format(**locals())).strip()
+        retry = "--connect-timeout 5 --retry 3 --retry-connrefused"
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
+        sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >> /etc/yum.conf'".format(**locals()))
+        sh____("{docker} exec test-box1 curl -k {retry} https://mirrors.almalinux.org".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y epel-release".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y python3-flask-basicauth".format(**locals()))
+        if not KEEP:
+            sx____("{docker} rm -f test-box1".format(**locals()))
+            sh____("{mirror} stop {image} --add-host".format(**locals()))
+    def test_30093_centos_epel(self) -> None:
+        docker = DOCKER
+        mirror = _docker_mirror
+        image = "almalinux:9.3"
+        if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
+        repo_image = output("{mirror} repo {image}".format(**locals()))
+        if not image_exist(repo_image): self.skipTest("have no " + repo_image)
+        if DRYRUN: return
+        sx____("{docker} rm -f test-box1".format(**locals()))
+        sh____("{mirror} start {image} --add-hosts --epel".format(**locals()))
+        add_host = output("{mirror} start {image} --add-hosts --epel".format(**locals())).strip()
+        retry = "--connect-timeout 5 --retry 3 --retry-connrefused"
+        sh____("{docker} run -d --name test-box1 {add_host} {image} sleep 600".format(**locals()))
+        sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >> /etc/yum.conf'".format(**locals()))
+        sh____("{docker} exec test-box1 curl -k {retry} https://mirrors.almalinux.org".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y epel-release".format(**locals()))
+        sh____("{docker} exec test-box1 yum install -y python3-flask-basicauth".format(**locals()))
+        if not KEEP:
+            sx____("{docker} rm -f test-box1".format(**locals()))
+            sh____("{mirror} stop {image} --add-host".format(**locals()))
+    def test_30094_centos_epel(self) -> None:
+        docker = DOCKER
+        mirror = _docker_mirror
+        image = "almalinux:9.4"
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         repo_image = output("{mirror} repo {image}".format(**locals()))
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
