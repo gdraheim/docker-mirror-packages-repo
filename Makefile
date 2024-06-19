@@ -30,29 +30,48 @@ include opensuse-main-makefile.mk
 
 repos:
 	docker images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" | grep /mirror-packages/
-removes:
-	docker images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" | cut -f 2 | xargs -r docker rmi
 prune:
 	: docker volume prune
 	docker volume list | cut -c 8- | xargs -r docker volume rm 
 
-rebuild: rebuild1 rebuild2 rebuild3
+removes: removes1 removes2 removes3 removes4
+removes1:
+	docker images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
+	| grep /mirror-packages/opensuse-repo | cut -f 2 | xargs -r docker rmi
+removes2:
+	docker images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
+	| grep /mirror-packages/ubuntu-repo | cut -f 2 | xargs -r docker rmi
+removes3:
+	docker images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
+	| grep /mirror-packages/centos-repo | cut -f 2 | xargs -r docker rmi
+	docker images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
+	| grep /mirror-packages/almalinux-repo | cut -f 2 | xargs -r docker rmi
+removes4:
+	docker images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
+	| grep /mirror-packages/epel-repo | cut -f 2 | xargs -r docker rmi
+
+rebuild: rebuild1 rebuild2 rebuild3 rebuild4
 rebuild1:
 	make opensuserepo.15.2
 	make opensuserepo.15.4
 	make opensuserepo.15.5
 	make opensuserepo.15.6
 rebuild2:
-	make centosrepo.7.7
-	make centosrepo.7.9
-	make almarepo.9.1
-	make almarepo.9.3
-rebuild3:
 	make ubunturepo.16.04
 	make ubunturepo.18.04
 	make universerepo.20.04
 	make universerepo.22.04
 	make universerepo.24.04
+rebuild3:
+	make centosrepo.7.7
+	make centosrepo.7.9
+	make almarepo.9.1
+	make almarepo.9.3
+rebuild4:
+	make epelrepo.7
+	make epelrepo.8
+	make epelrepo.9
+
 
 universe:
 	cd repo.d/. || exit 1 ; for i in ubuntu*; do du -sh "$$i/."; done
