@@ -95,15 +95,19 @@ For each new distro version
 * extend the docker_mirror.tests.py by duplicate-changing the old distro version
 
 ### make release
-* `make type`
-* `make style`
-*  check docker_mirror.tests.py if tests for new distro versions were added
-* `make check` # unittests for docker_mirror.py and dockerdir.py
-* check version tables
+* update version tables
    * BASE and ALMA in ./centos-docker-mirror.py
    * DIST in ./ubuntu-docker-mirror.py
    * OPENSUSE in ./opensuse-docker-mirror.py
    * copy over to ./docker_mirror.py
+* update default version
+   * CENTOS in ./centos-docker-mirror.py
+   * UBUNTU in ./ubuntu-docker-mirror.py
+   * LEAP in ./opensuse-docker-mirror.py
+* `make type`
+* `make style`
+*  check docker_mirror.tests.py if tests for new distro versions were added
+* `make check` # unittests for docker_mirror.py and dockerdir.py
 * `make uninstall` # may fail as "not installed"
 * `make install` 
 * `make uninstall`
