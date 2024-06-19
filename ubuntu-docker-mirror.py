@@ -39,7 +39,7 @@ DATADIRS = [REPODATADIR,
 
 PYTHON = "python3"
 DISTRO = "ubuntu"
-UBUNTU = "22.04"
+UBUNTU = "24.04"
 RSYNC_UBUNTU = "rsync://ftp5.gwdg.de/pub/linux/debian/ubuntu"
 
 MIRRORS: Dict[str, List[str]] = {}
