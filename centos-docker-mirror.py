@@ -173,13 +173,9 @@ def centos_release(distro: str = NIX, centos: str = NIX) -> str:
     """ this is a short version for the repo image"""
     distro = distro or DISTRO
     centos = centos or CENTOS
-    if "." in centos:
-        parts = centos.split(".")
-        major = parts[0]
-        minor = parts[1]
-        if "-" in minor:
-            minor = minor.split("-")[0]
-        return major + "." + minor
+    if "-" in centos:
+        release, _ = centos.split("-", 1)
+        return release
     return centos
 
 def centos_baseversion(distro: str = NIX, centos: str = NIX) -> str:
