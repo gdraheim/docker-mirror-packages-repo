@@ -648,8 +648,8 @@ def centos_tags(distro: str = NIX, centos: str = NIX) -> None:
     ver1 = major(ver2)
     if ver1 != ver2:
         sh___(F"{docker} tag {repo}/{name}:{rel} {repo}/{name}:{ver1}")
-        sh___(F"{docker} tag {repo}/{name}:{rel} {repo}/{name}{ver1}:{centos}")
-        sh___(F"{docker} tag {repo}/{name}:{rel} {repo}/{name}{ver1}:latest")
+        # sh___(F"{docker} tag {repo}/{name}:{rel} {repo}/{name}{ver1}:{centos}")
+        # sh___(F"{docker} tag {repo}/{name}:{rel} {repo}/{name}{ver1}:latest")
 
 def centos_cleaner() -> None:
     distro = DISTRO
