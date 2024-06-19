@@ -36,21 +36,21 @@ WAXWAIT = ""
 
 LEAP = "opensuse/leap"
 SUSE = "opensuse"
-OPENSUSE_VERSIONS = {"42.2": SUSE, "42.3": SUSE, "15.0": LEAP, "15.1": LEAP,  # ..
+OPENSUSE = {"42.2": SUSE, "42.3": SUSE, "15.0": LEAP, "15.1": LEAP,  # ..
                      "15.2": LEAP, "15.3": LEAP, "15.4": LEAP, "15.5": LEAP, "15.6": LEAP,
                      "16.0": LEAP}
 UBUNTU_LTS = {"16": "16.04", "18": "18.04", "20": "20.04", "22": "22.04", "24": "24.04"}
-UBUNTU_VERSIONS = {"12.04": "precise", "14.04": "trusty", "16.04": "xenial", "17.10": "artful",
+DIST = {"12.04": "precise", "14.04": "trusty", "16.04": "xenial", "17.10": "artful",
                    "18.04": "bionic", "18.10": "cosmic", "19.04": "disco", "19.10": "eoan",
                    "20.04": "focal", "20.10": "groovy", "21.04": "hirsute", "21.10": "impish",
                    "22.04": "jammpy", "22.10": "kinetic", "23.04": "lunatic", "23.10": "mantic",
                    "24.04": "noble"}
-CENTOS_VERSIONS = {"7.0": "7.0.1406", "7.1": "7.1.1503", "7.2": "7.2.1511", "7.3": "7.3.1611",
+BASE = {"7.0": "7.0.1406", "7.1": "7.1.1503", "7.2": "7.2.1511", "7.3": "7.3.1611",
                    "7.4": "7.4.1708", "7.5": "7.5.1804", "7.6": "7.6.1810", "7.7": "7.7.1908",
                    "7.8": "7.8.2003", "7.9": "7.9.2009",
                    "8.0": "8.0.1905", "8.1": "8.1.1911", "8.2": "8.2.2004", "8.3": "8.3.2011",
                    "8.4": "8.4.2105"}
-ALMA_VERSIONS = {"9.0-20221001": "9.0", "9.0-20220901": "9.0", "9.0-20220706": "9.0",
+ALMA = {"9.0-20221001": "9.0", "9.0-20220901": "9.0", "9.0-20220706": "9.0",
                  "9.1-20230222": "9.1", "9.1-20221201": "9.1", "9.1-20221117": "9.1",
                  "9.3-20231124": "9.3"}
 
@@ -317,8 +317,8 @@ class DockerMirrorPackagesRepo:
             ver = ""
         if "." not in ver:
             latest = ""
-            for release in UBUNTU_VERSIONS:
-                codename = UBUNTU_VERSIONS[release]
+            for release in DIST:
+                codename = DIST[release]
                 if len(ver) >= 3 and codename.startswith(ver):
                     logg.debug("release (%s) %s", release, codename)
                     if latest < release:
@@ -367,27 +367,27 @@ class DockerMirrorPackagesRepo:
             ver = ""
         if "." not in ver:
             latest = ""
-            for release in CENTOS_VERSIONS:
+            for release in BASE:
                 if release.startswith(ver):
-                    fullrelease = CENTOS_VERSIONS[release]
+                    fullrelease = BASE[release]
                     logg.debug("release %s (%s)", release, fullrelease)
                     if latest < fullrelease:
                         latest = fullrelease
-            for release in ALMA_VERSIONS:
+            for release in ALMA:
                 if release.startswith(ver):
                     # fullrelease = ALMA_VERSIONS[release]
-                    mainrelease = CENTOS_VERSIONS[release]
+                    mainrelease = BASE[release]
                     logg.debug("release %s (%s)", release, mainrelease)
                     if latest < mainrelease:
                         latest = mainrelease
             if latest:
                 ver = latest
-        if ver in CENTOS_VERSIONS:
-            ver = CENTOS_VERSIONS[ver]
-        if version in ALMA_VERSIONS:
-            ver = ALMA_VERSIONS[version]
-        elif version in ALMA_VERSIONS.values():
-            ver = max([os for os in ALMA_VERSIONS if ALMA_VERSIONS[os] == version])
+        if ver in BASE:
+            ver = BASE[ver]
+        if version in ALMA:
+            ver = ALMA[version]
+        elif version in ALMA.values():
+            ver = max([os for os in ALMA if ALMA[os] == version])
         logg.debug("latest version %s for %s", ver, version)
         return ver or version
     def get_centos_docker_mirror(self, image):
@@ -415,16 +415,16 @@ class DockerMirrorPackagesRepo:
             version = image[len("opensuse/leap:"):]
             latest = self.get_opensuse_latest_version(version)
             if latest:
-                if latest in OPENSUSE_VERSIONS:
-                    distro = OPENSUSE_VERSIONS[latest]
+                if latest in OPENSUSE:
+                    distro = OPENSUSE[latest]
                 return "{distro}:{latest}".format(**locals())
         if image.startswith("opensuse:"):
             distro = "opensuse"
             version = image[len("opensuse:"):]
             latest = self.get_opensuse_latest_version(version)
             if latest:
-                if latest in OPENSUSE_VERSIONS:
-                    distro = OPENSUSE_VERSIONS[latest]
+                if latest in OPENSUSE:
+                    distro = OPENSUSE[latest]
                 return "{distro}:{latest}".format(**locals())
         if default is not None:
             return default
@@ -436,7 +436,7 @@ class DockerMirrorPackagesRepo:
             ver = ""
         if "." not in ver:
             latest = ""
-            for release in OPENSUSE_VERSIONS:
+            for release in OPENSUSE:
                 if release.startswith(ver):
                     logg.debug("release %s", release)
                     # opensuse:42.0 was before opensuse/leap:15.0
