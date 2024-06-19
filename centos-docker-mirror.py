@@ -811,10 +811,12 @@ def CENTOS_set(centos: str) -> str:
         distro, centos = centos.split(":", 1)
         DISTRO = distro
     if centos in BASE:
+        DISTRO = distro or "centos"
         CENTOS = centos
         logg.debug("SET CENT1: %s %s [%s]", DISTRO, CENTOS, centos)
         return CENTOS
     if centos in BASE.values():
+        DISTRO = distro or "centos"
         CENTOS = max([os for os in BASE if BASE[os] == centos])
         logg.debug("SET CENT2: %s %s [%s]", DISTRO, CENTOS, centos)
         return CENTOS
