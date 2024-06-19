@@ -38,39 +38,39 @@ support, the local docker mirrors continue to work.
 
 Tested repos are
 
- * localhost:5000/mirror-packages/**centos-repo:7.3.1611**       _(17.3GB)_
- * localhost:5000/mirror-packages/**centos-repo:7.4.1708**       _(13.2GB)_
- * localhost:5000/mirror-packages/**centos-repo:7.5.1804**       _(14.7GB)_
- * localhost:5000/mirror-packages/**centos-repo:7.7.1908**       _(14.6GB)_
- * localhost:5000/mirror-packages/**centos-repo:8.0.1905**       _(18.7GB)_
- * localhost:5000/mirror-packages/**centos-repo/main:7.9.2009**  _(15.1GB)_
- * localhost:5000/mirror-packages/**centos-repo/sclo:7.9.2009**  _(22.4GB)_
- * localhost:5000/mirror-packages/**centos-repo/main:8.3.2011**  _(18.6GB)_
- * localhost:5000/mirror-packages/**centos-repo/plus:8.3.2011**  _(21.6GB)_
- * localhost:5000/mirror-packages/**almalinux-repo/main:9.1**    _(22.3GB)_
- * localhost:5000/mirror-packages/**almalinux-repo/plus:9.1**    _(23.1GB)_
- * localhost:5000/mirror-packages/**epel-repo:7.x.1910**         _(39.4GB)_
- * localhost:5000/mirror-packages/**epel-repo:7.x.2012**         _(48.9GB)_
- * localhost:5000/mirror-packages/**epel-repo:8.x.2012**         _(20.6GB)_
- * localhost:5000/mirror-packages/**epel-repo:9.x.2303**         _(29.3GB)_
- * localhost:5000/mirror-packages/**opensuse-repo:42.3**         _(38.6GB)_
- * localhost:5000/mirror-packages/**opensuse-repo:15.0**         _(48.9GB)_
- * localhost:5000/mirror-packages/**opensuse-repo:15.1**         _(54.6GB)_
- * localhost:5000/mirror-packages/**opensuse-repo/main:15.2**    _(93.1GB)_
- * localhost:5000/mirror-packages/**opensuse-repo/update:15.2**   _(118GB)_
- * localhost:5000/mirror-packages/**opensuse-repo/main:15.3**    _(69.9GB)_
- * localhost:5000/mirror-packages/**opensuse-repo/update:15.3**  _(70.1GB)_
- * localhost:5000/mirror-packages/**opensuse-repo/main:15.4**    _(94.3GB)_
- * localhost:5000/mirror-packages/**opensuse-repo/update:15.4**  _(94.3GB)_
- * localhost:5000/mirror-packages/**ubuntu-repo:16.04**          _(74.7GB)_
- * localhost:5000/mirror-packages/**ubuntu-repo:18.04**          _(19.5GB)_
- * localhost:5000/mirror-packages/**ubuntu-repo/main:16.04**     _(74.7GB)_
- * localhost:5000/mirror-packages/**ubuntu-repo/universe:16.04**  _(186GB)_
- * localhost:5000/mirror-packages/**ubuntu-repo/main:18.04**     _(19.5GB)_
- * localhost:5000/mirror-packages/**ubuntu-repo/main:20.04**     _(25.5GB)_
- * localhost:5000/mirror-packages/**ubuntu-repo/universe:20.04**  _(125GB)_
- * localhost:5000/mirror-packages/**ubuntu-repo/main:22.04**       _(35GB)_
- * localhost:5000/mirror-packages/**ubuntu-repo/universe:22.04**  _(178GB)_
+| docker image                                  | size
+| --------------------------------------------- | ----
+| mirror-packages/ubuntu-repo/universe:24.04	| 134GB
+| mirror-packages/ubuntu-repo/restricted:24.04	| 30.6GB
+| mirror-packages/ubuntu-repo/main:24.04	| 27GB
+| mirror-packages/ubuntu-repo/universe:22.04	| 178GB
+| mirror-packages/ubuntu-repo/restricted:22.04	| 35GB
+| mirror-packages/ubuntu-repo/main:22.04	| 29.2GB
+| mirror-packages/ubuntu-repo/universe:20.04	| 198GB
+| mirror-packages/ubuntu-repo/restricted:20.04	| 111GB
+| mirror-packages/ubuntu-repo/main:20.04	| 107GB
+| mirror-packages/ubuntu-repo/restricted:18.04	| 26GB
+| mirror-packages/ubuntu-repo/main:18.04	| 25.8GB
+| mirror-packages/ubuntu-repo/universe:16.04	| 186GB
+| mirror-packages/ubuntu-repo/restricted:16.04	| 45.4GB
+| mirror-packages/ubuntu-repo/main:16.04	| 44.4GB
+| mirror-packages/epel-repo:9.x.2303	| 29.3GB
+| mirror-packages/epel-repo:8.x.2012	| 20.6GB
+| mirror-packages/epel-repo:7.x.2012	| 48.9GB
+| mirror-packages/almalinux-repo/plus:9.3	| 59.6GB
+| mirror-packages/almalinux-repo/main:9.3	| 26.1GB
+| mirror-packages/almalinux-repo/plus:9.1	| 23.1GB
+| mirror-packages/almalinux-repo/main:9.1	| 22.4GB
+| mirror-packages/centos-repo/sclo:7.9.2009	| 22.4GB
+| mirror-packages/centos-repo7:7.9.2009	| 22.4GB
+| mirror-packages/centos-repo/main:7.9.2009	| 15.1GB
+| mirror-packages/opensuse-repo/update:15.6	| 168GB
+| mirror-packages/opensuse-repo/main:15.6	| 168GB
+| mirror-packages/opensuse-repo/update:15.5	| 112GB
+| mirror-packages/opensuse-repo/main:15.5	| 70.8GB
+| mirror-packages/opensuse-repo/update:15.4	| 143GB
+| mirror-packages/opensuse-repo/main:15.4	| 59.8GB
+| mirror-packages/opensuse-repo/update:15.2	| 118GB
 
 Remember that the internet package repos contain updates for the last
 distribution release, so they do grow in size over time. As such the
