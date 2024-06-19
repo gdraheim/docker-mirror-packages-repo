@@ -1,6 +1,11 @@
 #! /usr/bin/python3
 from typing import Optional, Union, Tuple, Dict, List
 
+DIST: Dict[str, str]
+BASE: Dict[str, str]
+ALMA: Dict[str, str]
+OPENSUSE: Dict[str, str]
+
 def decodes(text: Optional[str]) -> Optional[str]: ...
 def decodes_(text: Union[str,bytes]) -> str: ...
 def output3(cmd: Union[str, List[str]], shell: bool = True, debug: bool = True) -> Tuple[str, str, int]: ...
