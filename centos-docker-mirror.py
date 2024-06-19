@@ -227,6 +227,13 @@ def distro_dir(distro: str, release: str, suffix: str = "") -> str:
     dirlink = path.join(repodir, dirname)
     if not path.isdir(repodir):
         os.mkdir(repodir)
+    if "-" in release:
+        major, dated = release.split("-", 1)
+        oldname = F"{distro}.{major}{suffix}"
+        oldlink = path.join(repodir, oldname)
+        if path.isdir(oldlink) and not path.exists(dirlink):
+            logg.info("%s >> %s", oldlink, dirlink)
+            os.symlink(oldname, dirlink)
     if path.islink(dirlink) and not path.isdir(dirlink):
         os.unlink(dirlink)
     if not path.islink(dirlink):
