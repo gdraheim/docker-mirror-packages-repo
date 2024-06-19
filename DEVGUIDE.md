@@ -97,12 +97,14 @@ For each new distro version
 ### make release
 * `make type`
 * `make style`
-*  check docker_mirror.tests.py if new distro versions were added
+*  check docker_mirror.tests.py if tests for new distro versions were added
 * `make check` # unittests for docker_mirror.py and dockerdir.py
 * `make uninstall` # may fail as "not installed"
 * `make install` 
 * `make uninstall`
 * `make version` # or `make version FOR=tomorrow`
+* `make sizes`
+  * and update table in README.md
 * update long description in README.md
 * update short description in setup.cfg
 * `make build`
