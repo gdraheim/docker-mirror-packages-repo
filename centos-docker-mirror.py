@@ -145,14 +145,14 @@ BASEVERSIONS["8.5.2111"] = "8.4.2105"  # image:centos/base
 
 def major(version: str) -> str:
     version = version or CENTOS
-    if len(version) == 1 or version[1] == ".":
+    if len(version) == 1 or version[1] in ".-":
         return version[0]
     return version[:1]
 def majorminor(version: str) -> str:
     version = version or CENTOS
-    if len(version) == 3 or version[3] == ".":
+    if len(version) == 3 or version[3] in ".-":
         return version[:3]
-    if len(version) == 4 or version[4] == ".":
+    if len(version) == 4 or version[4] in ".-":
         return version[:4]
     return version[:3]
 
@@ -169,7 +169,21 @@ def centos_make() -> None:
     centos_check()
     centos_tags()
 
+def centos_release(distro: str = NIX, centos: str = NIX) -> str:
+    """ this is a short version for the repo image"""
+    distro = distro or DISTRO
+    centos = centos or CENTOS
+    if "." in centos:
+        parts = centos.split(".")
+        major = parts[0]
+        minor = parts[1]
+        if "-" in minor:
+            minor = minor.split("-")[0]
+        return major + "." + minor
+    return centos
+
 def centos_baseversion(distro: str = NIX, centos: str = NIX) -> str:
+    """ this is a long version for the base image"""
     distro = distro or DISTRO
     centos = centos or CENTOS
     if centos in BASE:
@@ -579,6 +593,7 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
     centos_restore()
     centos_cleaner()
     baseimage = centos_baseimage(distro, centos)
+    rel = centos_release(distro, centos)
     scripts = repo_scripts()
     cname = F"{distro}-repo-{centos}"
     PORT = centos_main_port(distro, centos)
@@ -588,50 +603,53 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
     if PORT != 80:
         sh___(F"{docker} exec {cname} yum install -y openssl")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{R}")
-    if R != centos:
+    if R != rel:
+        sh___(F"{docker} exec {cname} ln -sv {R} /srv/repo/{rel}")
+    if R != centos and centos != rel:
         sh___(F"{docker} exec {cname} ln -sv {R} /srv/repo/{centos}")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
     base = "base"
     repo = IMAGESREPO
-    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{centos}")
+    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{rel}")
     for dist in dists:
         sx___(F"{docker} rm --force {cname}")
-        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo/{base}:{centos} sleep 9999")
+        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo/{base}:{rel} sleep 9999")
         for subdir in dists[dist]:
             pooldir = F"{repodir}/{distro}.{centos}/{subdir}"
             if path.isdir(pooldir):
                 sh___(F"{docker} cp {pooldir} {cname}:/srv/repo/{R}/")
                 base = dist
         if base == dist:
-            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{centos}")
+            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{rel}")
     sh___(F"{docker} rm --force {cname}")
-    sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{centos} {repo}/{distro}-repo:{centos}")
-    sh___(F"{docker} rmi {repo}/{distro}-repo/base:{centos}")  # untag non-packages base
+    sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{rel} {repo}/{distro}-repo:{rel}")
+    sh___(F"{docker} rmi {repo}/{distro}-repo/base:{rel}")  # untag non-packages base
     PORT2 = centos_http_port(distro, centos)
     CMD2 = str(centos_http_cmd(distro, centos)).replace("'", '"')
     if PORT != PORT2:
         # the upstream almalinux repository runs on https by default but we don't have their certificate anyway
         base2 = "http"  # !!
-        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo:{centos} sleep 9999")
-        sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/{distro}-repo/{base2}:{centos}")
+        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo:{rel} sleep 9999")
+        sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/{distro}-repo/{base2}:{rel}")
         sx___(F"{docker} rm --force {cname}")
     centos_restore()
-    return F"{repo}/{distro}-repo:{centos}"
+    return F"{repo}/{distro}-repo:{rel}"
 
-def centos_tags() -> None:
+def centos_tags(distro: str = NIX, centos: str = NIX) -> None:
+    distro = distro or DISTRO
+    centos = centos or CENTOS
     docker = DOCKER
-    distro = DISTRO
-    centos = CENTOS
     repo = IMAGESREPO
     name = F"{distro}-repo"
-    ver2 = re.sub("[.]\d+$", "", centos)
-    if ver2 != centos:
-        sh___(F"{docker} tag {repo}/{name}:{centos} {repo}/{name}:{ver2}")
-    ver1 = re.sub("[.]\d+$", "", ver2)
+    rel = centos_release(distro, centos)
+    ver2 = majorminor(centos)
+    if ver2 != rel:
+        sh___(F"{docker} tag {repo}/{name}:{rel} {repo}/{name}:{ver2}")
+    ver1 = major(ver2)
     if ver1 != ver2:
-        sh___(F"{docker} tag {repo}/{name}:{centos} {repo}/{name}:{ver1}")
-        sh___(F"{docker} tag {repo}/{name}:{centos} {repo}/{name}{ver1}:{centos}")
-        sh___(F"{docker} tag {repo}/{name}:{centos} {repo}/{name}{ver1}:latest")
+        sh___(F"{docker} tag {repo}/{name}:{rel} {repo}/{name}:{ver1}")
+        sh___(F"{docker} tag {repo}/{name}:{rel} {repo}/{name}{ver1}:{centos}")
+        sh___(F"{docker} tag {repo}/{name}:{rel} {repo}/{name}{ver1}:latest")
 
 def centos_cleaner() -> None:
     distro = DISTRO
