@@ -64,8 +64,8 @@ Tested repos are
 | mirror-packages/centos-repo/sclo:7.9.2009	| 22.4GB
 | mirror-packages/centos-repo7:7.9.2009	| 22.4GB
 | mirror-packages/centos-repo/main:7.9.2009	| 15.1GB
-| mirror-packages/opensuse-repo/update:15.6	| 168GB
-| mirror-packages/opensuse-repo/main:15.6	| 168GB
+| mirror-packages/opensuse-repo/update:15.6	| 210GB
+| mirror-packages/opensuse-repo/main:15.6	| 205GB
 | mirror-packages/opensuse-repo/update:15.5	| 112GB
 | mirror-packages/opensuse-repo/main:15.5	| 70.8GB
 | mirror-packages/opensuse-repo/update:15.4	| 143GB
