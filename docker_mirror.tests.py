@@ -89,8 +89,8 @@ def runs(cmd: Union[str, List[str]], shell: bool = True) -> _subprocess:
 
 def ip_container(name: str) -> Optional[str]:
     docker = DOCKER
-    cmd = "{docker} inspect {name}"
-    proc = runs(cmd.format(**locals()))
+    cmd = F"{docker} inspect {name}"
+    proc = runs(cmd)
     if proc.rc:
         logg.debug("%s not found: rc=%i\n\t%s", name, proc.rc, proc.err)
         return None
@@ -274,14 +274,14 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         if DRYRUN: return
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-        cmd = "{docker} run -d --name test-repo {prefix}/{repo_image}"
-        logg.warning("%s", cmd.format(**locals()))
-        sh____(cmd.format(**locals()))
+        cmd = F"{docker} run -d --name test-repo {prefix}/{repo_image}"
+        logg.warning("%s", cmd)
+        sh____(cmd)
         mirror_ip = ip_container("test-repo")
         add_host = "--add-host mirrorlist.centos.org:{mirror_ip}".format(**locals())
-        cmd = "{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
-        logg.warning("%s", cmd.format(**locals()))
-        sh____(cmd.format(**locals()))
+        cmd = F"{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
+        logg.warning("%s", cmd)
+        sh____(cmd)
         # sh____("{docker} exec test-box1 yum install -y python-docker-py") # all /extras are now in epel
         sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
@@ -296,14 +296,14 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         if DRYRUN: return
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-        cmd = "{docker} run -d --name test-repo {prefix}/{repo_image}"
-        logg.warning("%s", cmd.format(**locals()))
-        sh____(cmd.format(**locals()))
+        cmd = F"{docker} run -d --name test-repo {prefix}/{repo_image}"
+        logg.warning("%s")
+        sh____(cmd)
         mirror_ip = ip_container("test-repo")
         add_host = "--add-host mirrorlist.centos.org:{mirror_ip}".format(**locals())
-        cmd = "{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
-        logg.warning("%s", cmd.format(**locals()))
-        sh____(cmd.format(**locals()))
+        cmd = F"{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
+        logg.warning("%s", cmd)
+        sh____(cmd)
         # sh____("{docker} exec test-box1 yum install -y python-docker-py") # all /extras are now in epel
         sh____("{docker} exec test-box1 yum install -y python2-numpy".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
@@ -318,14 +318,14 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         if DRYRUN: return
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-        cmd = "{docker} run -d --name test-repo {prefix}/{repo_image}"
-        logg.warning("%s", cmd.format(**locals()))
-        sh____(cmd.format(**locals()))
+        cmd = F"{docker} run -d --name test-repo {prefix}/{repo_image}"
+        logg.warning("%s", cmd)
+        sh____(cmd)
         mirror_ip = ip_container("test-repo")
         add_host = "--add-host mirrors.almalinux.org:{mirror_ip}".format(**locals())
-        cmd = "{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
-        logg.warning("%s", cmd.format(**locals()))
-        sh____(cmd.format(**locals()))
+        cmd = F"{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
+        logg.warning("%s", cmd)
+        sh____(cmd)
         retry = "--connect-timeout 5 --retry 3 --retry-connrefused"
         sh____("{docker} exec test-box1 curl -k {retry} https://mirrors.almalinux.org".format(**locals()))
         sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >>/etc/yum.conf'".format(**locals()))
@@ -342,14 +342,14 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         if DRYRUN: return
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-        cmd = "{docker} run -d --name test-repo {prefix}/{repo_image}"
-        logg.warning("%s", cmd.format(**locals()))
-        sh____(cmd.format(**locals()))
+        cmd = F"{docker} run -d --name test-repo {prefix}/{repo_image}"
+        logg.warning("%s", cmd)
+        sh____(cmd)
         mirror_ip = ip_container("test-repo")
         add_host = "--add-host mirrors.almalinux.org:{mirror_ip}".format(**locals())
-        cmd = "{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
-        logg.warning("%s", cmd.format(**locals()))
-        sh____(cmd.format(**locals()))
+        cmd = F"{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
+        logg.warning("%s", cmd)
+        sh____(cmd)
         retry = "--connect-timeout 5 --retry 3 --retry-connrefused"
         sh____("{docker} exec test-box1 curl -k {retry} https://mirrors.almalinux.org".format(**locals()))
         sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >>/etc/yum.conf'".format(**locals()))
@@ -366,14 +366,14 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         if DRYRUN: return
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-        cmd = "{docker} run -d --name test-repo {prefix}/{repo_image}"
-        logg.warning("%s", cmd.format(**locals()))
-        sh____(cmd.format(**locals()))
+        cmd = F"{docker} run -d --name test-repo {prefix}/{repo_image}"
+        logg.warning("%s", cmd)
+        sh____(cmd)
         mirror_ip = ip_container("test-repo")
         add_host = "--add-host mirrors.almalinux.org:{mirror_ip}".format(**locals())
-        cmd = "{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
-        logg.warning("%s", cmd.format(**locals()))
-        sh____(cmd.format(**locals()))
+        cmd = F"{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600"
+        logg.warning("%s", cmd)
+        sh____(cmd)
         retry = "--connect-timeout 5 --retry 3 --retry-connrefused"
         sh____("{docker} exec test-box1 curl -k {retry} https://mirrors.almalinux.org".format(**locals()))
         sh____("{docker} exec test-box1 bash -c 'echo sslverify=false >>/etc/yum.conf'".format(**locals()))
