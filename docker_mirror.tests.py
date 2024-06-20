@@ -9,7 +9,7 @@ __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.6253"
 
-from typing import Union, Optional, List, cast
+from typing import Union, Optional, List, Dict, cast
 import sys
 import subprocess
 import collections
@@ -34,6 +34,15 @@ MR151 = True  # modify repos of opensuse/leap:15.1
 MR152 = True
 
 _docker_mirror = "./docker_mirror.py"
+
+TAKE: Dict[str, str] = {}
+TAKE["ubuntu:14.04"] = "ubuntu:utopic-20150319"
+TAKE["ubuntu:16.04"] = "ubuntu:xenial-20160422"
+TAKE["ubuntu:18.04"] = "ubuntu:bionic-20180410"
+TAKE["ubuntu:20.04"] = "ubuntu:focal-20200606"
+TAKE["ubuntu:22.04"] = "ubuntu:jammy-20220428"
+TAKE["ubuntu:24.04"] = "ubuntu:noble-20240530"
+# ubuntu mirrors are often older than the newest docker images
 
 def decodes(text: Union[str, bytes]) -> str:
     if text is None: return None
@@ -372,13 +381,16 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
     def test_11404_ubuntu(self) -> None:
+        version="14.04"
         prefix = PREFIX
         docker = DOCKER
-        repo_image = "ubuntu-repo:14.04"
-        box1_image = "ubuntu:14.04"
+        repo_image = F"ubuntu-repo:{version}"
+        box1_image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
         if DRYRUN: return
+        if box1_image != F"ubuntu:{version}":
+            sx____(F"{docker} pull {box1_image}")
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
@@ -391,13 +403,16 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
     def test_11604_ubuntu(self) -> None:
+        version="16.04"
         prefix = PREFIX
         docker = DOCKER
-        repo_image = "ubuntu-repo:16.04"
-        box1_image = "ubuntu:16.04"
+        repo_image = F"ubuntu-repo:{version}"
+        box1_image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
         if DRYRUN: return
+        if box1_image != F"ubuntu:{version}":
+            sx____(F"{docker} pull {box1_image}")
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
@@ -410,13 +425,16 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
     def test_11804_ubuntu(self) -> None:
+        version="18.04"
         prefix = PREFIX
         docker = DOCKER
-        repo_image = "ubuntu-repo:18.04"
-        box1_image = "ubuntu:18.04"
+        repo_image = F"ubuntu-repo:{version}"
+        box1_image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
         if DRYRUN: return
+        if box1_image != F"ubuntu:{version}":
+            sx____(F"{docker} pull {box1_image}")
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
@@ -429,13 +447,16 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
     def test_12004_ubuntu(self) -> None:
+        version="20.04"
         prefix = PREFIX
         docker = DOCKER
-        repo_image = "ubuntu-repo:20.04"
-        box1_image = "ubuntu:20.04"
+        repo_image = F"ubuntu-repo:{version}"
+        box1_image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
         if DRYRUN: return
+        if box1_image != F"ubuntu:{version}":
+            sx____(F"{docker} pull {box1_image}")
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
@@ -449,13 +470,16 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
     def test_12204_ubuntu(self) -> None:
+        version="22.04"
         prefix = PREFIX
         docker = DOCKER
-        repo_image = "ubuntu-repo:22.04"
-        box1_image = "ubuntu:22.04"
+        repo_image = F"ubuntu-repo:{version}"
+        box1_image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
         if DRYRUN: return
+        if box1_image != F"ubuntu:{version}":
+            sx____(F"{docker} pull {box1_image}")
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
@@ -468,13 +492,16 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
     def test_12404_ubuntu(self) -> None:
+        version="24.04"
         prefix = PREFIX
         docker = DOCKER
-        repo_image = "ubuntu-repo:22.04"
-        box1_image = "ubuntu:22.04"
+        repo_image = F"ubuntu-repo:{version}"
+        box1_image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
         if DRYRUN: return
+        if box1_image != F"ubuntu:{version}":
+            sx____(F"{docker} pull {box1_image}")
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
         sh____("{docker} run -d --name test-repo {prefix}/{repo_image}".format(**locals()))
@@ -482,6 +509,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         add_host = "--add-host archive.ubuntu.com:{mirror_ip} --add-host security.ubuntu.com:{mirror_ip}".format(**locals())
         sh____("{docker} run -d --name test-box1 {add_host} {box1_image} sleep 600".format(**locals()))
         sh____("{docker} exec test-box1 apt-get update".format(**locals()))
+        ## sh____("{docker} exec test-box1 apt-get remove -y perl".format(**locals()))
         # sh____("{docker} exec test-box1 apt-get install -y python-docker".format(**locals()))
         sh____("{docker} exec test-box1 apt-get install -y apache2".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
@@ -580,10 +608,9 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         # if MR152:
         #   sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-update".format(**locals()))
         sh____("{docker} exec test-box1 zypper --no-gpg-checks refresh".format(**locals()))
-        sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y python-docker-py".format(**locals()))
+        sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y netperf".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-        # note that python-docker-py is gone in later distro versions
     def test_15153_opensuse(self) -> None:
         prefix = PREFIX
         docker = DOCKER
@@ -601,10 +628,9 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         # if MR152:
         #   sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-update".format(**locals()))
         sh____("{docker} exec test-box1 zypper --no-gpg-checks refresh".format(**locals()))
-        sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y python-docker-py".format(**locals()))
+        sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y netperf".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-        # note that python-docker-py is gone in later distro versions
     def test_15154_opensuse(self) -> None:
         prefix = PREFIX
         docker = DOCKER
@@ -622,10 +648,9 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         # if MR152:
         #   sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-update".format(**locals()))
         sh____("{docker} exec test-box1 zypper --no-gpg-checks refresh".format(**locals()))
-        sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y python-docker-py".format(**locals()))
+        sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y netperf".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-        # note that python-docker-py is gone in later distro versions
     def test_15155_opensuse(self) -> None:
         prefix = PREFIX
         docker = DOCKER
@@ -643,10 +668,9 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         # if MR152:
         #   sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-update".format(**locals()))
         sh____("{docker} exec test-box1 zypper --no-gpg-checks refresh".format(**locals()))
-        sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y python-docker-py".format(**locals()))
+        sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y netperf".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-        # note that python-docker-py is gone in later distro versions
     def test_15156_opensuse(self) -> None:
         prefix = PREFIX
         docker = DOCKER
@@ -664,10 +688,9 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         # if MR152:
         #   sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-update".format(**locals()))
         sh____("{docker} exec test-box1 zypper --no-gpg-checks refresh".format(**locals()))
-        sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y python-docker-py".format(**locals()))
+        sh____("{docker} exec test-box1 zypper --no-gpg-checks install -y netperf".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sx____("{docker} rm -f test-repo".format(**locals()))
-        # note that python-docker-py is gone in later distro versions
     def test_20000_centos(self) -> None:
         prefix = PREFIX
         docker = DOCKER
@@ -851,9 +874,10 @@ class DockerMirrorPackagesTest(unittest.TestCase):
             sx____("{docker} rm -f test-box1".format(**locals()))
             sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_21404_ubuntu(self) -> None:
+        version="14.04"
         docker = DOCKER
         mirror = _docker_mirror
-        image = "ubuntu:14.04"
+        image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         repo_image = output("{mirror} repo {image}".format(**locals()))
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
@@ -868,9 +892,10 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_21604_ubuntu(self) -> None:
+        version="16.04"
         docker = DOCKER
         mirror = _docker_mirror
-        image = "ubuntu:16.04"
+        image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         repo_image = output("{mirror} repo {image}".format(**locals()))
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
@@ -885,9 +910,10 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_21804_ubuntu(self) -> None:
+        version="18.04"
         docker = DOCKER
         mirror = _docker_mirror
-        image = "ubuntu:18.04"
+        image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         repo_image = output("{mirror} repo {image}".format(**locals()))
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
@@ -902,9 +928,10 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_22004_ubuntu(self) -> None:
+        version="20.04"
         docker = DOCKER
         mirror = _docker_mirror
-        image = "ubuntu:22.04"
+        image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         repo_image = output("{mirror} repo {image}".format(**locals()))
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
@@ -920,9 +947,10 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_22204_ubuntu(self) -> None:
+        version="22.04"
         docker = DOCKER
         mirror = _docker_mirror
-        image = "ubuntu:22.04"
+        image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         repo_image = output("{mirror} repo {image}".format(**locals()))
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
@@ -937,9 +965,10 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
     def test_22404_ubuntu(self) -> None:
+        version="24.04"
         docker = DOCKER
         mirror = _docker_mirror
-        image = "ubuntu:24.04"
+        image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         repo_image = output("{mirror} repo {image}".format(**locals()))
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
@@ -1117,6 +1146,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
             sh____("{docker} exec test-box1 zypper lr".format(**locals()))
             sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-oss repo-non-oss".format(**locals()))
             sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-update repo-update-non-oss".format(**locals()))
+            sh____("{docker} exec test-box1 zypper mr --no-gpgcheck repo-backports-update repo-sle-update".format(**locals()))
         sh____("{docker} exec test-box1 zypper install -y python python-xml".format(**locals()))
         sx____("{docker} rm -f test-box1".format(**locals()))
         sh____("{mirror} stop {image} --add-host".format(**locals()))
