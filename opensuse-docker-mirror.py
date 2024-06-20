@@ -54,13 +54,13 @@ OPENSUSE["16.0"] = "opensuse/leap"
 XXLEAP: List[str] = []  # ["15.2"] # obsolete, using repodata-fix.py now
 LEAP: str = "15.5"
 
-RSYNC_SUSE = "rsync://suse.uni-leipzig.de/opensuse-full/opensuse"
-RSYNC_SUSE2 = "rsync://ftp.tu-chemnitz.de/pub/linux/opensuse"
+RSYNC_SUSE1 = "rsync://suse.uni-leipzig.de/opensuse-full/opensuse" # incomplete for 15.6
+RSYNC_SUSE2 = "rsync://ftp.tu-chemnitz.de/ftp/pub/linux/opensuse"
 RSYNC_SUSE3 = "rsync://mirror.cs.upb.de/opensuse"
 
 DISTRO = "opensuse"
 MIRRORS: Dict[str, List[str]] = {}
-MIRRORS["opensuse"] = [RSYNC_SUSE, RSYNC_SUSE2, RSYNC_SUSE3]
+MIRRORS["opensuse"] = [RSYNC_SUSE2, RSYNC_SUSE3]
 
 PYTHON = "python3"
 RSYNC = "rsync"
@@ -76,7 +76,7 @@ SUBDIRS15["distribution"] = ["oss", "non-oss"]
 SUBDIRS15["update"] = ["oss", "non-oss", "backports", "sle"]
 
 FILTERS15: Dict[str, List[str]] = OrderedDict()
-FILTERS15["non-oss"] = ["x86_64", "noarch", "strc", "nosrc"]
+FILTERS15["non-oss"] = ["strc", "nosrc"]
 FILTERS15["sle"] = ["kernel-*", "eclipse-*", "cross-*"]
 
 def opensuse_make() -> None:
