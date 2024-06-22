@@ -382,11 +382,11 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____(F"{docker} rm -f test-box1")
         sx____(F"{docker} rm -f test-repo")
     def test_11404_ubuntu(self) -> None:
-        version="14.04"
+        version = "14.04"
         prefix = PREFIX
         docker = DOCKER
         repo_image = F"ubuntu-repo:{version}"
-        box1_image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
+        box1_image = TAKE.get(F"ubuntu:{version}", F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
         if DRYRUN: return
@@ -404,11 +404,11 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____(F"{docker} rm -f test-box1")
         sx____(F"{docker} rm -f test-repo")
     def test_11604_ubuntu(self) -> None:
-        version="16.04"
+        version = "16.04"
         prefix = PREFIX
         docker = DOCKER
         repo_image = F"ubuntu-repo:{version}"
-        box1_image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
+        box1_image = TAKE.get(F"ubuntu:{version}", F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
         if DRYRUN: return
@@ -426,11 +426,11 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____(F"{docker} rm -f test-box1")
         sx____(F"{docker} rm -f test-repo")
     def test_11804_ubuntu(self) -> None:
-        version="18.04"
+        version = "18.04"
         prefix = PREFIX
         docker = DOCKER
         repo_image = F"ubuntu-repo:{version}"
-        box1_image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
+        box1_image = TAKE.get(F"ubuntu:{version}", F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
         if DRYRUN: return
@@ -448,11 +448,11 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____(F"{docker} rm -f test-box1")
         sx____(F"{docker} rm -f test-repo")
     def test_12004_ubuntu(self) -> None:
-        version="20.04"
+        version = "20.04"
         prefix = PREFIX
         docker = DOCKER
         repo_image = F"ubuntu-repo:{version}"
-        box1_image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
+        box1_image = TAKE.get(F"ubuntu:{version}", F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
         if DRYRUN: return
@@ -471,11 +471,11 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____(F"{docker} rm -f test-box1")
         sx____(F"{docker} rm -f test-repo")
     def test_12204_ubuntu(self) -> None:
-        version="22.04"
+        version = "22.04"
         prefix = PREFIX
         docker = DOCKER
         repo_image = F"ubuntu-repo:{version}"
-        box1_image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
+        box1_image = TAKE.get(F"ubuntu:{version}", F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
         if DRYRUN: return
@@ -493,11 +493,11 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____(F"{docker} rm -f test-box1")
         sx____(F"{docker} rm -f test-repo")
     def test_12404_ubuntu(self) -> None:
-        version="24.04"
+        version = "24.04"
         prefix = PREFIX
         docker = DOCKER
         repo_image = F"ubuntu-repo:{version}"
-        box1_image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
+        box1_image = TAKE.get(F"ubuntu:{version}", F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         if not image_exists(prefix, repo_image): self.skipTest("have no " + repo_image)
         if DRYRUN: return
@@ -875,10 +875,10 @@ class DockerMirrorPackagesTest(unittest.TestCase):
             sx____(F"{docker} rm -f test-box1")
             sh____(F"{mirror} stop {image} --add-host")
     def test_21404_ubuntu(self) -> None:
-        version="14.04"
+        version = "14.04"
         docker = DOCKER
         mirror = _docker_mirror
-        image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
+        image = TAKE.get(F"ubuntu:{version}", F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         repo_image = output(F"{mirror} repo {image}")
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
@@ -893,10 +893,10 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____(F"{docker} rm -f test-box1")
         sh____(F"{mirror} stop {image} --add-host")
     def test_21604_ubuntu(self) -> None:
-        version="16.04"
+        version = "16.04"
         docker = DOCKER
         mirror = _docker_mirror
-        image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
+        image = TAKE.get(F"ubuntu:{version}", F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         repo_image = output(F"{mirror} repo {image}")
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
@@ -911,10 +911,10 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____(F"{docker} rm -f test-box1")
         sh____(F"{mirror} stop {image} --add-host")
     def test_21804_ubuntu(self) -> None:
-        version="18.04"
+        version = "18.04"
         docker = DOCKER
         mirror = _docker_mirror
-        image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
+        image = TAKE.get(F"ubuntu:{version}", F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         repo_image = output(F"{mirror} repo {image}")
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
@@ -929,10 +929,10 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____(F"{docker} rm -f test-box1")
         sh____(F"{mirror} stop {image} --add-host")
     def test_22004_ubuntu(self) -> None:
-        version="20.04"
+        version = "20.04"
         docker = DOCKER
         mirror = _docker_mirror
-        image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
+        image = TAKE.get(F"ubuntu:{version}", F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         repo_image = output(F"{mirror} repo {image}")
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
@@ -948,10 +948,10 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____(F"{docker} rm -f test-box1")
         sh____(F"{mirror} stop {image} --add-host")
     def test_22204_ubuntu(self) -> None:
-        version="22.04"
+        version = "22.04"
         docker = DOCKER
         mirror = _docker_mirror
-        image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
+        image = TAKE.get(F"ubuntu:{version}", F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         repo_image = output(F"{mirror} repo {image}")
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
@@ -966,10 +966,10 @@ class DockerMirrorPackagesTest(unittest.TestCase):
         sx____(F"{docker} rm -f test-box1")
         sh____(F"{mirror} stop {image} --add-host")
     def test_22404_ubuntu(self) -> None:
-        version="24.04"
+        version = "24.04"
         docker = DOCKER
         mirror = _docker_mirror
-        image = TAKE.get(F"ubuntu:{version}",F"ubuntu:{version}")
+        image = TAKE.get(F"ubuntu:{version}", F"ubuntu:{version}")
         if not os.path.exists(DOCKER_SOCKET): self.skipTest("docker-base test")
         repo_image = output(F"{mirror} repo {image}")
         if not image_exist(repo_image): self.skipTest("have no " + repo_image)
