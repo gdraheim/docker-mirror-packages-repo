@@ -83,6 +83,7 @@ nolinux += ["linux-lowlatency*.deb", "linux-kvm*.deb", "linux-generic*.deb", "li
 nolinux += ["linux-risc*.deb", "linux-meta*.deb", "linux-doc*.deb", "linux-tools*.deb"]
 nolinux += ["linux-gcp*.deb", "linux-gke*.deb", "linux-azure*.deb", "linux-oem*.deb", ]
 nolinux += ["linux-hwe*.deb", "linux-aws*.deb", "linux-intel*.deb", "linux-ibm*.deb", ]
+nodrivers = ["nvidia-*.deb", "libnvidia*.deb"]
 
 REPOS = UPDATES_REPOS
 DOCKER = "docker"
@@ -276,9 +277,14 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
                 filename = re.sub("Filename: *pool/", "", line)
                 filenames += 1
                 skip = False
-                for parts in nolinux:
-                    if fnmatch(filename, parts): skip = True
-                    if fnmatch(filename, "*/" + parts): skip = True
+                if "/linux" in filename:
+                    for parts in nolinux:
+                        if fnmatch(filename, parts): skip = True
+                        if fnmatch(filename, "*/" + parts): skip = True
+                if True:
+                    for parts in nodrivers:
+                        if fnmatch(filename, parts): skip = True
+                        if fnmatch(filename, "*/" + parts): skip = True
                 if not skip:
                     print(filename, file=f)
                     syncing += 1
