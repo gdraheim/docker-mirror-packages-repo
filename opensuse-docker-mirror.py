@@ -40,8 +40,8 @@ DATADIRS = [REPODATADIR,
             "/dock/docker-mirror-packages"]
 
 OPENSUSE: Dict[str, str] = {}
-OPENSUSE["13.2"] = "opensuse" # no docker image
-OPENSUSE["42.2"] = "opensuse/leap" # docker image removed
+OPENSUSE["13.2"] = "opensuse"  # no docker image
+OPENSUSE["42.2"] = "opensuse/leap"  # docker image removed
 OPENSUSE["42.3"] = "opensuse/leap"
 OPENSUSE["15.0"] = "opensuse/leap"
 OPENSUSE["15.1"] = "opensuse/leap"
@@ -54,7 +54,7 @@ OPENSUSE["16.0"] = "opensuse/leap"
 XXLEAP: List[str] = []  # ["15.2"] # obsolete, using repodata-fix.py now
 LEAP: str = "15.5"
 
-RSYNC_SUSE1 = "rsync://suse.uni-leipzig.de/opensuse-full/opensuse" # incomplete for 15.6
+RSYNC_SUSE1 = "rsync://suse.uni-leipzig.de/opensuse-full/opensuse"  # incomplete for 15.6
 RSYNC_SUSE2 = "rsync://ftp.tu-chemnitz.de/ftp/pub/linux/opensuse"
 RSYNC_SUSE3 = "rsync://mirror.cs.upb.de/opensuse"
 
