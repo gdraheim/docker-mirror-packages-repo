@@ -97,9 +97,9 @@ untag:
 # ..............................................
 
 K=
-test_%: ; ./docker_mirror.tests.py $@ -vv $K
-check: ; ./docker_mirror.tests.py -vv $K
-dry precheck: ; ./docker_mirror.tests.py -vv $K --dryrun
+test_%: ; ./docker_mirror.tests.py $@ -vv $V $K 
+check: ; ./docker_mirror.tests.py -vv $V $K
+dry precheck: ; ./docker_mirror.tests.py -vv $V $K --dryrun
 
 tests: ; $(PYTHON3) dockerdir-tests.py $K
 
