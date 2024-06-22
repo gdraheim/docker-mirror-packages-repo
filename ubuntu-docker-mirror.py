@@ -76,7 +76,13 @@ UNIVERSE_REPOS = ["main", "restricted", "universe"]
 MULTIVERSE_REPOS = ["main", "restricted", "universe", "multiverse"]
 AREAS = {"1": "", "2": "-updates", "3": "-backports", "4": "-security"}
 
-UBUNTU_XXX = ["linux-image*", "linux-module*", "linux-objects*", "universe/g/gcc-*-cross*"]
+nolinux = ["linux-image*.deb", "linux-module*.deb", "linux-objects*.deb", "linux-source*.deb"]
+nolinux += ["linux-restricted*.deb", "linux-signed*.deb", "linux-buildinfo*.deb", ]
+nolinux += ["linux-oracle*.deb", "linux-headers*.deb", "linux-virtual*.deb", "linux-cloud*.deb"]
+nolinux += ["linux-lowlatency*.deb", "linux-kvm*.deb", "linux-generic*.deb", "linux-crashdump*.deb"]
+nolinux += ["linux-risc*.deb", "linux-meta*.deb", "linux-doc*.deb", "linux-tools*.deb"]
+nolinux += ["linux-gcp*.deb", "linux-gke*.deb", "linux-azure*.deb", "linux-oem*.deb", ]
+nolinux += ["linux-hwe*.deb", "linux-aws*.deb", "linux-intel*.deb", "linux-ibm*.deb", ]
 
 REPOS = UPDATES_REPOS
 DOCKER = "docker"
@@ -178,6 +184,25 @@ def ubuntu_du(suffix: str = "") -> str:
         sh___(F"du -sh {dirpath}")
     return dirpath
 
+def ubuntu_nolinux(suffix: str = "") -> str:
+    distro = DISTRO
+    ubuntu = UBUNTU
+    repodir = REPODIR
+    dirpath = F"{repodir}/{distro}.{ubuntu}{suffix}/."
+    logg.info(F"dirpath {dirpath}")
+    for root, dirs, files in os.walk(dirpath):
+        for name in files:
+            if name.startswith("linux"):
+                filename = os.path.join(root, name)
+                skip = False
+                for parts in nolinux:
+                    if fnmatch(filename, parts): skip = True
+                    if fnmatch(filename, "*/" + parts): skip = True
+                if skip:
+                    logg.warning("remove %s", filename)
+                    os.unlink(filename)
+    return ""
+
 def ubuntu_sync_base_1() -> None: ubuntu_sync_base(dist=DIST[UBUNTU])
 def ubuntu_sync_base_2() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-updates")
 def ubuntu_sync_base_3() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-backports")
@@ -199,7 +224,7 @@ def ubuntu_sync_base(dist: str) -> None:
     distro = DISTRO
     mirror = MIRRORS[distro][0]
     options = "--ignore-times --files-from=" + tmpfile
-    # excludes = " ".join(["--exclude '%s'" % parts for parts in UBUNTU_XXX])
+    # excludes = " ".join(["--exclude '%s'" % parts for parts in nolinux])
     sh___(F"{rsync} -v {mirror}/dists/{dist} {repodir}/{distro}.{ubuntu}/dists/{dist} {options}")
 
 def when(levels: str, repos: List[str]) -> List[str]: return [item for item in levels.split(",") if item and item in repos]
@@ -232,7 +257,7 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
     if not path.isdir(maindir): os.makedirs(maindir)
     rsync = RSYNC
     mirror = MIRRORS[distro][0]
-    # excludes = " ".join(["--exclude '%s'" % parts for parts in UBUNTU_XXX])
+    # excludes = " ".join(["--exclude '%s'" % parts for parts in nolinux])
     options = "--ignore-times"
     sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-amd64 {maindir} {options}")
     sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-i386  {maindir} {options}")
@@ -251,7 +276,7 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
                 filename = re.sub("Filename: *pool/", "", line)
                 filenames += 1
                 skip = False
-                for parts in UBUNTU_XXX:
+                for parts in nolinux:
                     if fnmatch(filename, parts): skip = True
                     if fnmatch(filename, "*/" + parts): skip = True
                 if not skip:
@@ -261,7 +286,7 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
     pooldir = F"{repodir}/{distro}.{ubuntu}/pools/{dist}/{main}/pool"
     if not path.isdir(pooldir): os.makedirs(pooldir)
     if when:
-        # excludes = " ".join(["--exclude '%s'" % parts for parts in UBUNTU_XXX])
+        # instead of {exlude} we have nolinux filtered in the Packages above
         options = "--size-only"
         sh___(F"{rsync} -rv {mirror}/pool {pooldir} {options} --files-from={tmpfile}")
 
