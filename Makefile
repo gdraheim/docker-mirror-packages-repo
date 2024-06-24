@@ -19,6 +19,7 @@ version:
 	$$f; done; }
 	@ grep ^__version__ $(VERSIONFILES)
 
+DOCKER=docker
 PYTHON2=python
 PYTHON3=python3
 TWINE=twine
@@ -29,52 +30,59 @@ include ubuntu-main-makefile.mk
 include opensuse-main-makefile.mk
 
 repos:
-	docker images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" | grep /mirror-packages/
+	$(DOCKER) images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" | grep /mirror-packages/
 prune:
-	: docker volume prune
-	docker volume list | cut -c 8- | xargs -r docker volume rm 
+	: $(DOCKER) volume prune
+	$(DOCKER) volume list | cut -c 8- | xargs -r docker volume rm 
 
 removes: removes1 removes2 removes3 removes4
-removes1:
-	docker images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
+removes1 removes-opensuse:
+	$(DOCKER) ps -q -f status=exited | xargs -r docker rm
+	$(DOCKER) images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
 	| grep /mirror-packages/opensuse-repo | cut -f 2 | xargs -r docker rmi
-removes2:
-	docker images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
+removes2 removes-ubuntu:
+	$(DOCKER) ps -q -f status=exited | xargs -r docker rm
+	$(DOCKER) images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
 	| grep /mirror-packages/ubuntu-repo | cut -f 2 | xargs -r docker rmi
-removes3:
-	docker images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
+removes3 removes-centos:
+	$(DOCKER) ps -q -f status=exited | xargs -r docker rm
+	$(DOCKER) images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
 	| grep /mirror-packages/centos-repo | cut -f 2 | xargs -r docker rmi
-	docker images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
+	$(DOCKER) images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
 	| grep /mirror-packages/almalinux-repo | cut -f 2 | xargs -r docker rmi
-removes4:
-	docker images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
+removes4 removes-epel:
+	$(DOCKER) ps -q -f status=exited | xargs -r docker rm
+	$(DOCKER) images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
 	| grep /mirror-packages/epel-repo | cut -f 2 | xargs -r docker rmi
 
 rebuild: rebuild1 rebuild2 rebuild3 rebuild4
-rebuild1:
-	make opensuserepo.15.2
-	make opensuserepo.15.4
-	make opensuserepo.15.5
-	make opensuserepo.15.6
-rebuild2:
-	make ubunturepo.16.04
-	make ubunturepo.18.04
-	make universerepo.20.04
-	make universerepo.22.04
-	make universerepo.24.04
-rebuild3:
-	make centosrepo.7.7
-	make centosrepo.7.9
-	make almarepo.9.1
-	make almarepo.9.3
-rebuild4:
-	make epelrepo.7
-	make epelrepo.8
-	make epelrepo.9
+rebuild1 opensuse-rebuild:
+	$(MAKE) removes-opensuse
+	$(MAKE) opensuserepo.15.2
+	$(MAKE) opensuserepo.15.4
+	$(MAKE) opensuserepo.15.5
+	$(MAKE) opensuserepo.15.6
+rebuild2 ubuntu-rebuild:
+	$(MAKE) removes-ubuntu
+	$(MAKE) ubunturepo.16.04
+	$(MAKE) ubunturepo.18.04
+	$(MAKE) universerepo.20.04
+	$(MAKE) universerepo.22.04
+	$(MAKE) universerepo.24.04
+rebuild3 centos-rebuild:
+	$(MAKE) removes-centos
+	$(MAKE) centosrepo.7.9
+	: $(MAKE) centosrepo.8.5
+	$(MAKE) almarepo.9.1
+	$(MAKE) almarepo.9.3
+rebuild4 epel-rebuild:
+	$(MAKE) removes-epel
+	$(MAKE) epelrepo.7
+	: $(MAKE) epelrepo.8
+	$(MAKE) epelrepo.9
 
-
-universe:
-	cd repo.d/. || exit 1 ; for i in ubuntu*; do du -sh "$$i/."; done
+du: ;  cd repo.d/. || exit 1 ; for i in *.*; do if test -d "$$i"; then du -sh "$$i/."; fi ; done
+universe: ; cd repo.d/. || exit 1 ; for i in ubuntu*; do du -sh "$$i/."; done
 
 size:
 	@ echo "| docker image                          | size"
