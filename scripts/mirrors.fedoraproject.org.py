@@ -5,7 +5,7 @@ from __future__ import print_function
 __copyright__ = "(C) 2018-2024 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.7.6261"
+__version__ = "1.7.6262"
 
 import optparse
 import os
