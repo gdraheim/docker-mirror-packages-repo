@@ -875,7 +875,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=max(0, logging.WARNING - opt.verbose * 10))
     ADDHOSTS = opt.add_hosts
     ADDEPEL = opt.epel  # centos epel-repo
-    UPDATES = opt.updates
+    # UPDATES = opt.updates
     UNIVERSE = opt.universe  # ubuntu universe repo
     LOCAL = opt.local
     DOCKER_MIRROR_CONFIG = opt.configfile
