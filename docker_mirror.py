@@ -849,7 +849,7 @@ def repo_scripts():
 
 if __name__ == "__main__":
     from argparse import ArgumentParser, HelpFormatter
-    cmdline = ArgumentParser(formatter_class=lambda prog: HelpFormatter(prog, max_help_position=36, width=81),
+    cmdline = ArgumentParser(formatter_class=lambda prog: HelpFormatter(prog, max_help_position=36, width=81),  # type: ignore[arg-type]
                              description="""starts local containers representing mirrors of package repo repositories 
         which are required by a container type. Subsequent 'docker run' can use the '--add-hosts' from this
         helper script to divert 'pkg install' calls to a local docker container as the real source.""")
