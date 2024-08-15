@@ -18,6 +18,16 @@ version:
 	-e "/^ *__copyright__/s/(C) [0123456789]* /(C) $$Y /" \
 	$$f; done; }
 	@ grep ^__version__ $(VERSIONFILES)
+	@ $(MAKE) commit
+commit:
+	@ ver=`grep "version.*=" setup.cfg | sed -e "s/version *= */v/"` \
+	; echo ": $(GIT) commit -m $$ver"
+tag:
+	@ ver=`grep "version.*=" setup.cfg | sed -e "s/version *= */v/"` \
+	; rev=`${GIT} rev-parse --short HEAD` \
+	; if test -r tmp.changes.txt \
+	; then echo ": ${GIT} tag -F tmp.changes.txt $$ver $$rev" \
+	; else echo ": ${GIT} tag $$ver $$rev" ; fi
 
 DOCKER=docker
 PYTHON2=python
