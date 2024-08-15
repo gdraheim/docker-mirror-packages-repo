@@ -22,6 +22,11 @@ is fixed when copying the data into the repo-image container -or- when the '.dis
 directory  is created. The rpm/deb files themselves are hardlinked into the '.disk' 
 directory, so they do not consume extra space.
 
+(Technical detail: to hardlink a file in Unix means that the same inode has 
+multiple file names. Writing to such a file may update the data in two locations. 
+The repodata-fix.py script will therefore backup the old package.xml and create a 
+new file in the '.disk' area. So that file is not hardlinked with the sync-dir).
+
 ## docker_mirror.ini
 
 The `docker_mirror.ini` can hold overrides that are used to start a repo-container
