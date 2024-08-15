@@ -29,6 +29,7 @@ if sys.version[0] == '3':
     xrange = range
 
 NIX = ""
+NOBASE = False
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
 REPODIR = os.environ.get("REPODIR", "repo.d")
@@ -240,7 +241,9 @@ def opensuse_games(suffix: str = "") -> None:
 
 opensuserepo_CMD = [F"/usr/bin/{PYTHON}", "/srv/scripts/filelist.py", "--data", "/srv/repo"]
 opensuserepo_PORT = "80"
-def opensuse_repo() -> None:
+def opensuse_base() -> str:
+    return opensuse_repo(True)
+def opensuse_repo(onlybase: bool = False) -> str:
     python = PYTHON
     docker = DOCKER
     distro = DISTRO
@@ -276,9 +279,10 @@ def opensuse_repo() -> None:
     base = "base"
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{leap}")
     dists: Dict[str, List[str]] = OrderedDict()
-    # dists["mini"] = ["distribution", "-games"]
-    dists["main"] = ["distribution"]
-    dists["update"] = ["update"]
+    if not onlybase:
+        # dists["mini"] = ["distribution", "-games"]
+        dists["main"] = ["distribution"]
+        dists["update"] = ["update"]
     for dist in dists:
         sx___(F"{docker} rm --force {cname}")
         sh___(F"{docker} run --name={cname} --detach {imagesrepo}/{distro}-repo/{base}:{leap} sleep 9999")
@@ -314,8 +318,43 @@ def opensuse_repo() -> None:
         if base == dist:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{leap}")
     sh___(F"{docker} rm --force {cname}")
-    sh___(F"{docker} tag {imagesrepo}/{distro}-repo/{base}:{leap} {imagesrepo}/{distro}-repo:{leap}")
-    sh___(F"{docker} rmi {imagesrepo}/{distro}-repo/base:{leap}")  # untag non-packages base
+    if base != "base":
+        sh___(F"{docker} tag {imagesrepo}/{distro}-repo/{base}:{leap} {imagesrepo}/{distro}-repo:{leap}")
+    if NOBASE:
+        sh___(F"{docker} rmi {imagesrepo}/{distro}-repo/base:{leap}")  # untag non-packages base
+    return F"image = {imagesrepo}/{distro}-repo/{base}:{leap}"
+
+def opensuse_disk(onlybase: bool = False) -> str:
+    createrepo = "createrepo" # only works if this program is installed on the host
+    distro = DISTRO
+    leap = LEAP
+    repodir = REPODIR
+    scripts = repo_scripts()
+    rootdir = opensuse_dir(suffix=F".disk")
+    srv = F"{rootdir}/srv"
+    logg.info("srv = %s", srv)
+    dists: Dict[str, List[str]] = OrderedDict()
+    if not onlybase:
+        # dists["mini"] = ["distribution", "-games"]
+        dists["main"] = ["distribution"]
+        dists["update"] = ["update"]
+    sh___(F"test ! -d {srv} || rm -rf {srv}")
+    sh___(F"mkdir -p {srv}/repo")
+    for dist in dists:
+        clean: Dict[str, str] = {}
+        for subdir in dists[dist]:
+            basedir = F"{repodir}/{distro}.{leap}/."
+            pooldir = F"{repodir}/{distro}.{leap}/{subdir}"
+            if path.isdir(pooldir):
+                sh___(F"cp -r --link --no-clobber {pooldir} {srv}/repo/")
+                base = dist
+                sh___(F"find {srv}/repo/{subdir} -name repomd.xml -exec {scripts}/repodata-fix.py {{}} -v ';' ")
+        if dist in ["update"]:
+            # sh___("{docker} exec {cname} rm -r /srv/repo/{dist}/{leap}".format(**locals()))
+            sh___(F"ln -s {srv}/repo/{dist}/leap/{leap}/oss {srv}/repo/{dist}/{leap}")
+            if leap in XXLEAP:
+                sh___(F" cd {srv}/repo/{dist}/leap/{leap}/oss && {createrepo} . ")
+    return F"mount = {srv}/repo"
 
 def opensuse_test() -> None:
     distro = DISTRO

@@ -8,6 +8,8 @@ opensuse:
 	$(MAKE) opensusetest
 
 opensusesync: ; ./opensuse-docker-mirror.py $(LEAP) sync -v
+opensusebase: ; ./opensuse-docker-mirror.py $(LEAP) base -v
+opensusedisk: ; ./opensuse-docker-mirror.py $(LEAP) disk -v
 opensuserepo: ; ./opensuse-docker-mirror.py $(LEAP) repo -v
 opensusetest: ; ./opensuse-docker-mirror.py $(LEAP) test -v
 
@@ -59,3 +61,23 @@ opensuse-15.1: ; $(MAKE) opensuse LEAP=15.1 OPENSUSE=opensuse/leap
 opensuse-15.0: ; $(MAKE) opensuse LEAP=15.0 OPENSUSE=opensuse/leap
 opensuse-42.3: ; $(MAKE) opensuse LEAP=42.3 OPENSUSE=opensuse
 opensuse-42.2: ; $(MAKE) opensuse LEAP=42.2 OPENSUSE=opensuse
+
+# docker_mirror.ini shallow starts
+opensusebase.16.0: ; $(MAKE) opensusebase LEAP=16.0 OPENSUSE=opensuse/leap
+opensusebase.15.6: ; $(MAKE) opensusebase LEAP=15.6 OPENSUSE=opensuse/leap
+opensusebase.15.5: ; $(MAKE) opensusebase LEAP=15.5 OPENSUSE=opensuse/leap
+opensusebase.15.4: ; $(MAKE) opensusebase LEAP=15.4 OPENSUSE=opensuse/leap
+opensusebase.15.3: ; $(MAKE) opensusebase LEAP=15.3 OPENSUSE=opensuse/leap
+opensusebase.15.2: ; $(MAKE) opensusebase LEAP=15.2 OPENSUSE=opensuse/leap
+opensusebase.15.1: ; $(MAKE) opensusebase LEAP=15.1 OPENSUSE=opensuse/leap
+opensusebase.15.0: ; $(MAKE) opensusebase LEAP=15.0 OPENSUSE=opensuse/leap
+opensusebase.42.3: ; $(MAKE) opensusebase LEAP=42.3 OPENSUSE=opensuse
+opensusedisk.16.0: ; $(MAKE) opensusedisk LEAP=16.0 OPENSUSE=opensuse/leap
+opensusedisk.15.6: ; $(MAKE) opensusedisk LEAP=15.6 OPENSUSE=opensuse/leap
+opensusedisk.15.5: ; $(MAKE) opensusedisk LEAP=15.5 OPENSUSE=opensuse/leap
+opensusedisk.15.4: ; $(MAKE) opensusedisk LEAP=15.4 OPENSUSE=opensuse/leap
+opensusedisk.15.3: ; $(MAKE) opensusedisk LEAP=15.3 OPENSUSE=opensuse/leap
+opensusedisk.15.2: ; $(MAKE) opensusedisk LEAP=15.2 OPENSUSE=opensuse/leap
+opensusedisk.15.1: ; $(MAKE) opensusedisk LEAP=15.1 OPENSUSE=opensuse/leap
+opensusedisk.15.0: ; $(MAKE) opensusedisk LEAP=15.0 OPENSUSE=opensuse/leap
+opensusedisk.42.3: ; $(MAKE) opensusedisk LEAP=42.3 OPENSUSE=opensuse
