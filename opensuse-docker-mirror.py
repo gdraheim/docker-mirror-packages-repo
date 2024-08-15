@@ -325,10 +325,12 @@ def opensuse_repo(onlybase: bool = False) -> str:
     return F"image = {imagesrepo}/{distro}-repo/{base}:{leap}"
 
 def opensuse_disk(onlybase: bool = False) -> str:
-    createrepo = "createrepo" # only works if this program is installed on the host
+    createrepo = find_path("createrepo") 
+    docker = DOCKER
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
+    imagesrepo = IMAGESREPO
     scripts = repo_scripts()
     rootdir = opensuse_dir(suffix=F".disk")
     srv = F"{rootdir}/srv"
@@ -352,9 +354,24 @@ def opensuse_disk(onlybase: bool = False) -> str:
         if dist in ["update"]:
             # sh___("{docker} exec {cname} rm -r /srv/repo/{dist}/{leap}".format(**locals()))
             sh___(F"ln -s {srv}/repo/{dist}/leap/{leap}/oss {srv}/repo/{dist}/{leap}")
+            logg.info("running createrepo is obsolete as repodata-fix.py can handle everything (except %s)", XXLEAP)
             if leap in XXLEAP:
-                sh___(F" cd {srv}/repo/{dist}/leap/{leap}/oss && {createrepo} . ")
+                if createrepo:
+                    sh___(F" cd {srv}/repo/{dist}/leap/{leap}/oss && {createrepo} . ")
+                else:
+                    baseimage = F"{imagesrepo}/{distro}-repo/base:{leap}"
+                    host_uid = os.getuid()
+                    host_srv = os.path.abspath(srv)
+                    sh___(F""" rm  -rv {host_srv}/repo/{dist}/leap/{leap}/oss/repodata """)
+                    sh___(F"""{docker} run --rm=true -t -v {host_srv}:/srv -u {host_uid} --userns=host {baseimage} bash -c "cd /srv/repo/{dist}/leap/{leap}/oss && createrepo --workers=1 --verbose ." """)
     return F"mount = {srv}/repo"
+
+def find_path(bin: str, default: str = NIX) -> str:
+    for dirpath in os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin"):
+        filepath = os.path.join(dirpath, bin)
+        if os.path.exists(filepath):
+            return filepath
+    return default
 
 def opensuse_test() -> None:
     distro = DISTRO
