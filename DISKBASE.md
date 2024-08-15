@@ -23,6 +23,8 @@ via `docker_mirror.py`. Here's what I have as of 2024. This allows me to
 
 * `./docker_mirror.py --local start almalinux:9.4 --add-hosts -vvv`
 
+docker_mirror.ini:
+
     [almalinux:9.4-20240530]
     image = localhost:5000/mirror-packages/almalinux-repo/base:9.4
     mount = /dock/docker-mirror-packages/almalinux.9.4-20240530.disk/srv/repo
