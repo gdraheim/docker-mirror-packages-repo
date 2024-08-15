@@ -16,6 +16,11 @@ need to run two targets for each repo version.
 
 As a result it will print out the values needed for `docker_mirror.ini`.
 
+Note that you can not directly mount the sync-dirs. They are broken into multiple
+pieces ('base' and 'update' repos) and their metadata index is often broken. This
+is fixed when copying the data into the container -or- when the '.disk' directory
+is created. The rpm/deb files themselves are hardlinked into the '.disk' directory.
+
 ## docker_mirror.ini
 
 The `docker_mirror.ini` can hold overrides that are used to start a repo-container
