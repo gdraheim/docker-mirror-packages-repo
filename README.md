@@ -228,10 +228,10 @@ Just say
 
 The add-hosts says that it should print the line that is
 needed to be added to some `docker run` for a testing container
-that should be able to install packages locally. It is
-usally url of the offical package repo but diverted to 
-the IP address of the repo-container. You can find the
-repo-container as
+that should be able to install packages locally. Thease are
+usally the URLs of the offical package repo of the distro 
+but diverted to  the IP address of the locally running repo-container. 
+You can find the repo-container as
 
 * `docker ps -f name=ubuntu-repo-24.04`
 
