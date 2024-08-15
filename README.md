@@ -217,6 +217,19 @@ the universe packages unless it sees the "--universe" option.
 
 There was not attempt made to include multiverse package.
 
+## docker_mirror.ini
+
+The `docker_mirror.py` script will load override values in 
+a config file usually found in `~/.config/docker_mirror.ini`
+on newer Linux distros.
+
+In most cases that is not needed - unless you want to reduce
+disk pressure (in the docker space) by using the disk/base
+approach where the repo data is mounted into repo container
+instead of having a copy.
+
+For details see [DISKBASE.md](DISKBASE.md)
+
 ## IMPLEMENTATION
 
 Every package repo has a different way to store data in its
