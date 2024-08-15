@@ -189,7 +189,7 @@ def ubuntu_du(suffix: str = "") -> str:
     return dirpath
 
 def ubuntu_nolinux(suffix: str = "") -> str:
-    dirpath = ubuntu_dirpath(suffix) 
+    dirpath = ubuntu_dirpath(suffix)
     logg.info(F"dirpath {dirpath}")
     for root, dirs, files in os.walk(dirpath):
         for name in files:

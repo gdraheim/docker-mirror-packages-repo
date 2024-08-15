@@ -325,7 +325,7 @@ def opensuse_repo(onlybase: bool = False) -> str:
     return F"\n[{baseimage}]\nimage = {imagesrepo}/{distro}-repo/{base}:{leap}\n"
 
 def opensuse_disk(onlybase: bool = False) -> str:
-    createrepo = find_path("createrepo") 
+    createrepo = find_path("createrepo")
     docker = DOCKER
     distro = DISTRO
     leap = LEAP
