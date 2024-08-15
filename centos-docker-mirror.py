@@ -572,7 +572,8 @@ def centos_python(distro: str = NIX, centos: str = NIX) -> str:
     raise RuntimeWarning("unknown CENTOS %s" % centos)
 
 def centos_base(distro: str = NIX, centos: str = NIX) -> str:
-    return distro_repos(distro, centos, dists = [])
+    dists: Dict[str, List[str]] = {}
+    return distro_repos(distro, centos, dists)
 def centos_repo(distro: str = NIX, centos: str = NIX) -> str:
     distro = distro or DISTRO
     centos = centos or CENTOS
