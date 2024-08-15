@@ -372,7 +372,7 @@ class DockerMirrorPackagesRepo:
             latest = ""
             for release in DIST:
                 codename = DIST[release]
-                if len(ver) >= 3 and codename.startswith(ver):
+                if len(ver) >= 3 and ver.startswith(codename):
                     logg.debug("release (%s) %s", release, codename)
                     if latest < release:
                         latest = release
