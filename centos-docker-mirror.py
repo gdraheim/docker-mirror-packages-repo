@@ -30,6 +30,7 @@ if sys.version[0] == '3':
     xrange = range
 
 NIX = ""
+NOBASE = False
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
 REPODIR = os.environ.get("REPODIR", "repo.d")
@@ -570,6 +571,8 @@ def centos_python(distro: str = NIX, centos: str = NIX) -> str:
         return "/usr/bin/python3"
     raise RuntimeWarning("unknown CENTOS %s" % centos)
 
+def centos_base(distro: str = NIX, centos: str = NIX) -> str:
+    return distro_repos(distro, centos, dists = [])
 def centos_repo(distro: str = NIX, centos: str = NIX) -> str:
     distro = distro or DISTRO
     centos = centos or CENTOS
@@ -625,8 +628,10 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
         if base == dist:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{rel}")
     sh___(F"{docker} rm --force {cname}")
-    sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{rel} {repo}/{distro}-repo:{rel}")
-    sh___(F"{docker} rmi {repo}/{distro}-repo/base:{rel}")  # untag non-packages base
+    if base != "base":
+        sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{rel} {repo}/{distro}-repo:{rel}")
+    if not NOBASE:
+        sh___(F"{docker} rmi {repo}/{distro}-repo/base:{rel}")  # untag non-packages base
     PORT2 = centos_http_port(distro, centos)
     CMD2 = str(centos_http_cmd(distro, centos)).replace("'", '"')
     if PORT != PORT2:
@@ -636,7 +641,49 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
         sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/{distro}-repo/{base2}:{rel}")
         sx___(F"{docker} rm --force {cname}")
     centos_restore()
-    return F"{repo}/{distro}-repo:{rel}"
+    return F"image = {repo}/{distro}-repo/{base}:{rel}"
+
+def centos_disk(distro: str = NIX, centos: str = NIX) -> str:
+    distro = distro or DISTRO
+    centos = centos or CENTOS
+    if centos.startswith("9"):
+        return centos_disk9(distro)
+    if centos.startswith("8"):
+        return centos_disk8(distro)
+    if centos.startswith("7"):
+        return centos_disk7(distro)
+    raise RuntimeWarning("unknown CENTOS %s" % centos)
+
+def centos_disk9(distro: str = NIX, centos: str = NIX) -> str:
+    return distro_diskmake(distro, centos, SUBDIRS9)
+def centos_disk8(distro: str = NIX, centos: str = NIX) -> str:
+    return distro_diskmake(distro, centos, SUBDIRS8)
+def centos_disk7(distro: str = NIX, centos: str = NIX) -> str:
+    return distro_diskmake(distro, centos, SUBDIRS7)
+def distro_diskmake(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
+    distro = distro or DISTRO
+    centos = centos or CENTOS
+    docker = DOCKER
+    R = major(centos)
+    repodir = REPODIR
+    centos_restore()
+    centos_cleaner()
+    rel = centos_release(distro, centos)
+    scripts = repo_scripts()
+    rootdir = distro_dir(distro, centos, suffix=F".disk")
+    srv = F"{rootdir}/srv"
+    logg.info("srv = %s", srv)
+    sh___(F"mkdir -p {srv}/repo/{R}")
+    if R != rel:
+        sh___(F"ln -sv {R} {srv}/repo/{rel}")
+    if R != centos and centos != rel:
+        sh___(F"ln -sv {R} {srv}/repo/{centos}")
+    for dist in dists:
+        for subdir in dists[dist]:
+            pooldir = F"{repodir}/{distro}.{centos}/{subdir}"
+            if path.isdir(pooldir):
+                sh___(F"cp -r --link --no-clobber {pooldir} {srv}/repo/{R}/")
+    return F"mount {srv}/repo"
 
 def centos_tags(distro: str = NIX, centos: str = NIX) -> None:
     distro = distro or DISTRO

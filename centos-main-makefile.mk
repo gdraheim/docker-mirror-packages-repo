@@ -21,6 +21,8 @@ centoshelp: ; ./centos-docker-mirror.py $(CENTOS) --help
 centospull: ; ./centos-docker-mirror.py $(CENTOS) pull -v
 centossync: ; ./centos-docker-mirror.py -V $(DISTRO):$(CENTOS) sync -v
 centosrepo: ; ./centos-docker-mirror.py $(CENTOS) repo -v
+centosdisk: ; ./centos-docker-mirror.py $(CENTOS) disk -v
+centosbase: ; ./centos-docker-mirror.py $(CENTOS) base -v
 centostest: ; ./centos-docker-mirror.py $(CENTOS) test -v
 centoscheck: ; ./centos-docker-mirror.py $(CENTOS) check -v
 centostags: ; ./centos-docker-mirror.py $(CENTOS) tags -v
@@ -84,3 +86,39 @@ centos-7.6 centos-7.6.1810: ; $(MAKE) centos CENTOS=7.6.1810
 centos-7.5 centos-7.5.1804: ; $(MAKE) centos CENTOS=7.5.1804
 centos-7.4 centos-7.4.1708: ; $(MAKE) centos CENTOS=7.4.1708
 centos-7.3 centos-7.3.1611: ; $(MAKE) centos CENTOS=7.3.1611
+
+centosdisk.8.5 centosdisk.8.5.2111: ; $(MAKE) centosdisk CENTOS=8.5.2111 
+centosdisk.8.4 centosdisk.8.4.2105: ; $(MAKE) centosdisk CENTOS=8.4.2105 
+centosdisk.8.3 centosdisk.8.3.2011: ; $(MAKE) centosdisk CENTOS=8.3.2011 
+centosdisk.8.2 centosdisk.8.2.2004: ; $(MAKE) centosdisk CENTOS=8.2.2004 
+centosdisk.8.1 centosdisk.8.1.1911: ; $(MAKE) centosdisk CENTOS=8.1.1911 
+centosdisk.8.0 centosdisk.8.0.1905: ; $(MAKE) centosdisk CENTOS=8.0.1905 
+centosdisk.7.9 centosdisk.7.9.2009: ; $(MAKE) centosdisk CENTOS=7.9.2009 
+centosdisk.7.8 centosdisk.7.8.2003: ; $(MAKE) centosdisk CENTOS=7.8.2003 
+centosdisk.7.7 centosdisk.7.7.1908: ; $(MAKE) centosdisk CENTOS=7.7.1908 
+centosdisk.7.6 centosdisk.7.6.1810: ; $(MAKE) centosdisk CENTOS=7.6.1810 
+centosdisk.7.5 centosdisk.7.5.1804: ; $(MAKE) centosdisk CENTOS=7.5.1804 
+centosdisk.7.4 centosdisk.7.4.1708: ; $(MAKE) centosdisk CENTOS=7.4.1708 
+centosdisk.7.3 centosdisk.7.3.1611: ; $(MAKE) centosdisk CENTOS=7.3.1611 
+centosbase.8.5 centosbase.8.5.2111: ; $(MAKE) centosbase CENTOS=8.5.2111 
+centosbase.8.4 centosbase.8.4.2105: ; $(MAKE) centosbase CENTOS=8.4.2105 
+centosbase.8.3 centosbase.8.3.2011: ; $(MAKE) centosbase CENTOS=8.3.2011 
+centosbase.8.2 centosbase.8.2.2004: ; $(MAKE) centosbase CENTOS=8.2.2004 
+centosbase.8.1 centosbase.8.1.1911: ; $(MAKE) centosbase CENTOS=8.1.1911 
+centosbase.8.0 centosbase.8.0.1905: ; $(MAKE) centosbase CENTOS=8.0.1905 
+centosbase.7.9 centosbase.7.9.2009: ; $(MAKE) centosbase CENTOS=7.9.2009 
+centosbase.7.8 centosbase.7.8.2003: ; $(MAKE) centosbase CENTOS=7.8.2003 
+centosbase.7.7 centosbase.7.7.1908: ; $(MAKE) centosbase CENTOS=7.7.1908 
+centosbase.7.6 centosbase.7.6.1810: ; $(MAKE) centosbase CENTOS=7.6.1810 
+centosbase.7.5 centosbase.7.5.1804: ; $(MAKE) centosbase CENTOS=7.5.1804 
+centosbase.7.4 centosbase.7.4.1708: ; $(MAKE) centosbase CENTOS=7.4.1708 
+centosbase.7.3 centosbase.7.3.1611: ; $(MAKE) centosbase CENTOS=7.3.1611 
+
+almadisk.9.4: ; $(MAKE) centosdisk CENTOS=9.4 DISTRO=almalinux
+almadisk.9.3: ; $(MAKE) centosdisk CENTOS=9.3 DISTRO=almalinux
+almadisk.9.2: ; $(MAKE) centosdisk CENTOS=9.2 DISTRO=almalinux
+almadisk.9.1: ; $(MAKE) centosdisk CENTOS=9.1 DISTRO=almalinux
+almabase.9.4: ; $(MAKE) centosbase CENTOS=9.4 DISTRO=almalinux
+almabase.9.3: ; $(MAKE) centosbase CENTOS=9.3 DISTRO=almalinux
+almabase.9.2: ; $(MAKE) centosbase CENTOS=9.2 DISTRO=almalinux
+almabase.9.1: ; $(MAKE) centosbase CENTOS=9.1 DISTRO=almalinux
