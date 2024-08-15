@@ -322,7 +322,7 @@ def opensuse_repo(onlybase: bool = False) -> str:
         sh___(F"{docker} tag {imagesrepo}/{distro}-repo/{base}:{leap} {imagesrepo}/{distro}-repo:{leap}")
     if NOBASE:
         sh___(F"{docker} rmi {imagesrepo}/{distro}-repo/base:{leap}")  # untag non-packages base
-    return F"image = {imagesrepo}/{distro}-repo/{base}:{leap}"
+    return F"\n[{baseimage}]\nimage = {imagesrepo}/{distro}-repo/{base}:{leap}\n"
 
 def opensuse_disk(onlybase: bool = False) -> str:
     createrepo = find_path("createrepo") 
@@ -364,7 +364,8 @@ def opensuse_disk(onlybase: bool = False) -> str:
                     host_srv = os.path.abspath(srv)
                     sh___(F""" rm  -rv {host_srv}/repo/{dist}/leap/{leap}/oss/repodata """)
                     sh___(F"""{docker} run --rm=true -t -v {host_srv}:/srv -u {host_uid} --userns=host {baseimage} bash -c "cd /srv/repo/{dist}/leap/{leap}/oss && createrepo --workers=1 --verbose ." """)
-    return F"mount = {srv}/repo"
+    path_srv = os.path.realpath(srv)
+    return F"\nmount = {path_srv}/repo\n"
 
 def find_path(bin: str, default: str = NIX) -> str:
     for dirpath in os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin"):
