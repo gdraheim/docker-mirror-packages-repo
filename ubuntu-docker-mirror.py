@@ -363,12 +363,9 @@ def repo_image(repos: List[str]) -> str:
     return F"image = {imagesrepo}/{distro}-repo/{base}:{ubuntu}"
 
 def ubuntu_disk() -> str:
-    docker = DOCKER
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    python = PYTHON
-    scripts = repo_scripts()
     rootdir = ubuntu_dir(suffix=F".disk")
     srv = F"{rootdir}/srv"
     logg.info("srv = %s", srv)
