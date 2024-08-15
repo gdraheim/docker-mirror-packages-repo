@@ -574,6 +574,8 @@ if __name__ == "__main__":
                       epilog=re.sub("\\s+", " ", __doc__).strip())
     _o.add_option("-v", "--verbose", action="count", default=0,
                   help="increase logging level [%default]")
+    _o.add_option("-R", "--nobase", action="store_true", default=NOBASE,
+                  help="rm */base when repo image is ready [%default]")
     _o.add_option("-D", "--docker", metavar="EXE", default=DOCKER,
                   help="use other docker exe or podman [%default]")
     _o.add_option("-V", "--ver", metavar="NUM", default=UBUNTU,
@@ -591,6 +593,7 @@ if __name__ == "__main__":
     opt, args = _o.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
     config_globals(opt.config)
+    NOBASE = opt.nobase
     DOCKER = opt.docker
     UBUNTU_set(opt.ver)
     if opt.main:
