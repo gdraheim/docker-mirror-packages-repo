@@ -202,7 +202,7 @@ as well as some package index files.
 
 For more information check the [ubuntu-repo mirror info](./ubuntu-repo-mirror.info.md)
 
-# UBUNTU UNIVERSE
+## UBUNTU UNIVERSE
 
 Unlike with Redhat- and Suse-style extra repositories, the
 Ubuntu "universe" packages are hosted on the same server. That
