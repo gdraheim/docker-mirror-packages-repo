@@ -217,7 +217,25 @@ the universe packages unless it sees the "--universe" option.
 
 There was not attempt made to include multiverse package.
 
-# MIRROR DETAILS
+# DOCKER MIRROR
+
+The testing projects get a copy of the `docker_mirror.py`.
+When the mirror-packages are ready then the script can find
+them in the `docker images` list and start them as a container.
+Just say
+
+* `./docker_mirror.py start ubuntu:24.04 --add-hosts`
+
+The add-hosts says that it should print the line that is
+needed to be added to some `docker run` for a testing container
+that should be able to install packages locally. It is
+usally url of the offical package repo but diverted to 
+the IP address of the repo-container. You can find the
+repo-container as
+
+* `docker ps -f name=ubuntu-repo-24.04`
+
+See an example in [zziplib/testbuilds.py](https://github.com/gdraheim/zziplib/blob/master/testbuilds.py)
 
 ## docker_mirror.ini
 
