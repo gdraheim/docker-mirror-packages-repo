@@ -27,6 +27,7 @@ if sys.version[0] == '3':
     xrange = range
 
 NIX = ""
+NOBASE = False
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
 REPODIR = os.environ.get("REPODIR", "repo.d")
@@ -175,21 +176,20 @@ def ubuntu_dir(suffix: str = "") -> str:
         logg.warning("%s/. local dir", dirlink)
     return dirlink
 
-def ubuntu_du(suffix: str = "") -> str:
+def ubuntu_dirpath(suffix: str = "") -> str:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    dirpath = F"{repodir}/{distro}.{ubuntu}{suffix}/."
+    return F"{repodir}/{distro}.{ubuntu}{suffix}/."
+def ubuntu_du(suffix: str = "") -> str:
+    dirpath = ubuntu_dirpath(suffix)
     logg.info(F"dirpath {dirpath}")
     if os.path.isdir(dirpath):
         sh___(F"du -sh {dirpath}")
     return dirpath
 
 def ubuntu_nolinux(suffix: str = "") -> str:
-    distro = DISTRO
-    ubuntu = UBUNTU
-    repodir = REPODIR
-    dirpath = F"{repodir}/{distro}.{ubuntu}{suffix}/."
+    dirpath = ubuntu_dirpath(suffix) 
     logg.info(F"dirpath {dirpath}")
     for root, dirs, files in os.walk(dirpath):
         for name in files:
@@ -318,7 +318,11 @@ def ubuntu_http_cmd() -> List[str]:
     if "/" not in python:
         python = F"/usr/bin/{python}"
     return [python, "/srv/scripts/filelist.py", "--data", "/srv/repo"]
-def ubuntu_repo() -> None:
+def ubuntu_base() -> str:
+    return repo_image([])
+def ubuntu_repo() -> str:
+    return repo_image(REPOS)
+def repo_image(repos: List[str]) -> str:
     docker = DOCKER
     distro = DISTRO
     ubuntu = UBUNTU
@@ -341,7 +345,7 @@ def ubuntu_repo() -> None:
     PORT = ubuntu_http_port()
     CMD = str(ubuntu_http_cmd()).replace("'", '"')
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{ubuntu}")
-    for main in REPOS:
+    for main in repos:
         sh___(F"{docker} rm --force {cname}")
         sh___(F"{docker} run --name={cname} --detach {imagesrepo}/{distro}-repo/{base}:{ubuntu} sleep 9999")
         for dist in [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]:
@@ -351,9 +355,34 @@ def ubuntu_repo() -> None:
                 base = main
         if base == main:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{ubuntu}")
-    sh___(F"{docker} tag {imagesrepo}/{distro}-repo/{base}:{ubuntu} {imagesrepo}/{distro}-repo:{ubuntu}")
+    if base != "base":
+        sh___(F"{docker} tag {imagesrepo}/{distro}-repo/{base}:{ubuntu} {imagesrepo}/{distro}-repo:{ubuntu}")
     sh___(F"{docker} rm --force {cname}")
-    sx___(F"{docker} rmi {imagesrepo}/{distro}-repo/base:{ubuntu}")  # untag base image
+    if NOBASE:
+        sx___(F"{docker} rmi {imagesrepo}/{distro}-repo/base:{ubuntu}")  # untag base image
+    return F"image = {imagesrepo}/{distro}-repo/{base}:{ubuntu}"
+
+def ubuntu_disk() -> str:
+    docker = DOCKER
+    distro = DISTRO
+    ubuntu = UBUNTU
+    repodir = REPODIR
+    python = PYTHON
+    scripts = repo_scripts()
+    rootdir = ubuntu_dir(suffix=F".disk")
+    srv = F"{rootdir}/srv"
+    logg.info("srv = %s", srv)
+    sh___(F"test ! -d {srv} || rm -rf {srv}")
+    sh___(F"mkdir -p {srv}/repo/ubuntu")
+    sh___(F"cp -r --link {repodir}/{distro}.{ubuntu}/dists {srv}/repo/ubuntu")
+    sh___(F"mkdir -p {srv}/repo/ubuntu/pool")
+    for main in REPOS:
+        for dist in [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]:
+            pooldir = F"{repodir}/{distro}.{ubuntu}/pools/{dist}/{main}/pool"
+            if path.isdir(pooldir):
+                sh___(F"cp -r --link --no-clobber {pooldir}  {srv}/repo/ubuntu/")
+    sh___(F"du -sh {srv}")
+    return F"mount = {srv}/repo"
 
 def ubuntu_test() -> None:
     distro = DISTRO
