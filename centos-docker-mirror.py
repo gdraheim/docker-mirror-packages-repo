@@ -630,7 +630,7 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
     sh___(F"{docker} rm --force {cname}")
     if base != "base":
         sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{rel} {repo}/{distro}-repo:{rel}")
-    if not NOBASE:
+    if NOBASE:
         sh___(F"{docker} rmi {repo}/{distro}-repo/base:{rel}")  # untag non-packages base
     PORT2 = centos_http_port(distro, centos)
     CMD2 = str(centos_http_cmd(distro, centos)).replace("'", '"')
@@ -641,7 +641,7 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
         sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/{distro}-repo/{base2}:{rel}")
         sx___(F"{docker} rm --force {cname}")
     centos_restore()
-    return F"image = {repo}/{distro}-repo/{base}:{rel}"
+    return F"\n[{baseimage}]\nimage = {repo}/{distro}-repo/{base}:{rel}\n"
 
 def centos_disk(distro: str = NIX, centos: str = NIX) -> str:
     distro = distro or DISTRO
@@ -675,15 +675,16 @@ def distro_diskmake(distro: str, centos: str, dists: Dict[str, List[str]]) -> st
     logg.info("srv = %s", srv)
     sh___(F"mkdir -p {srv}/repo/{R}")
     if R != rel:
-        sh___(F"ln -sv {R} {srv}/repo/{rel}")
+        sh___(F"test -L {srv}/repo/{rel} || ln -sv {R} {srv}/repo/{rel}")
     if R != centos and centos != rel:
-        sh___(F"ln -sv {R} {srv}/repo/{centos}")
+        sh___(F"test -L {srv}/repo/{centos} || ln -sv {R} {srv}/repo/{centos}")
     for dist in dists:
         for subdir in dists[dist]:
             pooldir = F"{repodir}/{distro}.{centos}/{subdir}"
             if path.isdir(pooldir):
                 sh___(F"cp -r --link --no-clobber {pooldir} {srv}/repo/{R}/")
-    return F"mount {srv}/repo"
+    path_srv = os.path.realpath(srv)
+    return F"\nmount = {path_srv}/repo\n"
 
 def centos_tags(distro: str = NIX, centos: str = NIX) -> None:
     distro = distro or DISTRO
