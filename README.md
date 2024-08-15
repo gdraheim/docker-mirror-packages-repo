@@ -217,6 +217,8 @@ the universe packages unless it sees the "--universe" option.
 
 There was not attempt made to include multiverse package.
 
+# MIRROR DETAILS
+
 ## docker_mirror.ini
 
 The `docker_mirror.py` script will load override values in 
