@@ -66,19 +66,6 @@ ubunturepo.19.10: ; $(MAKE) ubunturepo UBUNTU=19.10
 ubunturepo.18.04: ; $(MAKE) ubunturepo UBUNTU=18.04
 ubunturepo.16.04: ; $(MAKE) ubunturepo UBUNTU=16.04
 
-ubuntubase.24.04: ; $(MAKE) ubuntubase UBUNTU=24.04
-ubuntubase.23.10: ; $(MAKE) ubuntubase UBUNTU=23.10
-ubuntubase.23.04: ; $(MAKE) ubuntubase UBUNTU=23.04
-ubuntubase.22.10: ; $(MAKE) ubuntubase UBUNTU=22.10
-ubuntubase.22.04: ; $(MAKE) ubuntubase UBUNTU=22.04
-ubuntubase.21.10: ; $(MAKE) ubuntubase UBUNTU=21.10
-ubuntubase.21.04: ; $(MAKE) ubuntubase UBUNTU=21.04
-ubuntubase.20.10: ; $(MAKE) ubuntubase UBUNTU=20.10
-ubuntubase.20.04: ; $(MAKE) ubuntubase UBUNTU=20.04
-ubuntubase.19.10: ; $(MAKE) ubuntubase UBUNTU=19.10
-ubuntubase.18.04: ; $(MAKE) ubuntubase UBUNTU=18.04
-ubuntubase.16.04: ; $(MAKE) ubuntubase UBUNTU=16.04
-
 ubuntu-24.04: ; $(MAKE) ubuntu UBUNTU=24.04
 ubuntu-23.10: ; $(MAKE) ubuntu UBUNTU=23.10
 ubuntu-23.04: ; $(MAKE) ubuntu UBUNTU=23.04
@@ -118,6 +105,20 @@ universerepo.20.04: ; $(MAKE) ubunturepo UBUNTU=20.04 UBUNTU_REPOS=--universe
 universerepo.19.10: ; $(MAKE) ubunturepo UBUNTU=19.10 UBUNTU_REPOS=--universe
 universerepo.18.04: ; $(MAKE) ubunturepo UBUNTU=18.04 UBUNTU_REPOS=--universe
 universerepo.16.04: ; $(MAKE) ubunturepo UBUNTU=16.04 UBUNTU_REPOS=--universe
+
+# docker_mirror.ini shallow starts
+ubuntubase.24.04: ; $(MAKE) ubuntubase UBUNTU=24.04
+ubuntubase.23.10: ; $(MAKE) ubuntubase UBUNTU=23.10
+ubuntubase.23.04: ; $(MAKE) ubuntubase UBUNTU=23.04
+ubuntubase.22.10: ; $(MAKE) ubuntubase UBUNTU=22.10
+ubuntubase.22.04: ; $(MAKE) ubuntubase UBUNTU=22.04
+ubuntubase.21.10: ; $(MAKE) ubuntubase UBUNTU=21.10
+ubuntubase.21.04: ; $(MAKE) ubuntubase UBUNTU=21.04
+ubuntubase.20.10: ; $(MAKE) ubuntubase UBUNTU=20.10
+ubuntubase.20.04: ; $(MAKE) ubuntubase UBUNTU=20.04
+ubuntubase.19.10: ; $(MAKE) ubuntubase UBUNTU=19.10
+ubuntubase.18.04: ; $(MAKE) ubuntubase UBUNTU=18.04
+ubuntubase.16.04: ; $(MAKE) ubuntubase UBUNTU=16.04
 
 ubuntudisk: ubuntudisk.16.04  ubuntudisk.18.04  ubuntudisk.20.04  ubuntudisk.22.04  ubuntudisk.24.04
 ubuntudisk.24.04: ; ./ubuntu-docker-mirror.py 24.04 disk -v --universe
