@@ -32,6 +32,7 @@ tag:
 DOCKER=docker
 PYTHON2=python
 PYTHON3=python3
+GIT=git
 TWINE=twine
 
 include centos-main-makefile.mk
@@ -150,9 +151,11 @@ install:
 	$(PIP3) install .
 	$(MAKE) showfiles | grep /.local/
 uninstall:
-	$(PIP3) uninstall -y `sed -e '/name *=/!d' -e 's/name *= *//' setup.cfg`
+	test -d tmp || mkdir -v tmp
+	cd tmp && $(PIP3) uninstall -y `sed -e '/name *=/!d' -e 's/name *= *//' ../setup.cfg`
 showfiles:
-	@ $(PIP3) show --files `sed -e '/name *=/!d' -e 's/name *= *//' setup.cfg` \
+	test -d tmp || mkdir -v tmp
+	@ cd tmp && $(PIP3) show --files `sed -e '/name *=/!d' -e 's/name *= *//' ../setup.cfg` \
 	| sed -e "s:[^ ]*/[.][.]/\\([a-z][a-z]*\\)/:~/.local/\\1/:"
 re reinstall:
 	- $(MAKE) uninstall
@@ -162,9 +165,9 @@ re reinstall:
 ####### retype + stubgen
 PY_RETYPE = ../retype
 py-retype:
-	set -ex ; if test -d $(PY_RETYPE); then cd $(PY_RETYPE) && git pull; else : \
-	; cd $(dir $(PY_RETYPE)) && git clone git@github.com:ambv/retype.git $(notdir $(PY_RETYPE)) \
-	; cd $(PY_RETYPE) && git checkout 17.12.0 ; fi
+	set -ex ; if test -d $(PY_RETYPE); then cd $(PY_RETYPE) && $(GIT) pull; else : \
+	; cd $(dir $(PY_RETYPE)) && $(GIT) clone git@github.com:ambv/retype.git $(notdir $(PY_RETYPE)) \
+	; cd $(PY_RETYPE) && $(GIT) checkout 17.12.0 ; fi
 	python3 $(PY_RETYPE)/retype.py --version
 
 mypy:
@@ -201,7 +204,7 @@ P12 = dockerdir.tests.py
 	$(AUTOPEP8) $(AUTOPEP8_OPTIONS) $(@:.pep1=) $(AUTOPEP8_ASDIFF)
 %.pep8:
 	$(AUTOPEP8) $(AUTOPEP8_OPTIONS) $(@:.pep8=) $(AUTOPEP8_INPLACE)
-	git --no-pager diff $(@:.pep8=)
+	$(GIT) --no-pager diff $(@:.pep8=)
 
 py1: ; $(MAKE) $(PY1).pep8
 py2: ; $(MAKE) $(PY2).pep8
