@@ -360,7 +360,7 @@ def repo_image(repos: List[str]) -> str:
     sh___(F"{docker} rm --force {cname}")
     if NOBASE:
         sx___(F"{docker} rmi {imagesrepo}/{distro}-repo/base:{ubuntu}")  # untag base image
-    return F"image = {imagesrepo}/{distro}-repo/{base}:{ubuntu}"
+    return F"\n[{baseimage}]\nimage = {imagesrepo}/{distro}-repo/{base}:{ubuntu}\n"
 
 def ubuntu_disk() -> str:
     distro = DISTRO
@@ -378,8 +378,8 @@ def ubuntu_disk() -> str:
             pooldir = F"{repodir}/{distro}.{ubuntu}/pools/{dist}/{main}/pool"
             if path.isdir(pooldir):
                 sh___(F"cp -r --link --no-clobber {pooldir}  {srv}/repo/ubuntu/")
-    sh___(F"du -sh {srv}")
-    return F"mount = {srv}/repo"
+    host_srv = os.path.realpath(srv)
+    return F"\nmount = {host_srv}/repo\n"
 
 def ubuntu_test() -> None:
     distro = DISTRO
