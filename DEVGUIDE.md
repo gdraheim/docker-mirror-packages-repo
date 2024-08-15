@@ -111,7 +111,8 @@ For each new distro version
 * `make uninstall` # may fail as "not installed"
 * `make install` 
 * `make uninstall`
-* `make version` # or `make version FOR=tomorrow`
+* `make version` 
+** prints the git commit 
 * `make sizes`
   * and update table in README.md
 * update long description in README.md
@@ -119,11 +120,13 @@ For each new distro version
 * `make build`
 * `make install` 
 * `make uninstall`
-* `git commit v1.x` to the version in setup.cfg (or just uninstalled)
+* `git commit v1.x` (as from `make version`)
 * `git push` # if necessary
 * wait for github workflows to be okay
 * prepare a tmp.changes.txt 
-* `git tag -F tmp.changes.txt v1.x` to the version in setup.cfg
+* `make tag`
+   * and `git tag -F tmp.changes.txt v1.x` 
 * `git push --tags`
 * update the short description on github
-* `make build` and following `twine upload` as shown
+* `make build` 
+   * and following `twine upload` as shown
