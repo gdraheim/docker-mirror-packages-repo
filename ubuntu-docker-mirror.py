@@ -293,7 +293,7 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
     if not path.isdir(pooldir): os.makedirs(pooldir)
     if when:
         # instead of {exlude} we have nolinux filtered in the Packages above
-        options = "--size-only"
+        options = "--size-only --copy-links "
         sh___(F"{rsync} -rv {mirror}/pool {pooldir} {options} --files-from={tmpfile}")
 
 def ubuntu_pool() -> None:

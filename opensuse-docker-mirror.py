@@ -170,7 +170,7 @@ def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in skipfiles])
-    excludes += """ --size-only """
+    excludes += """ --size-only --copy-links """
     leaprepo = F"{repodir}/{distro}.{leap}/{dist}/leap/{leap}/repo"
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     # retry:
@@ -192,7 +192,7 @@ def opensuse_sync_pack_(dist: str, repo: str, filters: List[str] = []) -> None:
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in skipfiles])
-    excludes += """ --size-only """
+    excludes += """ --size-only --copy-links """
     leaprepo = F"{repodir}/{distro}.{leap}/{dist}/leap/{leap}"
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     # retry:
