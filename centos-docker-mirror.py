@@ -947,6 +947,8 @@ if __name__ == "__main__":
                   help="use other docker exe or podman [%default]")
     _o.add_option("--rsync", metavar="EXE", default=RSYNC,
                   help="use other rsync exe [%default]")
+    _o.add_option("--python", metavar="EXE", default=PYTHON,
+                  help="use other python as script runner [%default]")
     _o.add_option("-V", "--ver", metavar="NUM", default=CENTOS,
                   help="use other centos version [%default]")
     _o.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
@@ -960,6 +962,7 @@ if __name__ == "__main__":
     NOBASE = opt.nobase
     DOCKER = opt.docker
     RSYNC = opt.rsync
+    PYTHON = opt.python
     CENTOS_set(opt.ver)
     #
     if not args: args = ["make"]
