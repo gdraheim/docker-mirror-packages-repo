@@ -41,6 +41,7 @@ DATADIRS = [REPODATADIR,
 PYTHON = "python3"
 DISTRO = "ubuntu"
 UBUNTU = "24.04"
+VARIANT = ""
 RSYNC_UBUNTU = "rsync://ftp5.gwdg.de/pub/linux/debian/ubuntu"
 
 MIRRORS: Dict[str, List[str]] = {}
@@ -150,7 +151,8 @@ def ubuntu_dir(suffix: str = "") -> str:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    dirname = F"{distro}.{ubuntu}{suffix}"
+    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
+    dirname = F"{distro}.{version}{suffix}"
     dirlink = path.join(repodir, dirname)
     if not path.isdir(repodir):
         os.mkdir(repodir)
@@ -180,7 +182,8 @@ def ubuntu_dirpath(suffix: str = "") -> str:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    return F"{repodir}/{distro}.{ubuntu}{suffix}/."
+    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
+    return F"{repodir}/{distro}.{version}{suffix}/."
 def ubuntu_du(suffix: str = "") -> str:
     dirpath = ubuntu_dirpath(suffix)
     logg.info(F"dirpath {dirpath}")
@@ -214,7 +217,8 @@ def ubuntu_sync_base(dist: str) -> None:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    distdir = F"{repodir}/{distro}.{ubuntu}/dists/{dist}"
+    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
+    distdir = F"{repodir}/{distro}.{version}/dists/{dist}"
     if not path.isdir(distdir):
         os.makedirs(distdir)
     tmpfile = F"{cache}/Release.{dist}.base.tmp"
@@ -226,7 +230,7 @@ def ubuntu_sync_base(dist: str) -> None:
     mirror = MIRRORS[distro][0]
     options = "--ignore-times --files-from=" + tmpfile
     # excludes = " ".join(["--exclude '%s'" % parts for parts in nolinux])
-    sh___(F"{rsync} -v {mirror}/dists/{dist} {repodir}/{distro}.{ubuntu}/dists/{dist} {options}")
+    sh___(F"{rsync} -v {mirror}/dists/{dist} {repodir}/{distro}.{version}/dists/{dist} {options}")
 
 def when(levels: str, repos: List[str]) -> List[str]: return [item for item in levels.split(",") if item and item in repos]
 def ubuntu_sync_main_1() -> None: ubuntu_sync_main(dist=DIST[UBUNTU], main="main", when=when("updates,restricted,universe,multiverse", REPOS))
@@ -254,7 +258,8 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    maindir = F"{repodir}/{distro}.{ubuntu}/dists/{dist}/{main}"
+    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
+    maindir = F"{repodir}/{distro}.{version}/dists/{dist}/{main}"
     if not path.isdir(maindir): os.makedirs(maindir)
     rsync = RSYNC
     mirror = MIRRORS[distro][0]
@@ -289,7 +294,7 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
                     print(filename, file=f)
                     syncing += 1
         logg.info("syncing %s of %s filenames in %s", syncing, filenames, gz1)
-    pooldir = F"{repodir}/{distro}.{ubuntu}/pools/{dist}/{main}/pool"
+    pooldir = F"{repodir}/{distro}.{version}/pools/{dist}/{main}/pool"
     if not path.isdir(pooldir): os.makedirs(pooldir)
     if when:
         # instead of {exlude} we have nolinux filtered in the Packages above
@@ -300,7 +305,8 @@ def ubuntu_pool() -> None:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    pooldir = F"{repodir}/{distro}.{UBUNTU}/pool"
+    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
+    pooldir = F"{repodir}/{distro}.{version}/pool"
     if path.isdir(pooldir):
         shutil.rmtree(pooldir)
     os.makedirs(pooldir)
@@ -309,7 +315,8 @@ def ubuntu_poolcount() -> None:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    sh___(F"echo `find {repodir}/{distro}.{ubuntu}/pool -type f | wc -l` pool files")
+    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
+    sh___(F"echo `find {repodir}/{distro}.{version}/pool -type f | wc -l` pool files")
 
 def ubuntu_http_port() -> str:
     return "80"
@@ -331,51 +338,53 @@ def repo_image(repos: List[str]) -> str:
     imagesrepo = IMAGESREPO
     python = PYTHON
     scripts = repo_scripts()
-    cname = F"{distro}-repo-{ubuntu}"  # container name
+    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
+    cname = F"{distro}-repo-{version}"  # container name
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} run --name={cname} --detach {baseimage} sleep 9999")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
-    sh___(F"{docker} cp {repodir}/{distro}.{ubuntu}/dists {cname}:/srv/repo/ubuntu")
+    sh___(F"{docker} cp {repodir}/{distro}.{version}/dists {cname}:/srv/repo/ubuntu")
     sh___(F"{docker} exec {cname} apt-get update")
     sh___(F"{docker} exec {cname} apt-get install -y {python}")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu/pool")
     base = "base"
     PORT = ubuntu_http_port()
     CMD = str(ubuntu_http_cmd()).replace("'", '"')
-    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{ubuntu}")
+    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
     for main in repos:
         sh___(F"{docker} rm --force {cname}")
-        sh___(F"{docker} run --name={cname} --detach {imagesrepo}/{distro}-repo/{base}:{ubuntu} sleep 9999")
+        sh___(F"{docker} run --name={cname} --detach {imagesrepo}/{distro}-repo/{base}:{version} sleep 9999")
         for dist in [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]:
-            pooldir = F"{repodir}/{distro}.{ubuntu}/pools/{dist}/{main}/pool"
+            pooldir = F"{repodir}/{distro}.{version}/pools/{dist}/{main}/pool"
             if path.isdir(pooldir):
                 sh___(F"{docker} cp {pooldir}  {cname}:/srv/repo/ubuntu/")
                 base = main
         if base == main:
-            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{ubuntu}")
+            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
     if base != "base":
-        sh___(F"{docker} tag {imagesrepo}/{distro}-repo/{base}:{ubuntu} {imagesrepo}/{distro}-repo:{ubuntu}")
+        sh___(F"{docker} tag {imagesrepo}/{distro}-repo/{base}:{version} {imagesrepo}/{distro}-repo:{version}")
     sh___(F"{docker} rm --force {cname}")
     if NOBASE:
-        sx___(F"{docker} rmi {imagesrepo}/{distro}-repo/base:{ubuntu}")  # untag base image
-    return F"\n[{baseimage}]\nimage = {imagesrepo}/{distro}-repo/{base}:{ubuntu}\n"
+        sx___(F"{docker} rmi {imagesrepo}/{distro}-repo/base:{version}")  # untag base image
+    return F"\n[{baseimage}]\nimage = {imagesrepo}/{distro}-repo/{base}:{version}\n"
 
 def ubuntu_disk() -> str:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
+    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
     rootdir = ubuntu_dir(suffix=F".disk")
     srv = F"{rootdir}/srv"
     logg.info("srv = %s", srv)
     sh___(F"test ! -d {srv} || rm -rf {srv}")
     sh___(F"mkdir -p {srv}/repo/ubuntu")
-    sh___(F"cp -r --link {repodir}/{distro}.{ubuntu}/dists {srv}/repo/ubuntu")
+    sh___(F"cp -r --link {repodir}/{distro}.{version}/dists {srv}/repo/ubuntu")
     sh___(F"mkdir -p {srv}/repo/ubuntu/pool")
     for main in REPOS:
         for dist in [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]:
-            pooldir = F"{repodir}/{distro}.{ubuntu}/pools/{dist}/{main}/pool"
+            pooldir = F"{repodir}/{distro}.{version}/pools/{dist}/{main}/pool"
             if path.isdir(pooldir):
                 sh___(F"cp -r --link --no-clobber {pooldir}  {srv}/repo/ubuntu/")
     host_srv = os.path.realpath(srv)
@@ -479,9 +488,10 @@ def xdg_cache_home() -> str:
 def ubuntu_cache() -> str:
     distro = DISTRO
     ubuntu = UBUNTU
+    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
     cachedir = xdg_cache_home()
     basedir = F"{cachedir}/docker_mirror"
-    maindir = F"{cachedir}/docker_mirror/{distro}.{ubuntu}"
+    maindir = F"{cachedir}/docker_mirror/{distro}.{version}"
     if not os.path.isdir(maindir):
         os.makedirs(maindir)
     return maindir
@@ -508,13 +518,15 @@ def commands() -> str:
 
 def ubuntu_image(distro: str = NIX, ubuntu: str = NIX) -> str:
     image = distro or DISTRO
-    version = ubuntu or UBUNTU
+    ubuntu = ubuntu or UBUNTU
+    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
     return F"{image}:{version}"
 def ubuntu_baseimage(distro: str = NIX, ubuntu: str = NIX) -> str:
     image = distro or DISTRO
-    version = ubuntu or UBUNTU
-    if version in BASEVERSION:
-        version = BASEVERSION[version]
+    ubuntu = ubuntu or UBUNTU
+    if ubuntu in BASEVERSION:
+        ubuntu = BASEVERSION[ubuntu]
+    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
     return F"{image}:{version}"
 
 def UBUNTU_set(ubuntu: str) -> str:
@@ -580,6 +592,8 @@ if __name__ == "__main__":
                   help="use other docker exe or podman [%default]")
     _o.add_option("-V", "--ver", metavar="NUM", default=UBUNTU,
                   help="use other ubuntu version [%default]")
+    _o.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
+                  help="use variant suffix for testing [%default]")
     _o.add_option("-m", "--main", action="store_true", default=False,
                   help="only sync main packages [%default]")
     _o.add_option("-u", "--updates", action="store_true", default=False,
@@ -593,6 +607,7 @@ if __name__ == "__main__":
     opt, args = _o.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
     config_globals(opt.config)
+    VARIANT = opt.variant
     NOBASE = opt.nobase
     DOCKER = opt.docker
     UBUNTU_set(opt.ver)

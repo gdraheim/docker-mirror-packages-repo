@@ -82,6 +82,7 @@ ALMA["9.4-20240530"] = "9.4"
 
 CENTOS = "9.3-20240410"
 ARCH = "x86_64"
+VARIANT = ""
 
 DOCKER = "docker"
 RSYNC = "rsync"
@@ -224,13 +225,15 @@ def centos_epeldir(suffix: str = "") -> str:
 def distro_dir(distro: str, release: str, suffix: str = "") -> str:
     # distro = DISTRO
     repodir = REPODIR
-    dirname = F"{distro}.{release}{suffix}"
+    version = F"{release}.{VARIANT}" if VARIANT else release
+    dirname = F"{distro}.{version}{suffix}"
     dirlink = path.join(repodir, dirname)
     if not path.isdir(repodir):
         os.mkdir(repodir)
     if "-" in release:
-        major, dated = release.split("-", 1)
-        oldname = F"{distro}.{major}{suffix}"
+        mainrelease, _ = release.split("-", 1)
+        version = F"{mainrelease}.{VARIANT}" if VARIANT else mainrelease
+        oldname = F"{distro}.{version}{suffix}"
         oldlink = path.join(repodir, oldname)
         if path.isdir(oldlink) and not path.exists(dirlink):
             logg.info("%s >> %s", oldlink, dirlink)
@@ -282,9 +285,9 @@ def centos_sync() -> None:
         subdirs = SUBDIRS9
     for base in subdirs:
         for subdir in subdirs[base]:
-            logg.info(F"#### [{base}] /{subdir}")
+            logg.info(F"#### [{base}] /{VARIANT}{subdir}")
             distro_sync_subdir(distro, centos, subdir)
-            logg.info(F"DONE [{base}] /{subdir}")
+            logg.info(F"DONE [{base}] /{VARIANT}{subdir}")
 
 def centos_mirror(distro: str = NIX, centos: str = NIX) -> str:
     return distro_mirror(distro, centos)
@@ -302,7 +305,8 @@ def distro_sync_subdir(distro: str, centos: str, subdir: str) -> None:
     mirror = distro_mirror(distro, centos)
     excludes = CENTOS_XXX
     repodir = REPODIR
-    sh___(F"{rsync} -rv {mirror}/{centos2}/{subdir}   {repodir}/{distro}.{centos2}/ {excludes}")
+    version = F"{centos2}.{VARIANT}" if VARIANT else centos2
+    sh___(F"{rsync} -rv {mirror}/{centos2}/{subdir}   {repodir}/{distro}.{version}/ {excludes}")
 
 def centos_sync_AppStream() -> None: distro_sync_subdir(DISTRO, CENTOS, "AppStream")
 def centos_sync_BaseOS() -> None: distro_sync_subdir(DISTRO, CENTOS, "BaseOS")
@@ -361,26 +365,28 @@ def centos_unpack() -> None:
     docker = DOCKER
     distro = DISTRO
     centos = CENTOS
+    version = "F{centos}.{VARIANT}" if VARIANT else centos
     R = major(centos)
     repodir = REPODIR
     cname = "centos-unpack-" + centos  # container name
     image = F"localhost:5000/{distro}-repo"
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} run --name={cname} --detach {image}:{centos} sleep 9999")
-    sh___(F"{docker} cp {cname}:/srv/repo/{R}/os {repodir}/{distro}.{centos}/")
-    sh___(F"{docker} cp {cname}:/srv/repo/{R}/extras {repodir}/{distro}.{centos}/")
-    sh___(F"{docker} cp {cname}:/srv/repo/{R}/updates {repodir}/{distro}.{centos}/")
-    sh___(F"{docker} cp {cname}:/srv/repo/{R}/sclo {repodir}/{distro}.{centos}/")
+    sh___(F"{docker} cp {cname}:/srv/repo/{R}/os {repodir}/{distro}.{version}/")
+    sh___(F"{docker} cp {cname}:/srv/repo/{R}/extras {repodir}/{distro}.{version}/")
+    sh___(F"{docker} cp {cname}:/srv/repo/{R}/updates {repodir}/{distro}.{version}/")
+    sh___(F"{docker} cp {cname}:/srv/repo/{R}/sclo {repodir}/{distro}.{version}/")
     sh___(F"{docker} rm --force {cname}")
-    sh___(F"du -sh {repodir}/{distro}.{centos}/.")
+    sh___(F"du -sh {repodir}/{distro}.{version}/.")
 
 def centos_clean() -> None:
     """ when moving from centos:7 to centos:8 """
     distro = DISTRO
     centos = CENTOS
     repodir = REPODIR
+    version = "F{centos}.{VARIANT}" if VARIANT else centos
     for subdir in ["os", "extras", "updates", "sclo"]:
-        sh___(F"rm -rf {repodir}/{distro}.{centos}/{subdir}")
+        sh___(F"rm -rf {repodir}/{distro}.{version}/{subdir}")
 
 def centos_epelrepo(distro: str = NIX, centos: str = NIX) -> None:
     distro = distro or EPEL
@@ -413,9 +419,10 @@ def centos_epeldate(distro: str = "", centos: str = "", repodir: str = "") -> Op
     centos = centos or CENTOS
     epel = major(centos)
     repodir = repodir or REPODIR
-    epeldir = F"{repodir}/{distro}.{epel}/{epel}"
+    version = "F{epel}.{VARIANT}" if VARIANT else epel
+    epeldir = F"{repodir}/{distro}.{version}/{epel}"
     latest = None
-    for root, dirs, files in os.walk(epeldir):
+    for root, _, files in os.walk(epeldir):
         for name in files:
             filename = os.path.join(root, name)
             changed = os.path.getmtime(filename)
@@ -438,6 +445,7 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
     epel = major(centos)
     arch = ARCH
     scripts = repo_scripts()
+    version = F"{epel}.{VARIANT}" if VARIANT else epel
     cname = F"{distro}-repo-{epel}"
     baseimage = centos_baseimage(DISTRO, centos)
     out, end = output2(F"./docker_mirror.py start {baseimage} -a")
@@ -460,25 +468,25 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
     repo = IMAGESREPO
     latest = centos_epeldate(distro, centos, repodir) or datetime.date.today()
     yymm = latest.strftime("%y%m")
-    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{epel}.x.{yymm}")
+    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{version}.x.{yymm}")
     for dist in dists:
         sx___(F"{docker} rm --force {cname}")
-        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo/{base}:{epel}.x.{yymm} sleep 9999")
+        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo/{base}:{version}.x.{yymm} sleep 9999")
         for subdir in dists[dist]:
             sh___(F"{docker} cp {repodir}/{distro}.{epel}/{epel}/{subdir} {cname}:/srv/repo/epel/{epel}/")
             base = dist  # !!
         if base == dist:
-            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{epel}.x.{yymm}")
-    sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{epel}.x.{yymm} {repo}/{distro}-repo:{epel}.x.{yymm}")
+            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{version}.x.{yymm}")
+    sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{version}.x.{yymm} {repo}/{distro}-repo:{version}.x.{yymm}")
     sx___(F"{docker} rm --force {cname}")
-    sh___(F"{docker} rmi {repo}/{distro}-repo/base:{epel}.x.{yymm}")
+    sh___(F"{docker} rmi {repo}/{distro}-repo/base:{version}.x.{yymm}")
     PORT2 = centos_epel_http_port(distro, centos)
     CMD2 = str(centos_epel_http_cmd(distro, centos)).replace("'", '"')
     if PORT != PORT2:
         # the upstream epel repository runs on https by default but we don't have their certificate anyway
         base2 = "http"  # !!
-        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo:{epel}.x.{yymm} sleep 9999")
-        sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/{distro}-repo/{base2}:{epel}.x.{yymm}")
+        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo:{version}.x.{yymm} sleep 9999")
+        sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/{distro}-repo/{base2}:{version}.x.{yymm}")
         sx___(F"{docker} rm --force {cname}")
 
 def centos_epelrepo7(distro: str = NIX, centos: str = NIX) -> None:
@@ -489,6 +497,7 @@ def centos_epelrepo7(distro: str = NIX, centos: str = NIX) -> None:
     epel = major(centos)
     arch = ARCH
     scripts = repo_scripts()
+    version = F"{epel}.{VARIANT}" if VARIANT else epel
     cname = F"{distro}-repo-{epel}"  # container name
     PORT = centos_epel_port(distro, centos)
     CMD = str(centos_epel_cmd(distro, centos)).replace("'", '"')
@@ -505,15 +514,15 @@ def centos_epelrepo7(distro: str = NIX, centos: str = NIX) -> None:
     latest = centos_epeldate(distro, centos, repodir) or datetime.date.today()
     yymm = latest.strftime("%y%m")
     sh___(F"{docker} cp {repodir}/{distro}.{epel}/{epel} {cname}:/srv/repo/epel/")
-    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/{distro}-repo:{epel}.x.{yymm}")
+    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/{distro}-repo:{version}.x.{yymm}")
     sh___(F"{docker} rm --force {cname}")
     if MAKE_EPEL_HTTP:
         PORT2 = centos_epel_http_port(distro, centos)
         CMD2 = str(centos_epel_http_cmd(distro, centos)).replace("'", '"')
         base2 = "http"  # !!
         # the upstream epel repository runs on https by default but we don't have their certificate anyway
-        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo:{epel}.x.{yymm} sleep 999")
-        sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' {cname} {repo}/{distro}-repo/{base2}:{epel}.x.{yymm}")
+        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo:{version}.x.{yymm} sleep 999")
+        sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' {cname} {repo}/{distro}-repo/{base2}:{version}.x.{yymm}")
         sh___(F"{docker} rm --force {cname}")
 
 def centos_epel_port(distro: str = NIX, centos: str = NIX) -> int:
@@ -602,6 +611,7 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
     baseimage = centos_baseimage(distro, centos)
     rel = centos_release(distro, centos)
     scripts = repo_scripts()
+    version = F"{rel}.{VARIANT}" if VARIANT else rel
     cname = F"{distro}-repo-{centos}"
     PORT = centos_main_port(distro, centos)
     CMD = str(centos_main_cmd(distro, centos)).replace("'", '"')
@@ -617,32 +627,32 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
     base = "base"
     repo = IMAGESREPO
-    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{rel}")
+    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{version}")
     for dist in dists:
         sx___(F"{docker} rm --force {cname}")
-        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo/{base}:{rel} sleep 9999")
+        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo/{base}:{version} sleep 9999")
         for subdir in dists[dist]:
             pooldir = F"{repodir}/{distro}.{centos}/{subdir}"
             if path.isdir(pooldir):
                 sh___(F"{docker} cp {pooldir} {cname}:/srv/repo/{R}/")
                 base = dist
         if base == dist:
-            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{rel}")
+            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{version}")
     sh___(F"{docker} rm --force {cname}")
     if base != "base":
-        sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{rel} {repo}/{distro}-repo:{rel}")
+        sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{version} {repo}/{distro}-repo:{version}")
     if NOBASE:
-        sh___(F"{docker} rmi {repo}/{distro}-repo/base:{rel}")  # untag non-packages base
+        sh___(F"{docker} rmi {repo}/{distro}-repo/base:{version}")  # untag non-packages base
     PORT2 = centos_http_port(distro, centos)
     CMD2 = str(centos_http_cmd(distro, centos)).replace("'", '"')
     if PORT != PORT2:
         # the upstream almalinux repository runs on https by default but we don't have their certificate anyway
         base2 = "http"  # !!
-        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo:{rel} sleep 9999")
-        sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/{distro}-repo/{base2}:{rel}")
+        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo:{version} sleep 9999")
+        sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/{distro}-repo/{base2}:{version}")
         sx___(F"{docker} rm --force {cname}")
     centos_restore()
-    return F"\n[{baseimage}]\nimage = {repo}/{distro}-repo/{base}:{rel}\n"
+    return F"\n[{baseimage}]\nimage = {repo}/{distro}-repo/{base}:{version}\n"
 
 def centos_disk(distro: str = NIX, centos: str = NIX) -> str:
     distro = distro or DISTRO
@@ -671,6 +681,7 @@ def distro_diskmake(distro: str, centos: str, dists: Dict[str, List[str]]) -> st
     centos_cleaner()
     rel = centos_release(distro, centos)
     scripts = repo_scripts()
+    # version = F"{rel}.{VARIANT}" if VARIANT else rel
     rootdir = distro_dir(distro, centos, suffix=F".disk")
     srv = F"{rootdir}/srv"
     logg.info("srv = %s", srv)
@@ -825,7 +836,7 @@ def output3(cmd: Union[str, List[str]], shell: bool = True) -> Tuple[str, str, i
 #############################################################################
 
 def path_find(base: str, name: str) -> Optional[str]:
-    for dirpath, dirnames, filenames in os.walk(base):
+    for dirpath, _, filenames in os.walk(base):
         if name in filenames:
             return path.join(dirpath, name)
     return None
@@ -936,11 +947,14 @@ if __name__ == "__main__":
                   help="use other docker exe or podman [%default]")
     _o.add_option("-V", "--ver", metavar="NUM", default=CENTOS,
                   help="use other centos version [%default]")
+    _o.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
+                  help="use variant suffix for testing [%default]")
     _o.add_option("-c", "--config", metavar="NAME=VAL", action="append", default=[],
                   help="override globals (REPODIR, REPODATADIRS, IMAGESREPO)")
     opt, args = _o.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
     config_globals(opt.config)
+    VARIANT = opt.variant
     NOBASE = opt.nobase
     DOCKER = opt.docker
     CENTOS_set(opt.ver)

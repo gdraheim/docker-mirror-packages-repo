@@ -102,7 +102,8 @@ def opensuse_dir(suffix: str = "") -> str:
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
-    dirname = F"{distro}.{leap}{suffix}"
+    version = F"{leap}.{VARIANT}" if VARIANT else leap
+    dirname = F"{distro}.{version}{suffix}"
     dirlink = path.join(repodir, dirname)
     if not path.isdir(repodir):
         os.mkdir(repodir)
@@ -133,7 +134,8 @@ def opensuse_save() -> None:
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
-    src = F"{repodir}/{distro}.{leap}/."
+    version = F"{leap}.{VARIANT}" if VARIANT else leap
+    src = F"{repodir}/{distro}.{version}/."
     dst = opensuse_dir("." + yymmdd) + "/."
     logg.info("src = %s", src)
     logg.info("dst = %s", dst)
@@ -165,17 +167,18 @@ def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
+    version = F"{leap}.{VARIANT}" if VARIANT else leap
     mirror = MIRRORS[distro][0]
     rsync = RSYNC
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in skipfiles])
     excludes += """ --size-only --copy-links """
-    leaprepo = F"{repodir}/{distro}.{leap}/{dist}/leap/{leap}/repo"
+    leaprepo = F"{repodir}/{distro}.{version}/{dist}/leap/{leap}/repo"
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     # retry:
     cmd = F"{rsync} -rv {mirror}/{dist}/leap/{leap}/repo/{repo} {leaprepo}/ {excludes}"
-    logfile = F"{repodir}/{distro}.{leap}.log"
+    logfile = F"{repodir}/{distro}.{version}.log"
     for attempt in xrange(RETRY):
         try:
             sh___(F"set -o pipefail ; {cmd} |& tee {logfile}")
@@ -187,17 +190,18 @@ def opensuse_sync_pack_(dist: str, repo: str, filters: List[str] = []) -> None:
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
+    version = F"{leap}.{VARIANT}" if VARIANT else leap
     mirror = MIRRORS[distro][0]
     rsync = RSYNC
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in skipfiles])
     excludes += """ --size-only --copy-links """
-    leaprepo = F"{repodir}/{distro}.{leap}/{dist}/leap/{leap}"
+    leaprepo = F"{repodir}/{distro}.{version}/{dist}/leap/{leap}"
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     # retry:
     cmd = F"{rsync} -rv {mirror}/{dist}/leap/{leap}/{repo} {leaprepo}/ {excludes}"
-    logfile = F"{repodir}/{distro}.{leap}.log"
+    logfile = F"{repodir}/{distro}.{version}.log"
     for attempt in xrange(RETRY):
         try:
             sh___(F"set -o pipefail ; {cmd} |& tee {logfile}")
@@ -220,7 +224,8 @@ def opensuse_games(suffix: str = "") -> None:
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
-    dirname = F"{repodir}/{distro}.{leap}{suffix}"
+    version = F"{leap}.{VARIANT}" if VARIANT else leap
+    dirname = F"{repodir}/{distro}.{version}{suffix}"
     basedir = dirname + "/."
     logg.info("check %s", basedir)
     if path.isdir(basedir):
@@ -249,6 +254,7 @@ def opensuse_repo(onlybase: bool = False) -> str:
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
+    version = F"{leap}.{VARIANT}" if VARIANT else leap
     baseimage = opensuse_baseimage(distro, leap)
     scripts = repo_scripts()
     cname = F"{distro}-repo-{leap}"
@@ -277,7 +283,7 @@ def opensuse_repo(onlybase: bool = False) -> str:
     CMD = str(opensuserepo_CMD).replace("'", '"')
     PORT = opensuserepo_PORT
     base = "base"
-    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{leap}")
+    sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
     dists: Dict[str, List[str]] = OrderedDict()
     if not onlybase:
         # dists["mini"] = ["distribution", "-games"]
@@ -285,13 +291,13 @@ def opensuse_repo(onlybase: bool = False) -> str:
         dists["update"] = ["update"]
     for dist in dists:
         sx___(F"{docker} rm --force {cname}")
-        sh___(F"{docker} run --name={cname} --detach {imagesrepo}/{distro}-repo/{base}:{leap} sleep 9999")
+        sh___(F"{docker} run --name={cname} --detach {imagesrepo}/{distro}-repo/{base}:{version} sleep 9999")
         clean: Dict[str, str] = {}
         for subdir in dists[dist]:
-            basedir = F"{repodir}/{distro}.{leap}/."
-            pooldir = F"{repodir}/{distro}.{leap}/{subdir}"
+            basedir = F"{repodir}/{distro}.{version}/."
+            pooldir = F"{repodir}/{distro}.{version}/{subdir}"
             if subdir.startswith("-"):
-                gamesfile = F"{repodir}/{distro}.{leap}{subdir}.json"
+                gamesfile = F"{repodir}/{distro}.{version}{subdir}.json"
                 clean = json.load(open(gamesfile))
                 if not clean:
                     continue
@@ -316,13 +322,13 @@ def opensuse_repo(onlybase: bool = False) -> str:
             if leap in XXLEAP:
                 sh___(F""" {docker} exec {cname} bash -c "cd /srv/repo/{dist}/leap/{leap}/oss && createrepo ." """)
         if base == dist:
-            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{leap}")
+            sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
     sh___(F"{docker} rm --force {cname}")
     if base != "base":
-        sh___(F"{docker} tag {imagesrepo}/{distro}-repo/{base}:{leap} {imagesrepo}/{distro}-repo:{leap}")
+        sh___(F"{docker} tag {imagesrepo}/{distro}-repo/{base}:{version} {imagesrepo}/{distro}-repo:{version}")
     if NOBASE:
-        sh___(F"{docker} rmi {imagesrepo}/{distro}-repo/base:{leap}")  # untag non-packages base
-    return F"\n[{baseimage}]\nimage = {imagesrepo}/{distro}-repo/{base}:{leap}\n"
+        sh___(F"{docker} rmi {imagesrepo}/{distro}-repo/base:{version}")  # untag non-packages base
+    return F"\n[{baseimage}]\nimage = {imagesrepo}/{distro}-repo/{base}:{version}\n"
 
 def opensuse_disk(onlybase: bool = False) -> str:
     createrepo = find_path("createrepo")
@@ -332,6 +338,7 @@ def opensuse_disk(onlybase: bool = False) -> str:
     repodir = REPODIR
     imagesrepo = IMAGESREPO
     scripts = repo_scripts()
+    version = F"{leap}.{VARIANT}" if VARIANT else leap
     rootdir = opensuse_dir(suffix=F".disk")
     srv = F"{rootdir}/srv"
     logg.info("srv = %s", srv)
@@ -345,8 +352,8 @@ def opensuse_disk(onlybase: bool = False) -> str:
     for dist in dists:
         clean: Dict[str, str] = {}
         for subdir in dists[dist]:
-            basedir = F"{repodir}/{distro}.{leap}/."
-            pooldir = F"{repodir}/{distro}.{leap}/{subdir}"
+            basedir = F"{repodir}/{distro}.{version}/."
+            pooldir = F"{repodir}/{distro}.{version}/{subdir}"
             if path.isdir(pooldir):
                 sh___(F"cp -r --link --no-clobber {pooldir} {srv}/repo/")
                 base = dist
@@ -359,7 +366,7 @@ def opensuse_disk(onlybase: bool = False) -> str:
                 if createrepo:
                     sh___(F" cd {srv}/repo/{dist}/leap/{leap}/oss && {createrepo} . ")
                 else:
-                    baseimage = F"{imagesrepo}/{distro}-repo/base:{leap}"
+                    baseimage = F"{imagesrepo}/{distro}-repo/base:{version}"
                     host_uid = os.getuid()
                     host_srv = os.path.abspath(srv)
                     sh___(F""" rm  -rv {host_srv}/repo/{dist}/leap/{leap}/oss/repodata """)
@@ -546,11 +553,14 @@ if __name__ == "__main__":
                   help="use other docker exe or podman [%default]")
     _o.add_option("-V", "--ver", metavar="NUM", default=LEAP,
                   help="use other opensuse/leap version [%default]")
+    _o.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
+                  help="use variant suffix for testing [%default]")
     _o.add_option("-c", "--config", metavar="NAME=VAL", action="append", default=[],
                   help="override globals (REPODIR, REPODATADIRS, IMAGESREPO)")
     opt, args = _o.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
     config_globals(opt.config)
+    VARIANT = opt.variant
     NOBASE = opt.nobase
     DOCKER = opt.docker
     LEAP_set(opt.ver)
