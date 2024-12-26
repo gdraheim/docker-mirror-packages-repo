@@ -80,10 +80,13 @@ ALMA["9.3-20240410"] = "9.3"
 ALMA["9.4-20240506"] = "9.4"
 ALMA["9.4-20240530"] = "9.4"
 
+ARCHLIST = ["x86_64", "ppc64le", "aarch64", "s390x"] 
+
 CENTOS = "9.3-20240410"
-ARCH = "x86_64"
+ARCHS = ["x86_64"]
 VARIANT = ""
 
+PYTHON = "" # default depends on centos version
 DOCKER = "docker"
 RSYNC = "rsync"
 
@@ -346,7 +349,7 @@ def distro_epelsyncs(distro: str, centos: str, subdirs: List[str] = []) -> str:
     rsync = RSYNC
     mirror = MIRRORS[distro][0]
     epel = major(centos)
-    arch = ARCH
+    archs = ARCHS
     repo = distro_dir(distro, epel)
     excludes = """ --exclude "*.iso" """
     if subdirs:
@@ -354,10 +357,12 @@ def distro_epelsyncs(distro: str, centos: str, subdirs: List[str] = []) -> str:
             basedir = F"{repo}/{epel}/{subdir}"
             if not path.isdir(basedir):
                 os.makedirs(basedir)
-            sh___(F"{rsync} -rv {mirror}/{epel}/{subdir}/{arch} {basedir}/ {excludes}")
+            for arch in archs:
+                sh___(F"{rsync} -rv {mirror}/{epel}/{subdir}/{arch} {basedir}/ {excludes}")
     else:
         basedir = F"{repo}/{epel}"
-        sh___(F"{rsync} -rv {mirror}/{epel}/{arch} {basedir}/ {excludes}")
+        for arch in archs:
+            sh___(F"{rsync} -rv {mirror}/{epel}/{arch} {basedir}/ {excludes}")
     return F"epel.{epel}/{epel}"
 
 def centos_unpack() -> None:
@@ -443,7 +448,6 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
     repodir = REPODIR
     docker = DOCKER
     epel = major(centos)
-    arch = ARCH
     scripts = repo_scripts()
     version = F"{epel}.{VARIANT}" if VARIANT else epel
     cname = F"{distro}-repo-{epel}"
@@ -495,7 +499,6 @@ def centos_epelrepo7(distro: str = NIX, centos: str = NIX) -> None:
     repodir = REPODIR
     docker = DOCKER
     epel = major(centos)
-    arch = ARCH
     scripts = repo_scripts()
     version = F"{epel}.{VARIANT}" if VARIANT else epel
     cname = F"{distro}-repo-{epel}"  # container name
@@ -572,6 +575,8 @@ def centos_http_cmd(distro: str = NIX, centos: str = NIX) -> List[str]:
 def centos_python(distro: str = NIX, centos: str = NIX) -> str:
     distro = distro or DISTRO
     centos = centos or CENTOS
+    if PYTHON:
+        return PYTHON
     if centos.startswith("7"):
         return "/usr/bin/python"
     if centos.startswith("8"):
@@ -718,23 +723,25 @@ def centos_cleaner() -> None:
     distro = DISTRO
     centos = CENTOS
     repodir = REPODIR
-    arch = "x86_64"
+    archs = ARCHS
     for subdir in ["updates", "extras"]:
-        orig = F"{repodir}/{distro}.{centos}/{subdir}/{arch}/drpms"
-        save = F"{repodir}/{distro}.{centos}/{subdir}.{arch}.drpms"
-        if path.isdir(orig):
-            shutil.move(orig, save)
+        for arch in archs:
+            orig = F"{repodir}/{distro}.{centos}/{subdir}/{arch}/drpms"
+            save = F"{repodir}/{distro}.{centos}/{subdir}.{arch}.drpms"
+            if path.isdir(orig):
+                shutil.move(orig, save)
 
 def centos_restore() -> None:
     distro = DISTRO
     centos = CENTOS
     repodir = REPODIR
-    arch = "x86_64"
+    archs = ARCHS
     for subdir in ["updates", "extras"]:
-        orig = F"{repodir}/{distro}.{centos}/{subdir}/{arch}/drpms"
-        save = F"{repodir}/{distro}.{centos}/{subdir}.{arch}.drpms"
-        if path.isdir(save):
-            shutil.move(save, orig)
+        for arch in archs:
+            orig = F"{repodir}/{distro}.{centos}/{subdir}/{arch}/drpms"
+            save = F"{repodir}/{distro}.{centos}/{subdir}.{arch}.drpms"
+            if path.isdir(save):
+                shutil.move(save, orig)
 
 def centos_test() -> None:
     distro = DISTRO
@@ -953,11 +960,19 @@ if __name__ == "__main__":
                   help="use other centos version [%default]")
     _o.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
                   help="use variant suffix for testing [%default]")
+    _o.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
+                  help=F"use other ubuntu version {ARCHS}")
     _o.add_option("-c", "--config", metavar="NAME=VAL", action="append", default=[],
                   help="override globals (REPODIR, REPODATADIRS, IMAGESREPO)")
     opt, args = _o.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
     config_globals(opt.config)
+    if opt.archs:
+        badarchs = [arch for arch in opt.archs if arch not in ARCHLIST]
+        if badarchs:
+            logg.error("unknown arch %s (from known %s)", badarchs, ARCHLIST)
+            sys.exit(1)
+        ARCHS = opt.archs
     VARIANT = opt.variant
     NOBASE = opt.nobase
     DOCKER = opt.docker

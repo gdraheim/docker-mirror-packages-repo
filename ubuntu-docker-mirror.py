@@ -42,6 +42,10 @@ PYTHON = "python3"
 DISTRO = "ubuntu"
 UBUNTU = "24.04"
 VARIANT = ""
+
+ARCHLIST = ["amd64", "i386"]
+ARCHS = ["amd64", "i386"]
+
 RSYNC_UBUNTU = "rsync://ftp5.gwdg.de/pub/linux/debian/ubuntu"
 
 MIRRORS: Dict[str, List[str]] = {}
@@ -598,6 +602,8 @@ if __name__ == "__main__":
                   help="use other ubuntu version [%default]")
     _o.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
                   help="use variant suffix for testing [%default]")
+    _o.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
+                  help=F"use other ubuntu version {ARCHS}")
     _o.add_option("-m", "--main", action="store_true", default=False,
                   help="only sync main packages [%default]")
     _o.add_option("-u", "--updates", action="store_true", default=False,
@@ -611,6 +617,12 @@ if __name__ == "__main__":
     opt, args = _o.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
     config_globals(opt.config)
+    if opt.archs:
+        badarchs = [arch for arch in opt.archs if arch not in ARCHLIST]
+        if badarchs:
+            logg.error("unknown arch %s (from known %s)", badarchs, ARCHLIST)
+            sys.exit(1)
+        ARCHS = opt.archs
     VARIANT = opt.variant
     NOBASE = opt.nobase
     DOCKER = opt.docker

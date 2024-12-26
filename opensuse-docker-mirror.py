@@ -54,6 +54,7 @@ OPENSUSE["15.6"] = "opensuse/leap"
 OPENSUSE["16.0"] = "opensuse/leap"
 XXLEAP: List[str] = []  # ["15.2"] # obsolete, using repodata-fix.py now
 LEAP: str = "15.5"
+VARIANT = ""
 
 RSYNC_SUSE1 = "rsync://suse.uni-leipzig.de/opensuse-full/opensuse"  # incomplete for 15.6
 RSYNC_SUSE2 = "rsync://ftp.tu-chemnitz.de/ftp/pub/linux/opensuse"
@@ -62,6 +63,10 @@ RSYNC_SUSE3 = "rsync://mirror.cs.upb.de/opensuse"
 DISTRO = "opensuse"
 MIRRORS: Dict[str, List[str]] = {}
 MIRRORS["opensuse"] = [RSYNC_SUSE2, RSYNC_SUSE3]
+
+ARCHLIST = [ "x86_64", "aarch64", "s390x", "ppc", "ppc64le" ]
+ARCHS = ["x86_64"]
+
 
 PYTHON = "python3"
 RSYNC = "rsync"
@@ -559,11 +564,19 @@ if __name__ == "__main__":
                   help="use other opensuse/leap version [%default]")
     _o.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
                   help="use variant suffix for testing [%default]")
+    _o.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
+                  help=F"use other ubuntu version {ARCHS}")
     _o.add_option("-c", "--config", metavar="NAME=VAL", action="append", default=[],
                   help="override globals (REPODIR, REPODATADIRS, IMAGESREPO)")
     opt, args = _o.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
     config_globals(opt.config)
+    if opt.archs:
+        badarchs = [arch for arch in opt.archs if arch not in ARCHLIST]
+        if badarchs:
+            logg.error("unknown arch %s (from known %s)", badarchs, ARCHLIST)
+            sys.exit(1)
+        ARCHS = opt.archs
     VARIANT = opt.variant
     NOBASE = opt.nobase
     DOCKER = opt.docker
