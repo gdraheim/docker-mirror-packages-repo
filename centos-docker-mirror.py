@@ -945,6 +945,8 @@ if __name__ == "__main__":
                   help="rm */base when repo image is ready [%default]")
     _o.add_option("-D", "--docker", metavar="EXE", default=DOCKER,
                   help="use other docker exe or podman [%default]")
+    _o.add_option("--rsync", metavar="EXE", default=RSYNC,
+                  help="use other rsync exe [%default]")
     _o.add_option("-V", "--ver", metavar="NUM", default=CENTOS,
                   help="use other centos version [%default]")
     _o.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
@@ -957,6 +959,7 @@ if __name__ == "__main__":
     VARIANT = opt.variant
     NOBASE = opt.nobase
     DOCKER = opt.docker
+    RSYNC = opt.rsync
     CENTOS_set(opt.ver)
     #
     if not args: args = ["make"]
