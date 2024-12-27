@@ -545,7 +545,7 @@ if __name__ == "__main__":
     _o.add_option("--datadir", metavar="DIR", default=REPODATADIR,
                   help="set $REPODATADIR -> "+(REPODATADIR if REPODATADIR else opensuse_datadir()))
     _o.add_option("--imagesrepo", metavar="PREFIX", default=IMAGESREPO,
-                  help="set $IMAGESREPO prefix")
+                  help="set $IMAGESREPO [%default]")
     _o.add_option("-V", "--ver", metavar="NUM", default=LEAP,
                   help="use other opensuse/leap version [%default]")
     _o.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
