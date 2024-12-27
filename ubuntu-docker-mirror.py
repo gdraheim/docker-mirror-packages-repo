@@ -585,10 +585,10 @@ if __name__ == "__main__":
                        help="set $REPODATADIR -> "+(REPODATADIR if REPODATADIR else ubuntu_datadir()))
     cmdline.add_option("--imagesrepo", metavar="PREFIX", default=IMAGESREPO,
                        help="set $IMAGESREPO [%default]")
-    cmdline.add_option("-V", "--ver", metavar="NUM", default=UBUNTU,
-                       help="use other ubuntu version [%default]")
     cmdline.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
                        help="use variant suffix for testing [%default]")
+    cmdline.add_option("-V", "--ver", metavar="NUM", default=UBUNTU,
+                       help="use other ubuntu version [%default]")
     cmdline.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
                        help=F"use other arch list {ARCHS}")
     cmdline.add_option("-m", "--main", action="store_true", default=False,

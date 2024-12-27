@@ -547,10 +547,10 @@ if __name__ == "__main__":
                        help="set $REPODATADIR -> "+(REPODATADIR if REPODATADIR else opensuse_datadir()))
     cmdline.add_option("--imagesrepo", metavar="PREFIX", default=IMAGESREPO,
                        help="set $IMAGESREPO [%default]")
-    cmdline.add_option("-V", "--ver", metavar="NUM", default=LEAP,
-                       help="use other opensuse/leap version [%default]")
     cmdline.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
                        help="use variant suffix for testing [%default]")
+    cmdline.add_option("-V", "--ver", metavar="NUM", default=LEAP,
+                       help="use other opensuse/leap version [%default]")
     cmdline.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
                        help=F"use other arch list {ARCHS}")
     opt, args = cmdline.parse_args()
