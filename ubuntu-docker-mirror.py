@@ -566,41 +566,41 @@ def UBUNTU_set(ubuntu: str) -> str:
 
 if __name__ == "__main__":
     from optparse import OptionParser
-    _o = OptionParser("%%prog [-options] [%s]" % commands(),
+    cmdline = OptionParser("%%prog [-options] [%s]" % commands(),
                       epilog=re.sub("\\s+", " ", __doc__).strip())
-    _o.add_option("-v", "--verbose", action="count", default=0,
-                  help="increase logging level [%default]")
-    _o.add_option("-R", "--nobase", action="store_true", default=NOBASE,
-                  help="rm */base when repo image is ready [%default]")
-    _o.add_option("-D", "--docker", metavar="EXE", default=DOCKER,
-                  help="use other docker exe or podman [%default]")
-    _o.add_option("--rsync", metavar="EXE", default=RSYNC,
-                  help="use other rsync exe [%default]")
-    _o.add_option("--python", metavar="EXE", default=PYTHON,
-                  help="use other python as script runner [%default]")
-    _o.add_option("--repodir", metavar="DIR", default=REPODIR,
-                  help="set $REPODIR [%default]")
-    _o.add_option("--datadir", metavar="DIR", default=REPODATADIR,
-                  help="set $REPODATADIR -> "+(REPODATADIR if REPODATADIR else ubuntu_datadir()))
-    _o.add_option("--imagesrepo", metavar="PREFIX", default=IMAGESREPO,
-                  help="set $IMAGESREPO [%default]")
-    _o.add_option("-V", "--ver", metavar="NUM", default=UBUNTU,
-                  help="use other ubuntu version [%default]")
-    _o.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
-                  help="use variant suffix for testing [%default]")
-    _o.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
-                  help=F"use other ubuntu version {ARCHS}")
-    _o.add_option("-m", "--main", action="store_true", default=False,
-                  help="only sync main packages [%default]")
-    _o.add_option("-u", "--updates", action="store_true", default=False,
-                  help="only main and updates packages [%default]")
-    _o.add_option("-U", "--universe", action="store_true", default=False,
-                  help="include universe packages [%default]")
-    _o.add_option("-M", "--multiverse", action="store_true", default=False,
-                  help="include all packages [%default]")
-    opt, args = _o.parse_args()
+    cmdline.formatter.max_help_position = 30
+    cmdline.add_option("-v", "--verbose", action="count", default=0,
+                       help="increase logging level [%default]")
+    cmdline.add_option("-R", "--nobase", action="store_true", default=NOBASE,
+                       help="rm */base when repo image is ready [%default]")
+    cmdline.add_option("-D", "--docker", metavar="EXE", default=DOCKER,
+                       help="use other docker exe or podman [%default]")
+    cmdline.add_option("--rsync", metavar="EXE", default=RSYNC,
+                       help="use other rsync exe [%default]")
+    cmdline.add_option("--python", metavar="EXE", default=PYTHON,
+                       help="use other python as script runner [%default]")
+    cmdline.add_option("--repodir", metavar="DIR", default=REPODIR,
+                       help="set $REPODIR [%default]")
+    cmdline.add_option("--datadir", metavar="DIR", default=REPODATADIR,
+                       help="set $REPODATADIR -> "+(REPODATADIR if REPODATADIR else ubuntu_datadir()))
+    cmdline.add_option("--imagesrepo", metavar="PREFIX", default=IMAGESREPO,
+                       help="set $IMAGESREPO [%default]")
+    cmdline.add_option("-V", "--ver", metavar="NUM", default=UBUNTU,
+                       help="use other ubuntu version [%default]")
+    cmdline.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
+                       help="use variant suffix for testing [%default]")
+    cmdline.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
+                       help=F"use other ubuntu version {ARCHS}")
+    cmdline.add_option("-m", "--main", action="store_true", default=False,
+                       help="only sync main packages [%default]")
+    cmdline.add_option("-u", "--updates", action="store_true", default=False,
+                       help="only main and updates packages [%default]")
+    cmdline.add_option("-U", "--universe", action="store_true", default=False,
+                       help="include universe packages [%default]")
+    cmdline.add_option("-M", "--multiverse", action="store_true", default=False,
+                       help="include all packages [%default]")
+    opt, args = cmdline.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
-    config_globals(opt.config)
     if opt.archs:
         badarchs = [arch for arch in opt.archs if arch not in ARCHLIST]
         if badarchs:
