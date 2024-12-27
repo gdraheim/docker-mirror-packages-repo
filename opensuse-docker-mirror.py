@@ -540,6 +540,8 @@ if __name__ == "__main__":
                   help="use other rsync exe [%default]")
     _o.add_option("--python", metavar="EXE", default=PYTHON,
                   help="use other python as script runner [%default]")
+    _o.add_option("--repodir", metavar="DIR", default=REPODIR,
+                  help="set $REPODIR [%default]")
     _o.add_option("--datadir", metavar="DIR", default=REPODATADIR,
                   help="set $REPODATADIR [%default]"+("" if REPODATADIR else opensuse_datadir()))
     _o.add_option("--imagesrepo", metavar="PREFIX", default=IMAGESREPO,
