@@ -609,6 +609,8 @@ if __name__ == "__main__":
                   help="set $REPODIR [%default]")
     _o.add_option("--datadir", metavar="DIR", default=REPODATADIR,
                   help="set $REPODATADIR [%default]"+("" if REPODATADIR else ubuntu_datadir()))
+    _o.add_option("--imagesrepo", metavar="PREFIX", default=IMAGESREPO,
+                  help="set $IMAGESREPO prefix")
     _o.add_option("-V", "--ver", metavar="NUM", default=UBUNTU,
                   help="use other ubuntu version [%default]")
     _o.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
@@ -638,6 +640,7 @@ if __name__ == "__main__":
     if opt.datadir:
         REPODATADIR = opt.datadir
         DATADIRS = [ REPODATADIR ]
+    IMAGESREPO = opt.imagesrepo
     VARIANT = opt.variant
     NOBASE = opt.nobase
     DOCKER = opt.docker
