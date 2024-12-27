@@ -552,7 +552,7 @@ if __name__ == "__main__":
     cmdline.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
                        help="use variant suffix for testing [%default]")
     cmdline.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
-                       help=F"use other ubuntu version {ARCHS}")
+                       help=F"use other arch list {ARCHS}")
     opt, args = cmdline.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
     if opt.archs:

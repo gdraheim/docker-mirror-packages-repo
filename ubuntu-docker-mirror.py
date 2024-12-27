@@ -590,7 +590,7 @@ if __name__ == "__main__":
     cmdline.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
                        help="use variant suffix for testing [%default]")
     cmdline.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
-                       help=F"use other ubuntu version {ARCHS}")
+                       help=F"use other arch list {ARCHS}")
     cmdline.add_option("-m", "--main", action="store_true", default=False,
                        help="only sync main packages [%default]")
     cmdline.add_option("-u", "--updates", action="store_true", default=False,
