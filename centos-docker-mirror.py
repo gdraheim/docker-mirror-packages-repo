@@ -939,7 +939,7 @@ if __name__ == "__main__":
     _o.add_option("--repodir", metavar="DIR", default=REPODIR,
                   help="set $REPODIR [%default]")
     _o.add_option("--datadir", metavar="DIR", default=REPODATADIR,
-                  help="set $REPODATADIR [%default]"+("" if REPODATADIR else centos_datadir()))
+                  help="set $REPODATADIR -> "+(REPODATADIR if REPODATADIR else centos_datadir()))
     _o.add_option("--imagesrepo", metavar="PREFIX", default=IMAGESREPO,
                   help="set $IMAGESREPO prefix")
     _o.add_option("-V", "--ver", metavar="NUM", default=CENTOS,
