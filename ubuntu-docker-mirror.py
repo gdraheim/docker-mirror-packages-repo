@@ -151,6 +151,13 @@ def ubuntu_sync() -> None:
     ubuntu_sync_universe_4()
     ubuntu_sync_multiverse_4()
 
+def ubuntu_datadir() -> str:
+    for data in reversed(DATADIRS):
+        logg.debug(".. check %s", data)
+        if path.isdir(data):
+            return data
+    return REPODIR
+
 def ubuntu_dir(suffix: str = "") -> str:
     distro = DISTRO
     ubuntu = UBUNTU
@@ -598,6 +605,10 @@ if __name__ == "__main__":
                   help="use other rsync exe [%default]")
     _o.add_option("--python", metavar="EXE", default=PYTHON,
                   help="use other python as script runner [%default]")
+    _o.add_option("--repodir", metavar="DIR", default=REPODIR,
+                  help="set $REPODIR [%default]")
+    _o.add_option("--datadir", metavar="DIR", default=REPODATADIR,
+                  help="set $REPODATADIR [%default]"+("" if REPODATADIR else ubuntu_datadir()))
     _o.add_option("-V", "--ver", metavar="NUM", default=UBUNTU,
                   help="use other ubuntu version [%default]")
     _o.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
@@ -623,6 +634,10 @@ if __name__ == "__main__":
             logg.error("unknown arch %s (from known %s)", badarchs, ARCHLIST)
             sys.exit(1)
         ARCHS = opt.archs
+    REPODIR = opt.repodir
+    if opt.datadir:
+        REPODATADIR = opt.datadir
+        DATADIRS = [ REPODATADIR ]
     VARIANT = opt.variant
     NOBASE = opt.nobase
     DOCKER = opt.docker

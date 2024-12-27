@@ -217,6 +217,13 @@ def centos_pull() -> None:
         if release != centos:
             sh___(f"{docker} tag almalinux:{release} almalinux:{centos}")
 
+def centos_datadir() -> str:
+    for data in reversed(DATADIRS):
+        logg.debug(".. check %s", data)
+        if path.isdir(data):
+            return data
+    return REPODIR
+
 def centos_dir(suffix: str = "") -> str:
     distro = DISTRO
     centos = CENTOS
@@ -956,6 +963,10 @@ if __name__ == "__main__":
                   help="use other rsync exe [%default]")
     _o.add_option("--python", metavar="EXE", default=PYTHON,
                   help="use other python as script runner [%default]")
+    _o.add_option("--repodir", metavar="DIR", default=REPODIR,
+                  help="set $REPODIR [%default]")
+    _o.add_option("--datadir", metavar="DIR", default=REPODATADIR,
+                  help="set $REPODATADIR [%default]"+("" if REPODATADIR else centos_datadir()))
     _o.add_option("-V", "--ver", metavar="NUM", default=CENTOS,
                   help="use other centos version [%default]")
     _o.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
@@ -973,6 +984,10 @@ if __name__ == "__main__":
             logg.error("unknown arch %s (from known %s)", badarchs, ARCHLIST)
             sys.exit(1)
         ARCHS = opt.archs
+    REPODIR = opt.repodir
+    if opt.datadir:
+        REPODATADIR = opt.datadir
+        DATADIRS = [ REPODATADIR ]
     VARIANT = opt.variant
     NOBASE = opt.nobase
     DOCKER = opt.docker

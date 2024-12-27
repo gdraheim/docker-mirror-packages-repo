@@ -103,6 +103,13 @@ def opensuse_sync() -> None:
             else:
                 opensuse_sync_pack_(dist, repo, filters)  # repo may not exist (yet)
 
+def opensuse_datadir() -> str:
+    for data in reversed(DATADIRS):
+        logg.debug(".. check %s", data)
+        if path.isdir(data):
+            return data
+    return REPODIR
+
 def opensuse_dir(suffix: str = "") -> str:
     distro = DISTRO
     leap = LEAP
@@ -560,6 +567,8 @@ if __name__ == "__main__":
                   help="use other rsync exe [%default]")
     _o.add_option("--python", metavar="EXE", default=PYTHON,
                   help="use other python as script runner [%default]")
+    _o.add_option("--datadir", metavar="DIR", default=REPODATADIR,
+                  help="set $REPODATADIR [%default]"+("" if REPODATADIR else opensuse_datadir()))
     _o.add_option("-V", "--ver", metavar="NUM", default=LEAP,
                   help="use other opensuse/leap version [%default]")
     _o.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
@@ -577,6 +586,10 @@ if __name__ == "__main__":
             logg.error("unknown arch %s (from known %s)", badarchs, ARCHLIST)
             sys.exit(1)
         ARCHS = opt.archs
+    REPODIR = opt.repodir
+    if opt.datadir:
+        REPODATADIR = opt.datadir
+        DATADIRS = [ REPODATADIR ]
     VARIANT = opt.variant
     NOBASE = opt.nobase
     DOCKER = opt.docker
