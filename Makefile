@@ -117,8 +117,15 @@ untag:
 
 K=
 test_%: ; ./docker_mirror.tests.py $@ -vv $V $K 
-check: ; ./docker_mirror.tests.py -vv $V $K
+m_%: ; ./docker_mirror.tests.py $@ -vv $V $K 
+o_%: ; ./opensuse-docker-mirror.tests.py $@ -vv $V $K 
+
 dry precheck: ; ./docker_mirror.tests.py -vv $V $K --dryrun
+check: mm oo cc uu
+mm: ; ./docker_mirror.tests.py -vv $V $K
+oo: ; ./opensuse-docker-mirror.tests.py -v $V $K
+
+ooo: ; ./opensuse-docker-mirror.tests.py -v $V $K --coverage
 
 tests: ; $(PYTHON3) dockerdir-tests.py $K
 
