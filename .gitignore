@@ -36,4 +36,5 @@ dist
 .vscode/settings.json
 build
 .coverage
+*.coverage.*
 *,cover
