@@ -111,7 +111,7 @@ class OpensuseMirrorTest(unittest.TestCase):
             return "42" + "." + ver3[2]
         return ver3[0:2] + "." + ver3[2]
     #
-    def test_2100(self) -> None:
+    def test_60100(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} --help"
@@ -119,7 +119,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.debug("out: %s", out)
         self.assertIn("imagesrepo=PREFIX", out)
         self.coverage()
-    def test_2101(self) -> None:
+    def test_60101(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} commands"
@@ -131,14 +131,14 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertIn("|datadir|", out)
         self.assertIn("|version", out)
         self.coverage()
-    def test_2110(self) -> None:
+    def test_60110(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} datadir"
         out = sh(cmd)
         logg.debug("out: %s", out)
         self.coverage()
-    def test_2111(self) -> None:
+    def test_60111(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} scripts"
@@ -146,7 +146,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.debug("out: %s", out)
         self.assertEqual("./scripts", out.strip())
         self.coverage()
-    def test_2132(self) -> None:
+    def test_60132(self) -> None:
         ver = self.testver()
         self.assertEqual(ver, "13.2")
         cover = self.cover()
@@ -157,7 +157,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, run.out.strip())
         self.assertEqual("", run.err.strip())
         self.coverage()
-    def test_2140(self) -> None:
+    def test_60140(self) -> None:
         ver = self.testver()
         self.assertEqual(ver, "42.0")
         cover = self.cover()
@@ -168,7 +168,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, run.out.strip())
         self.assertIn("is not a known os version", run.err.strip())
         self.coverage()
-    def test_2142(self) -> None:
+    def test_60142(self) -> None:
         ver = self.testver()
         self.assertEqual(ver, "42.2")
         cover = self.cover()
@@ -179,7 +179,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, run.out.strip())
         self.assertEqual("", run.err.strip())
         self.coverage()
-    def test_2143(self) -> None:
+    def test_60143(self) -> None:
         ver = self.testver()
         self.assertEqual(ver, "42.3")
         cover = self.cover()
@@ -190,7 +190,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, run.out.strip())
         self.assertEqual("", run.err.strip())
         self.coverage()
-    def test_2151(self) -> None:
+    def test_60151(self) -> None:
         ver = self.testver()
         self.assertEqual(ver, "15.1")
         cover = self.cover()
@@ -201,7 +201,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, run.out.strip())
         self.assertEqual("", run.err.strip())
         self.coverage()
-    def test_2152(self) -> None:
+    def test_60152(self) -> None:
         ver = self.testver()
         self.assertEqual(ver, "15.2")
         cover = self.cover()
@@ -212,7 +212,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, run.out.strip())
         self.assertEqual("", run.err.strip())
         self.coverage()
-    def test_2153(self) -> None:
+    def test_60153(self) -> None:
         ver = self.testver()
         self.assertEqual(ver, "15.3")
         cover = self.cover()
@@ -223,7 +223,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, run.out.strip())
         self.assertEqual("", run.err.strip())
         self.coverage()
-    def test_2154(self) -> None:
+    def test_60154(self) -> None:
         ver = self.testver()
         self.assertEqual(ver, "15.4")
         cover = self.cover()
@@ -234,7 +234,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, run.out.strip())
         self.assertEqual("", run.err.strip())
         self.coverage()
-    def test_2155(self) -> None:
+    def test_60155(self) -> None:
         ver = self.testver()
         self.assertEqual(ver, "15.5")
         cover = self.cover()
@@ -245,7 +245,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, run.out.strip())
         self.assertEqual("", run.err.strip())
         self.coverage()
-    def test_2156(self) -> None:
+    def test_60156(self) -> None:
         ver = self.testver()
         self.assertEqual(ver, "15.6")
         cover = self.cover()
@@ -256,7 +256,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, run.out.strip())
         self.assertEqual("", run.err.strip())
         self.coverage()
-    def test_2159(self) -> None:
+    def test_60159(self) -> None:
         ver = self.testver()
         self.assertEqual(ver, "15.9")
         cover = self.cover()
@@ -267,7 +267,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, run.out.strip())
         self.assertIn("is not a known os version", run.err.strip())
         self.coverage()
-    def test_2160(self) -> None:
+    def test_60160(self) -> None:
         ver = self.testver()
         self.assertEqual(ver, "16.0")
         cover = self.cover()
@@ -278,7 +278,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, run.out.strip())
         self.assertEqual("", run.err.strip())
         self.coverage()
-    def test_2193(self) -> None:
+    def test_60193(self) -> None:
         ver2 = "13"
         ver = "13.2"
         cover = self.cover()
@@ -289,7 +289,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, run.out.strip())
         self.assertEqual("", run.err.strip())
         self.coverage()
-    def test_2195(self) -> None:
+    def test_60195(self) -> None:
         ver2 = "15"
         ver = "15.6"
         cover = self.cover()
@@ -300,7 +300,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, run.out.strip())
         self.assertEqual("", run.err.strip())
         self.coverage()
-    def test_2196(self) -> None:
+    def test_60196(self) -> None:
         ver2 = "16"
         ver = "16.0"
         cover = self.cover()
@@ -311,7 +311,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, run.out.strip())
         self.assertEqual("", run.err.strip())
         self.coverage()
-    def test_2200(self) -> None:
+    def test_60200(self) -> None:
         tmp = self.testdir()
         cover = self.cover()
         script = SCRIPT
@@ -321,7 +321,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(tmp, run.out.strip())
         self.coverage()
         self.rm_testdir()
-    def test_2201(self) -> None:
+    def test_61001(self) -> None:
         tmp = self.testdir()
         cover = self.cover()
         script = SCRIPT
@@ -331,7 +331,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(tmp, run.out.strip())
         self.coverage()
         self.rm_testdir()
-    def test_2202(self) -> None:
+    def test_61002(self) -> None:
         tmp = self.testdir()
         cover = self.cover()
         script = SCRIPT
@@ -344,7 +344,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(repo, run.out.strip()) # repodir is fallback
         self.coverage()
         self.rm_testdir()
-    def test_2203(self) -> None:
+    def test_61003(self) -> None:
         tmp = self.testdir()
         cover = self.cover()
         script = SCRIPT
@@ -358,7 +358,23 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertNotEqual(repo, run.out.strip()) # repodir not a fallback
         self.coverage()
         self.rm_testdir()
-    def test_999(self) -> None:
+    def test_61153(self) -> None:
+        ver = self.testver()
+        tmp = self.testdir()
+        cover = self.cover()
+        script = SCRIPT
+        data = F"{tmp}/data"
+        repo = F"{tmp}/repo"
+        want = F"{repo}/opensuse.{ver}"
+        os.makedirs(data)
+        cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        logg.debug("err: %s", run.err)
+        self.assertEqual(want, run.out.strip()) 
+        self.coverage()
+        self.rm_testdir()
+    def test_69999(self) -> None:
         if COVERAGE:
             o1 = sh(F" {PYTHON} -m coverage combine")
             o2 = sh(F" {PYTHON} -m coverage report {SCRIPT}")
