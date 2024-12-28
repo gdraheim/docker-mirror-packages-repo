@@ -358,6 +358,44 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertNotEqual(repo, run.out.strip()) # repodir not a fallback
         self.coverage()
         self.rm_testdir()
+    def test_61132(self) -> None:
+        ver = self.testver()
+        tmp = self.testdir()
+        cover = self.cover()
+        script = SCRIPT
+        data = F"{tmp}/data"
+        repo = F"{tmp}/repo"
+        want = F"{repo}/opensuse.{ver}"
+        os.makedirs(data)
+        cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        logg.debug("err: %s", run.err)
+        self.assertEqual(want, run.out.strip()) 
+        self.assertTrue(os.path.isdir(os.path.join(want, ".")))
+        self.assertTrue(os.path.islink(want))
+        self.assertIn(data, os.readlink(want))
+        self.coverage()
+        self.rm_testdir()
+    def test_61142(self) -> None:
+        ver = self.testver()
+        tmp = self.testdir()
+        cover = self.cover()
+        script = SCRIPT
+        data = F"{tmp}/data"
+        repo = F"{tmp}/repo"
+        want = F"{repo}/opensuse.{ver}"
+        os.makedirs(data)
+        cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        logg.debug("err: %s", run.err)
+        self.assertEqual(want, run.out.strip()) 
+        self.assertTrue(os.path.isdir(os.path.join(want, ".")))
+        self.assertTrue(os.path.islink(want))
+        self.assertIn(data, os.readlink(want))
+        self.coverage()
+        self.rm_testdir()
     def test_61153(self) -> None:
         ver = self.testver()
         tmp = self.testdir()
@@ -372,6 +410,28 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.debug("out: %s", run.out)
         logg.debug("err: %s", run.err)
         self.assertEqual(want, run.out.strip()) 
+        self.assertTrue(os.path.isdir(os.path.join(want, ".")))
+        self.assertTrue(os.path.islink(want))
+        self.assertIn(data, os.readlink(want))
+        self.coverage()
+        self.rm_testdir()
+    def test_61160(self) -> None:
+        ver = self.testver()
+        tmp = self.testdir()
+        cover = self.cover()
+        script = SCRIPT
+        data = F"{tmp}/data"
+        repo = F"{tmp}/repo"
+        want = F"{repo}/opensuse.{ver}"
+        os.makedirs(data)
+        cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        logg.debug("err: %s", run.err)
+        self.assertEqual(want, run.out.strip()) 
+        self.assertTrue(os.path.isdir(os.path.join(want, ".")))
+        self.assertTrue(os.path.islink(want))
+        self.assertIn(data, os.readlink(want))
         self.coverage()
         self.rm_testdir()
     def test_69999(self) -> None:
