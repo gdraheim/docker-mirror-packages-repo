@@ -260,13 +260,13 @@ def distro_dir(distro: str, release: str, suffix: str = "") -> str:
                 dirpath = path.join(data, dirname)
                 if not path.isdir(dirpath):
                     os.makedirs(dirpath)
-                os.symlink(dirpath, dirlink)
+                os.symlink(path.abspath(dirpath), dirlink)
                 break
     dircheck = path.join(dirlink, ".")
     if path.isdir(dircheck):
         logg.info("%s -> %s", dirlink, os.readlink(dirlink))
     else:
-        os.mkdir(dirname)  # local dir
+        os.mkdir(dirlink)  # local dir
         logg.warning("%s/. local dir", dirlink)
     return dirlink
 
