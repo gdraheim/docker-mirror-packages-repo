@@ -1,25 +1,55 @@
 #! /usr/bin/env python3
-from typing import Optional, Union, Dict, List, Any, Sequence, Callable, Iterable, cast
+__copyright__ = "(C) 2024 Guido Draheim"
+__contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
+__license__ = "CC0 Creative Commons Zero (Public Domain)"
+__version__ = "1.7.6334"
+
+from typing import Optional, Union, Dict, List, Any, Sequence, Callable, Iterable, cast, NamedTuple
 import shutil
-import json
 import inspect
 import unittest
 import sys, os, re
 from fnmatch import fnmatchcase as fnmatch
-from subprocess import getoutput
+from subprocess import getoutput, Popen, PIPE
 
 import logging
 logg = logging.getLogger("tests.opensuse")
+DONE = (logging.ERROR + logging.WARNING)//2
+logging.addLevelName(DONE, "DONE")
 NIX = ""
 LIST: List[str] = []
 
 PYTHON = "python3"
 SCRIPT = "opensuse-docker-mirror.py"
 COVERAGE = False
+KEEP = False
 
-def sh(cmd: str, *args: Any) -> str:
+def sh(cmd: str, **args: Any) -> str:
     logg.debug("sh %s", cmd)
-    return getoutput(cmd, *args)
+    return getoutput(cmd, **args)
+class Proc(NamedTuple):
+    out: str
+    err: str
+    ret: int
+def runs(cmd: str, **args: Any) -> Proc:
+    logg.debug("run %s", cmd)
+    if isinstance(cmd, str):
+        proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE, **args)
+    else:
+        proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE, **args)
+    out, err = proc.communicate()
+    return Proc(decodes(out), decodes(err), proc.returncode)
+def decodes(text: Union[str, bytes]) -> str:
+    if isinstance(text, bytes):
+        encoded = sys.getdefaultencoding()
+        if encoded in ["ascii"]:
+            encoded = "utf-8"
+        try: 
+            return text.decode(encoded)
+        except:
+            return text.decode("latin-1")
+    return text
+
 def get_caller_name() -> str:
     frame = inspect.currentframe().f_back.f_back  # type: ignore
     return frame.f_code.co_name  # type: ignore
@@ -43,15 +73,15 @@ class OpensuseMirrorTest(unittest.TestCase):
     def testdir(self, testname: Optional[str] = None, keep: bool = False) -> str:
         testname = testname or self.caller_testname()
         newdir = "tmp/tmp." + testname
-        if path.isdir(newdir) and not keep:
+        if os.path.isdir(newdir) and not keep:
             shutil.rmtree(newdir)
-        if not path.isdir(newdir):
+        if not os.path.isdir(newdir):
             os.makedirs(newdir)
         return newdir
     def rm_testdir(self, testname: Optional[str] = None) -> str:
         testname = testname or self.caller_testname()
         newdir = "tmp/tmp." + testname
-        if path.isdir(newdir):
+        if os.path.isdir(newdir):
             if not KEEP:
                 shutil.rmtree(newdir)
         return newdir
@@ -67,16 +97,90 @@ class OpensuseMirrorTest(unittest.TestCase):
             f = open(newcoverage, "wb")
             f.write(text2)
             f.close()
-    #
-    def test_100(self) -> None:
+    def cover(self) -> str:
         python = PYTHON
         cover = F"{python} -m coverage run" if COVERAGE else python
+        return cover
+    #
+    def test_2100(self) -> None:
+        cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} --help"
         out = sh(cmd)
         logg.debug("out: %s", out)
         self.assertIn("imagesrepo=PREFIX", out)
         self.coverage()
+    def test_2101(self) -> None:
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} commands"
+        out = sh(cmd)
+        logg.debug("out: %s", out)
+        self.assertIn("|disk|", out)
+        self.assertIn("|image|", out)
+        self.assertIn("|repo|", out)
+        self.assertIn("|datadir|", out)
+        self.coverage()
+    def test_2110(self) -> None:
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} datadir"
+        out = sh(cmd)
+        logg.debug("out: %s", out)
+        self.coverage()
+    def test_2200(self) -> None:
+        tmp = self.testdir()
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} datadir"
+        run = runs(cmd, env={"REPODATADIR": tmp})
+        logg.debug("out: %s", run.out)
+        self.assertEqual(tmp, run.out.strip())
+        self.coverage()
+        self.rm_testdir()
+    def test_2201(self) -> None:
+        tmp = self.testdir()
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} datadir --datadir={tmp}"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(tmp, run.out.strip())
+        self.coverage()
+        self.rm_testdir()
+    def test_2202(self) -> None:
+        tmp = self.testdir()
+        cover = self.cover()
+        script = SCRIPT
+        data = F"{tmp}/data"
+        repo = F"{tmp}/repo"
+        cmd = F"{cover} {script} datadir --datadir={data} --repodir={repo}"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertNotEqual(data, run.out.strip()) # datadir does not exist
+        self.assertEqual(repo, run.out.strip()) # repodir is fallback
+        self.coverage()
+        self.rm_testdir()
+    def test_2203(self) -> None:
+        tmp = self.testdir()
+        cover = self.cover()
+        script = SCRIPT
+        data = F"{tmp}/data"
+        repo = F"{tmp}/repo"
+        os.makedirs(data)
+        cmd = F"{cover} {script} datadir --datadir={data} --repodir={repo}"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(data, run.out.strip()) # datadir does now exist
+        self.assertNotEqual(repo, run.out.strip()) # repodir not a fallback
+        self.coverage()
+        self.rm_testdir()
+    def test_999(self) -> None:
+        if COVERAGE:
+            o1 = sh(F" {PYTHON} -m coverage combine")
+            o2 = sh(F" {PYTHON} -m coverage report {SCRIPT}")
+            o3 = sh(F" {PYTHON} -m coverage annotate  {SCRIPT}")
+            logg.log(DONE,"COVERAGE:\n%s\n%s\n%s", o1, o2, o3)
 
 if __name__ == "__main__":
     # unittest.main()
@@ -124,9 +228,5 @@ if __name__ == "__main__":
     else:
         Runner = unittest.TextTestRunner
         result = Runner(verbosity=opt.verbose, failfast=opt.failfast).run(suite)
-    if opt.coverage:
-        print(F" {PYTHON} -m coverage combine")
-        print(F" {PYTHON} -m coverage report {SCRIPT}")
-        print(F" {PYTHON} -m coverage annotate  {SCRIPT}")
     if not result.wasSuccessful():
         sys.exit(1)
