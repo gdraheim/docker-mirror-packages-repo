@@ -4,11 +4,14 @@ __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.6334"
 
+# pylint: disable=unused-import
 from typing import Optional, Union, Dict, List, Any, Sequence, Callable, Iterable, cast, NamedTuple
 import shutil
 import inspect
 import unittest
-import sys, os, re
+import sys
+import os
+import re
 from fnmatch import fnmatchcase as fnmatch
 from subprocess import getoutput, Popen, PIPE
 
@@ -44,9 +47,9 @@ def decodes(text: Union[str, bytes]) -> str:
         encoded = sys.getdefaultencoding()
         if encoded in ["ascii"]:
             encoded = "utf-8"
-        try: 
+        try:
             return text.decode(encoded)
-        except:
+        except: # pylint: disable=bare-except
             return text.decode("latin-1")
     return text
 
@@ -101,6 +104,12 @@ class OpensuseMirrorTest(unittest.TestCase):
         python = PYTHON
         cover = F"{python} -m coverage run" if COVERAGE else python
         return cover
+    def testver(self, testname: Optional[str] = None) -> None:
+        testname = testname or self.caller_testname()
+        ver3 = testname[-3:]
+        if ver3.startswith("14"):
+            return "42" + "." + ver3[2]
+        return ver3[0:2] + "." + ver3[2]
     #
     def test_2100(self) -> None:
         cover = self.cover()
@@ -120,6 +129,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertIn("|image|", out)
         self.assertIn("|repo|", out)
         self.assertIn("|datadir|", out)
+        self.assertIn("|version", out)
         self.coverage()
     def test_2110(self) -> None:
         cover = self.cover()
@@ -127,6 +137,179 @@ class OpensuseMirrorTest(unittest.TestCase):
         cmd = F"{cover} {script} datadir"
         out = sh(cmd)
         logg.debug("out: %s", out)
+        self.coverage()
+    def test_2111(self) -> None:
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} scripts"
+        out = sh(cmd)
+        logg.debug("out: %s", out)
+        self.assertEqual("./scripts", out.strip())
+        self.coverage()
+    def test_2132(self) -> None:
+        ver = self.testver()
+        self.assertEqual(ver, "13.2")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(ver, run.out.strip())
+        self.assertEqual("", run.err.strip())
+        self.coverage()
+    def test_2140(self) -> None:
+        ver = self.testver()
+        self.assertEqual(ver, "42.0")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(ver, run.out.strip())
+        self.assertIn("is not a known os version", run.err.strip())
+        self.coverage()
+    def test_2142(self) -> None:
+        ver = self.testver()
+        self.assertEqual(ver, "42.2")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(ver, run.out.strip())
+        self.assertEqual("", run.err.strip())
+        self.coverage()
+    def test_2143(self) -> None:
+        ver = self.testver()
+        self.assertEqual(ver, "42.3")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(ver, run.out.strip())
+        self.assertEqual("", run.err.strip())
+        self.coverage()
+    def test_2151(self) -> None:
+        ver = self.testver()
+        self.assertEqual(ver, "15.1")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(ver, run.out.strip())
+        self.assertEqual("", run.err.strip())
+        self.coverage()
+    def test_2152(self) -> None:
+        ver = self.testver()
+        self.assertEqual(ver, "15.2")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(ver, run.out.strip())
+        self.assertEqual("", run.err.strip())
+        self.coverage()
+    def test_2153(self) -> None:
+        ver = self.testver()
+        self.assertEqual(ver, "15.3")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(ver, run.out.strip())
+        self.assertEqual("", run.err.strip())
+        self.coverage()
+    def test_2154(self) -> None:
+        ver = self.testver()
+        self.assertEqual(ver, "15.4")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(ver, run.out.strip())
+        self.assertEqual("", run.err.strip())
+        self.coverage()
+    def test_2155(self) -> None:
+        ver = self.testver()
+        self.assertEqual(ver, "15.5")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(ver, run.out.strip())
+        self.assertEqual("", run.err.strip())
+        self.coverage()
+    def test_2156(self) -> None:
+        ver = self.testver()
+        self.assertEqual(ver, "15.6")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(ver, run.out.strip())
+        self.assertEqual("", run.err.strip())
+        self.coverage()
+    def test_2159(self) -> None:
+        ver = self.testver()
+        self.assertEqual(ver, "15.9")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(ver, run.out.strip())
+        self.assertIn("is not a known os version", run.err.strip())
+        self.coverage()
+    def test_2160(self) -> None:
+        ver = self.testver()
+        self.assertEqual(ver, "16.0")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(ver, run.out.strip())
+        self.assertEqual("", run.err.strip())
+        self.coverage()
+    def test_2193(self) -> None:
+        ver2 = "13"
+        ver = "13.2"
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver2} version"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(ver, run.out.strip())
+        self.assertEqual("", run.err.strip())
+        self.coverage()
+    def test_2195(self) -> None:
+        ver2 = "15"
+        ver = "15.6"
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver2} version"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(ver, run.out.strip())
+        self.assertEqual("", run.err.strip())
+        self.coverage()
+    def test_2196(self) -> None:
+        ver2 = "16"
+        ver = "16.0"
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver2} version"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(ver, run.out.strip())
+        self.assertEqual("", run.err.strip())
         self.coverage()
     def test_2200(self) -> None:
         tmp = self.testdir()
@@ -184,7 +367,7 @@ class OpensuseMirrorTest(unittest.TestCase):
 
 if __name__ == "__main__":
     # unittest.main()
-    from optparse import OptionParser
+    from optparse import OptionParser # pylint: disable=deprecated-module
     cmdline = OptionParser("%s test...")
     cmdline.add_option("-v", "--verbose", action="count", default=0, help="more verbose logging")
     cmdline.add_option("-^", "--quiet", action="count", default=0, help="less verbose logging")
@@ -195,14 +378,14 @@ if __name__ == "__main__":
                        help="Stop the test run on the first error or failure. [%default]")
     cmdline.add_option("--xmlresults", metavar="FILE", default=None,
                        help="capture results as a junit xml file [%default]")
-    opt, args = cmdline.parse_args()
+    opt, _args = cmdline.parse_args()
     logging.basicConfig(level=max(0, logging.WARNING - 10 * opt.verbose + 10 * opt.quiet))
     KEEP = opt.keep
     COVERAGE = opt.coverage
-    if not args:
-        args = ["test_*"]
+    if not _args:
+        _args = ["test_*"]
     suite = unittest.TestSuite()
-    for arg in args:
+    for arg in _args:
         if len(arg) > 2 and arg[0].isalpha() and arg[1] == "_":
             arg = "test_" + arg[2:]
         for classname in sorted(globals()):
