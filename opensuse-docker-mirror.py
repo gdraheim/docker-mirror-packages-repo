@@ -134,7 +134,6 @@ def opensuse_dir(suffix: str = "") -> str:
                 os.symlink(path.abspath(dirpath), dirlink)
                 break
     dircheck = path.join(dirlink, ".")
-    logg.warning("dircheck %s", dircheck)
     if path.isdir(dircheck):
         logg.info("%s -> %s", dirlink, os.readlink(dirlink))
     else:
