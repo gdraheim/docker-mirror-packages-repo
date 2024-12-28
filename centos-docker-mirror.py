@@ -455,7 +455,7 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
     repodir = REPODIR
     docker = DOCKER
     epel = major(centos)
-    scripts = repo_scripts()
+    scripts = centos_scripts()
     version = F"{epel}.{VARIANT}" if VARIANT else epel
     cname = F"{distro}-repo-{epel}"
     baseimage = centos_baseimage(DISTRO, centos)
@@ -506,7 +506,7 @@ def centos_epelrepo7(distro: str = NIX, centos: str = NIX) -> None:
     repodir = REPODIR
     docker = DOCKER
     epel = major(centos)
-    scripts = repo_scripts()
+    scripts = centos_scripts()
     version = F"{epel}.{VARIANT}" if VARIANT else epel
     cname = F"{distro}-repo-{epel}"  # container name
     PORT = centos_epel_port(distro, centos)
@@ -622,7 +622,7 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
     centos_cleaner()
     baseimage = centos_baseimage(distro, centos)
     rel = centos_release(distro, centos)
-    scripts = repo_scripts()
+    scripts = centos_scripts()
     version = F"{rel}.{VARIANT}" if VARIANT else rel
     cname = F"{distro}-repo-{centos}"
     PORT = centos_main_port(distro, centos)
@@ -692,7 +692,7 @@ def distro_diskmake(distro: str, centos: str, dists: Dict[str, List[str]]) -> st
     centos_restore()
     centos_cleaner()
     rel = centos_release(distro, centos)
-    scripts = repo_scripts()
+    scripts = centos_scripts()
     # version = F"{rel}.{VARIANT}" if VARIANT else rel
     rootdir = distro_dir(distro, centos, suffix=F".disk")
     srv = F"{rootdir}/srv"
@@ -781,10 +781,8 @@ def centos_check() -> None:
             print(F"?? {f}.rpm")
     sh___(F"{docker} rm --force {cname}")
 
-def centos_scripts() -> None:
-    print(repo_scripts())
-def repo_scripts() -> str:
-    me = os.path.dirname(sys.argv[0])
+def centos_scripts() -> str:
+    me = os.path.dirname(sys.argv[0]) or "."
     dn = os.path.join(me, "scripts")
     if os.path.isdir(dn): return dn
     dn = os.path.join(me, "docker_mirror/scripts")
@@ -793,6 +791,7 @@ def repo_scripts() -> str:
     if os.path.isdir(dn): return dn
     dn = os.path.join(me, "../share/docker_mirror/scripts")
     if os.path.isdir(dn): return dn
+    logg.error("%s -> %s", sys.argv[0], me)
     return "scripts"
 
 #############################################################################

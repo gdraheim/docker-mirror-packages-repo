@@ -348,7 +348,7 @@ def repo_image(repos: List[str]) -> str:
     baseimage = ubuntu_baseimage(distro, ubuntu)
     imagesrepo = IMAGESREPO
     python = PYTHON
-    scripts = repo_scripts()
+    scripts = ubuntu_scripts()
     version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
     cname = F"{distro}-repo-{version}"  # container name
     sx___(F"{docker} rm --force {cname}")
@@ -413,10 +413,8 @@ def ubuntu_test() -> None:
     # docker exec $@_host_1 apt-get install -y firefox
     # docker-compose -p $@ -f ubuntu-compose.yml.tmp down
 
-def ubuntu_scripts() -> None:
-    print(repo_scripts())
-def repo_scripts() -> str:
-    me = os.path.dirname(sys.argv[0])
+def ubuntu_scripts() -> str:
+    me = os.path.dirname(sys.argv[0]) or "."
     dn = os.path.join(me, "scripts")
     if os.path.isdir(dn): return dn
     dn = os.path.join(me, "docker_mirror/scripts")
@@ -425,6 +423,7 @@ def repo_scripts() -> str:
     if os.path.isdir(dn): return dn
     dn = os.path.join(me, "../share/docker_mirror/scripts")
     if os.path.isdir(dn): return dn
+    logg.error("%s -> %s", sys.argv[0], me)
     return "scripts"
 
 #############################################################################

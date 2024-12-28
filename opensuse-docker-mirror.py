@@ -408,7 +408,7 @@ def opensuse_test() -> None:
 def opensuse_scripts() -> None:
     print(repo_scripts())
 def repo_scripts() -> str:
-    me = os.path.dirname(sys.argv[0])
+    me = os.path.dirname(sys.argv[0]) or "."
     dn = os.path.join(me, "scripts")
     if os.path.isdir(dn): return dn
     dn = os.path.join(me, "docker_mirror/scripts")
@@ -417,6 +417,7 @@ def repo_scripts() -> str:
     if os.path.isdir(dn): return dn
     dn = os.path.join(me, "../share/docker_mirror/scripts")
     if os.path.isdir(dn): return dn
+    logg.error("%s -> %s", sys.argv[0], me)
     return "scripts"
 
 #############################################################################
@@ -514,6 +515,8 @@ def opensuse_baseimage(distro: str = NIX, leap: str = NIX) -> str:
         leap = BASEVERSION[leap]
     return F"{image}:{leap}"
 
+def opensuse_version(distro: str = NIX, leap: str = NIX) -> str:
+    return LEAP
 def LEAP_set(leap: str) -> str:
     global LEAP
     if len(leap) <= 2:
