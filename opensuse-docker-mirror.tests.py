@@ -427,7 +427,6 @@ class OpensuseMirrorTest(unittest.TestCase):
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
         run = runs(cmd)
         logg.debug("out: %s", run.out)
-        logg.debug("err: %s", run.err)
         self.assertEqual(want, run.out.strip()) 
         self.assertTrue(os.path.isdir(os.path.join(want, ".")))
         self.assertTrue(os.path.islink(want))
