@@ -489,9 +489,7 @@ def path_find(base: str, name: str) -> Optional[str]:
             return path.join(dirpath, name)
     return None
 
-def opensuse_commands_() -> None:
-    print(commands())
-def commands() -> str:
+def opensuse_commands() -> str:
     cmds: List[str] = []
     for name in sorted(globals()):
         if name.startswith("opensuse_"):
@@ -528,7 +526,7 @@ def LEAP_set(leap: str) -> str:
 
 if __name__ == "__main__":
     from optparse import OptionParser
-    cmdline = OptionParser("%%prog [-options] [%s]" % commands(),
+    cmdline = OptionParser("%%prog [-options] [%s]" % opensuse_commands(),
                       epilog=re.sub("\\s+", " ", __doc__).strip())
     cmdline.formatter.max_help_position = 30
     cmdline.add_option("-v", "--verbose", action="count", default=0,
@@ -555,12 +553,12 @@ if __name__ == "__main__":
                        help=F"use other arch list {ARCHS}")
     opt, args = cmdline.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
-    if opt.archs:
-        badarchs = [arch for arch in opt.archs if arch not in ARCHLIST]
+    if opt.arch:
+        badarchs = [arch for arch in opt.arch if arch not in ARCHLIST]
         if badarchs:
             logg.error("unknown arch %s (from known %s)", badarchs, ARCHLIST)
             sys.exit(1)
-        ARCHS = opt.archs
+        ARCHS = opt.arch
     REPODIR = opt.repodir
     if opt.datadir:
         REPODATADIR = opt.datadir
