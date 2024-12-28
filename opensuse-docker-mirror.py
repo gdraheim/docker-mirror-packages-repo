@@ -25,8 +25,8 @@ import logging
 logg = logging.getLogger("MIRROR")
 
 if sys.version[0] == '3':
-    basestring = str
-    xrange = range
+    basestring = str # pylint: disable=invalid-name
+    xrange = range # pylint: disable=invalid-name
 
 NIX = ""
 NOBASE = False
