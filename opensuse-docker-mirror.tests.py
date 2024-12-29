@@ -13,7 +13,7 @@ import sys
 import os
 import re
 from fnmatch import fnmatchcase as fnmatch
-from subprocess import getoutput, Popen, PIPE
+from subprocess import getoutput, Popen, PIPE, call
 
 import logging
 logg = logging.getLogger("tests.opensuse")
@@ -26,6 +26,7 @@ PYTHON = "python3"
 SCRIPT = "opensuse-docker-mirror.py"
 COVERAGE = False
 KEEP = False
+DRY_RSYNC = 1
 
 def sh(cmd: str, **args: Any) -> str:
     logg.debug("sh %s", cmd)
@@ -39,9 +40,14 @@ def runs(cmd: str, **args: Any) -> Proc:
     if isinstance(cmd, str):
         proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE, **args)
     else:
-        proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE, **args)
+        proc = Popen(cmd, shell=False, stdout=PIPE, stderr=PIPE, **args)
     out, err = proc.communicate()
     return Proc(decodes(out), decodes(err), proc.returncode)
+def calls(cmd: str, **args: Any) -> int:
+    if isinstance(cmd, str):
+        return call(cmd, shell=True, **args)
+    else:
+        return call(cmd, shell=False, **args)
 def decodes(text: Union[str, bytes]) -> str:
     if isinstance(text, bytes):
         encoded = sys.getdefaultencoding()
@@ -452,6 +458,40 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertIn(data, os.readlink(want))
         self.coverage()
         self.rm_testdir()
+    def test_53156(self) -> None:
+        war = "tmp"
+        ver = self.testver()
+        tmp = self.testdir()
+        cover = self.cover()
+        script = SCRIPT
+        data = F"{tmp}/data"
+        repo = F"{tmp}/repo"
+        want = F"{repo}/opensuse.{ver}.{war}"
+        os.makedirs(data)
+        cmd = F"{cover} {script} {ver} sync --datadir={data} --repodir={repo} -W {war}"
+        if DRY_RSYNC:
+             cmd += " --rsync='rsync --dry-run'"
+        ret = calls(cmd)
+        self.assertEqual(0, ret)
+        self.coverage()
+        self.rm_testdir()
+    def test_53160(self) -> None:
+        war = "tmp"
+        ver = self.testver()
+        tmp = self.testdir()
+        cover = self.cover()
+        script = SCRIPT
+        data = F"{tmp}/data"
+        repo = F"{tmp}/repo"
+        want = F"{repo}/opensuse.{ver}.{war}"
+        os.makedirs(data)
+        cmd = F"{cover} {script} {ver} sync --datadir={data} --repodir={repo} -W {war}"
+        if DRY_RSYNC:
+             cmd += " --rsync='rsync --dry-run'"
+        ret = calls(cmd)
+        self.assertEqual(0, ret)
+        self.coverage()
+        self.rm_testdir()
     def test_59999(self) -> None:
         if COVERAGE:
             o1 = sh(F" {PYTHON} -m coverage combine")
@@ -466,6 +506,8 @@ if __name__ == "__main__":
     cmdline.add_option("-v", "--verbose", action="count", default=0, help="more verbose logging")
     cmdline.add_option("-^", "--quiet", action="count", default=0, help="less verbose logging")
     cmdline.add_option("-k", "--keep", action="count", default=0, help="keep testdir")
+    cmdline.add_option("--dry-rsync", action="count", default=DRY_RSYNC, help="upstream rsync --dry-run [%default]")
+    cmdline.add_option("--real-rsync", action="count", default=0, help="upstream rsync for real [%default]")
     cmdline.add_option("--coverage", action="store_true", default=False,
                        help="Generate coverage data. [%default]")
     cmdline.add_option("--failfast", action="store_true", default=False,
@@ -476,6 +518,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=max(0, logging.WARNING - 10 * opt.verbose + 10 * opt.quiet))
     KEEP = opt.keep
     COVERAGE = opt.coverage
+    DRY_RSYNC = opt.dry_rsync - opt.real_rsync
     if not _args:
         _args = ["test_*"]
     suite = unittest.TestSuite()
