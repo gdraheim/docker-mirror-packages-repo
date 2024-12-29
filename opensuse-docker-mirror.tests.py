@@ -371,7 +371,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         run = runs(cmd)
         logg.debug("out: %s", run.out)
         logg.debug("err: %s", run.err)
-        self.assertEqual(want, run.out.strip()) 
+        self.assertEqual(want, run.out.strip())
         self.assertTrue(os.path.isdir(os.path.join(want, ".")))
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
@@ -390,7 +390,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         run = runs(cmd)
         logg.debug("out: %s", run.out)
         logg.debug("err: %s", run.err)
-        self.assertEqual(want, run.out.strip()) 
+        self.assertEqual(want, run.out.strip())
         self.assertTrue(os.path.isdir(os.path.join(want, ".")))
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
@@ -409,7 +409,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         run = runs(cmd)
         logg.debug("out: %s", run.out)
         logg.debug("err: %s", run.err)
-        self.assertEqual(want, run.out.strip()) 
+        self.assertEqual(want, run.out.strip())
         self.assertTrue(os.path.isdir(os.path.join(want, ".")))
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
@@ -427,7 +427,26 @@ class OpensuseMirrorTest(unittest.TestCase):
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
         run = runs(cmd)
         logg.debug("out: %s", run.out)
-        self.assertEqual(want, run.out.strip()) 
+        self.assertEqual(want, run.out.strip())
+        self.assertTrue(os.path.isdir(os.path.join(want, ".")))
+        self.assertTrue(os.path.islink(want))
+        self.assertIn(data, os.readlink(want))
+        self.coverage()
+        self.rm_testdir()
+    def test_62160(self) -> None:
+        war = "disk"
+        ver = self.testver()
+        tmp = self.testdir()
+        cover = self.cover()
+        script = SCRIPT
+        data = F"{tmp}/data"
+        repo = F"{tmp}/repo"
+        want = F"{repo}/opensuse.{ver}.{war}"
+        os.makedirs(data)
+        cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo} -W {war}"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        self.assertEqual(want, run.out.strip())
         self.assertTrue(os.path.isdir(os.path.join(want, ".")))
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
