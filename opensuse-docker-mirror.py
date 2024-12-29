@@ -76,6 +76,7 @@ RETRY = 3
 
 BASEVERSION: Dict[str, str] = {}
 BASEVERSION["15.4"] = "15.3"  # image:opensuse/base
+BASEVERSION["16.0"] = "15.6"  # image:opensuse/base
 
 SUBDIRS15: Dict[str, List[str]] = OrderedDict()
 SUBDIRS15["distribution"] = ["oss", "non-oss"]
@@ -514,6 +515,11 @@ def opensuse_baseimage(distro: str = NIX, leap: str = NIX) -> str:
     if leap in BASEVERSION:
         leap = BASEVERSION[leap]
     return F"{image}:{leap}"
+def opensuse_pull(distro: str = NIX, leap: str = NIX) -> str:
+    docker = DOCKER
+    baseimage = opensuse_baseimage(distro, leap)
+    sh___(F"""{docker} pull {baseimage} """)
+    return baseimage
 
 def opensuse_version(distro: str = NIX, leap: str = NIX) -> str:
     return LEAP

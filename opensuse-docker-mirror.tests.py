@@ -27,6 +27,7 @@ SCRIPT = "opensuse-docker-mirror.py"
 COVERAGE = False
 KEEP = False
 DRY_RSYNC = 1
+DOCKER = "docker"
 
 def sh(cmd: str, **args: Any) -> str:
     logg.debug("sh %s", cmd)
@@ -492,6 +493,20 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(0, ret)
         self.coverage()
         self.rm_testdir()
+    def test_54160(self) -> None:
+        ver = self.testver()
+        test = self.testname()
+        docker = DOCKER
+        cover = self.cover()
+        script = SCRIPT
+        imagesrepo = F"localhost:5000/{test}"
+        cmd = F"{cover} {script} {ver} pull --docker='{docker}' --imagesrepo='{imagesrepo}'"
+        ret = calls(cmd)
+        cmd = F"{cover} {script} {ver} repo --docker='{docker}' --imagesrepo='{imagesrepo}'"
+        ret = calls(cmd)
+        self.assertEqual(0, ret)
+        self.coverage()
+        self.rm_testdir()
     def test_59999(self) -> None:
         if COVERAGE:
             o1 = sh(F" {PYTHON} -m coverage combine")
@@ -506,6 +521,7 @@ if __name__ == "__main__":
     cmdline.add_option("-v", "--verbose", action="count", default=0, help="more verbose logging")
     cmdline.add_option("-^", "--quiet", action="count", default=0, help="less verbose logging")
     cmdline.add_option("-k", "--keep", action="count", default=0, help="keep testdir")
+    cmdline.add_option("-D", "--docker", metavar="EXE", default=DOCKER, help="use different docker/podman [%default]")
     cmdline.add_option("--dry-rsync", action="count", default=DRY_RSYNC, help="upstream rsync --dry-run [%default]")
     cmdline.add_option("--real-rsync", action="count", default=0, help="upstream rsync for real [%default]")
     cmdline.add_option("--coverage", action="store_true", default=False,
@@ -519,6 +535,7 @@ if __name__ == "__main__":
     KEEP = opt.keep
     COVERAGE = opt.coverage
     DRY_RSYNC = opt.dry_rsync - opt.real_rsync
+    DOCKER = opt.docker
     if not _args:
         _args = ["test_*"]
     suite = unittest.TestSuite()
