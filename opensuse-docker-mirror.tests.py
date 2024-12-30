@@ -142,6 +142,9 @@ class OpensuseMirrorTest(unittest.TestCase):
                 if line.startswith(pat):
                     images += [ line ]
         return images
+    def testrepo(self, testname: Optional[str] = None) -> str:
+        testname = testname or self.caller_testname()
+        return F"localhost:5000/{testname}/"
     def rm_images(self, pat: Optional[str] = None) -> List[str]:
         if not pat:
             testname =self.caller_testname()
@@ -529,13 +532,12 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(0, ret)
         self.coverage()
         self.rm_testdir()
-    def test_54156(self) -> None:
+    def test_54156(self, clean=True) -> None:
         ver = self.testver()
-        test = self.testname()
         docker = DOCKER
         cover = self.cover()
         script = SCRIPT
-        imagesrepo = F"localhost:5000/{test}"
+        imagesrepo = self.testrepo()
         cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
         cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -vvv"
@@ -543,14 +545,14 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(0, ret)
         self.coverage()
         self.rm_testdir()
-        self.rm_images()
-    def test_54160(self) -> None:
+        if clean:
+            self.rm_images()
+    def test_54160(self, clean=True) -> None:
         ver = self.testver()
-        test = self.testname()
         docker = DOCKER
         cover = self.cover()
         script = SCRIPT
-        imagesrepo = F"localhost:5000/{test}"
+        imagesrepo = self.testrepo()
         cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
         cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
@@ -559,7 +561,8 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(0, ret)
         self.coverage()
         self.rm_testdir()
-        self.rm_images()
+        if clean:
+           self.rm_images()
     def test_59999(self) -> None:
         if COVERAGE:
             o1 = sh(F" {PYTHON} -m coverage combine")
