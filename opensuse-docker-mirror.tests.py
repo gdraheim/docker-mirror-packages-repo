@@ -28,6 +28,7 @@ COVERAGE = False
 KEEP = False
 DRY_RSYNC = 1
 DOCKER = "docker"
+VV="-v"
 
 def sh(cmd: str, **args: Any) -> str:
     logg.debug("sh %s", cmd)
@@ -117,6 +118,43 @@ class OpensuseMirrorTest(unittest.TestCase):
         if ver3.startswith("14"):
             return "42" + "." + ver3[2]
         return ver3[0:2] + "." + ver3[2]
+    def imagesdangling(self) -> List[str]:
+        images: List[str] = []
+        docker = DOCKER
+        cmd = F"{docker} image list -q -f dangling=true"
+        run = runs(cmd)
+        for line in run.out.splitlines():
+            images += [ line ]
+        return images
+    def imageslist(self, pat: Optional[str] = None) -> List[str]:
+        images: List[str] = []
+        docker = DOCKER
+        cmd = F"{docker} image list -q --format {{{{.Repository}}}}:{{{{.Tag}}}}"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        for line in run.out.splitlines():
+            if not pat:
+                continue
+            elif "*" in pat:
+                if fnmatch(line, pat):
+                    images += [ line ]
+            else:
+                if line.startswith(pat):
+                    images += [ line ]
+        return images
+    def rm_images(self, pat: Optional[str] = None) -> List[str]:
+        if not pat:
+            testname =self.caller_testname()
+            pat = F"localhost:5000/{testname}/"
+        logg.debug("pat = %s", pat)
+        images = self.imageslist(pat) + self.imagesdangling()
+        docker = DOCKER
+        cmd = F"{docker} rmi"
+        if images:
+            for image in images:
+                cmd += F" {image}"
+            calls(cmd)
+        return images
     #
     def test_50100(self) -> None:
         cover = self.cover()
@@ -467,9 +505,8 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         data = F"{tmp}/data"
         repo = F"{tmp}/repo"
-        want = F"{repo}/opensuse.{ver}.{war}"
         os.makedirs(data)
-        cmd = F"{cover} {script} {ver} sync --datadir={data} --repodir={repo} -W {war}"
+        cmd = F"{cover} {script} {ver} sync {VV} --datadir={data} --repodir={repo} -W {war}"
         if DRY_RSYNC:
              cmd += " --rsync='rsync --dry-run'"
         ret = calls(cmd)
@@ -484,15 +521,29 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         data = F"{tmp}/data"
         repo = F"{tmp}/repo"
-        want = F"{repo}/opensuse.{ver}.{war}"
         os.makedirs(data)
-        cmd = F"{cover} {script} {ver} sync --datadir={data} --repodir={repo} -W {war}"
+        cmd = F"{cover} {script} {ver} sync {VV} --datadir={data} --repodir={repo} -W {war}"
         if DRY_RSYNC:
              cmd += " --rsync='rsync --dry-run'"
         ret = calls(cmd)
         self.assertEqual(0, ret)
         self.coverage()
         self.rm_testdir()
+    def test_54156(self) -> None:
+        ver = self.testver()
+        test = self.testname()
+        docker = DOCKER
+        cover = self.cover()
+        script = SCRIPT
+        imagesrepo = F"localhost:5000/{test}"
+        cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
+        ret = calls(cmd)
+        cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -vvv"
+        ret = calls(cmd)
+        self.assertEqual(0, ret)
+        self.coverage()
+        self.rm_testdir()
+        self.rm_images()
     def test_54160(self) -> None:
         ver = self.testver()
         test = self.testname()
@@ -500,13 +551,15 @@ class OpensuseMirrorTest(unittest.TestCase):
         cover = self.cover()
         script = SCRIPT
         imagesrepo = F"localhost:5000/{test}"
-        cmd = F"{cover} {script} {ver} pull --docker='{docker}' --imagesrepo='{imagesrepo}'"
+        cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
-        cmd = F"{cover} {script} {ver} repo --docker='{docker}' --imagesrepo='{imagesrepo}'"
+        cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
+        cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
         self.assertEqual(0, ret)
         self.coverage()
         self.rm_testdir()
+        self.rm_images()
     def test_59999(self) -> None:
         if COVERAGE:
             o1 = sh(F" {PYTHON} -m coverage combine")
@@ -536,6 +589,8 @@ if __name__ == "__main__":
     COVERAGE = opt.coverage
     DRY_RSYNC = opt.dry_rsync - opt.real_rsync
     DOCKER = opt.docker
+    if opt.verbose:
+        VV= "-" + "v" * int(opt.verbose)
     if not _args:
         _args = ["test_*"]
     suite = unittest.TestSuite()

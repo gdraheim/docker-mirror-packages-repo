@@ -329,6 +329,8 @@ def opensuse_repo(onlybase: bool = False) -> str:
                 sh___(F"{docker} cp {pooldir} {cname}:/srv/repo/")
                 base = dist
                 sh___(F"{docker} exec {cname} bash -c \"find /srv/repo/{subdir} -name repomd.xml -exec {python} /srv/scripts/repodata-fix.py {{}} -v ';'\" ")
+            else:
+                logg.info("did not find pooldir %s", pooldir)
         if dist in ["update"]:
             # sh___("{docker} exec {cname} rm -r /srv/repo/{dist}/{leap}".format(**locals()))
             sh___(F"{docker} exec {cname} ln -s /srv/repo/{dist}/leap/{leap}/oss /srv/repo/{dist}/{leap}")
@@ -386,6 +388,12 @@ def opensuse_disk(onlybase: bool = False) -> str:
                     sh___(F"""{docker} run --rm=true -t -v {host_srv}:/srv -u {host_uid} --userns=host {baseimage} bash -c "cd /srv/repo/{dist}/leap/{leap}/oss && createrepo --workers=1 --verbose ." """)
     path_srv = os.path.realpath(srv)
     return F"\nmount = {path_srv}/repo\n"
+
+def opensuse_diskpath() -> str:
+    rootdir = opensuse_dir(suffix=F".disk")
+    srv = F"{rootdir}/srv"
+    path_srv = os.path.realpath(srv)
+    return F"{path_srv}/repo\n"
 
 def find_path(bin: str, default: str = NIX) -> str:
     for dirpath in os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin"):
