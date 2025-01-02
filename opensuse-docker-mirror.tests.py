@@ -4,7 +4,7 @@ __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.6334"
 
-# pylint: disable=unused-import
+# pylint: disable=unused-import,line-too-long
 from typing import Optional, Union, Dict, List, Any, Sequence, Callable, Iterable, cast, NamedTuple
 import shutil
 import inspect
@@ -14,7 +14,7 @@ import os
 import re
 import time
 from fnmatch import fnmatchcase as fnmatch
-from subprocess import getoutput, Popen, PIPE, call
+from subprocess import getoutput, Popen, PIPE, call, CalledProcessError
 
 import logging
 logg = logging.getLogger("tests.opensuse")
@@ -38,25 +38,35 @@ KEEPBASEIMAGE = False
 def sh(cmd: str, **args: Any) -> str:
     logg.debug("sh %s", cmd)
     return getoutput(cmd, **args)
-class Proc(NamedTuple):
-    out: str
-    err: str
+class CompletedProc(NamedTuple):
+    """ aligned with subprocess.CompletedProcess (Python 3.5) """
+    stdout: str
+    stderr: str
     ret: int
-def runs(cmd: str, **args: Any) -> Proc:
+    @property
+    def returncode(self) -> int:
+        return self.ret
+    def check_returncode(self) -> None:
+        if self.returncode != 0:
+            raise CalledProcessError(returncode=self.returncode, cmd = [], output=None, output=self.stdout, stderr=self.stderr)
+def runs(cmd: str, **args: Any) -> CompletedProc:
+    """ subprocess.run() defaults to shell=False (Python 3.5) and capture_output=False (Python 3.7)"""
     logg.debug("run: %s", cmd)
     if isinstance(cmd, str):
         proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE, **args)
     else:
         proc = Popen(cmd, shell=False, stdout=PIPE, stderr=PIPE, **args)
     out, err = proc.communicate()
-    return Proc(decodes(out), decodes(err), proc.returncode)
+    return CompletedProc(decodes(out), decodes(err), proc.returncode)
 def calls(cmd: str, **args: Any) -> int:
+    """ subprocess.call() defaults to shell=False"""
     logg.debug("run: %s", cmd)
     if isinstance(cmd, str):
         return call(cmd, shell=True, **args)
     else:
         return call(cmd, shell=False, **args)
 def decodes(text: Union[str, bytes]) -> str:
+    """ no need to provide encoding for subprocess.run() or subprocess.call() """
     if isinstance(text, bytes):
         encoded = sys.getdefaultencoding()
         if encoded in ["ascii"]:
@@ -129,7 +139,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         docker = DOCKER
         cmd = F"{docker} image list -q -f dangling=true"
         run = runs(cmd)
-        for line in run.out.splitlines():
+        for line in run.stdout.splitlines():
             images += [ line ]
         return images
     def imageslist(self, pat: Optional[str] = None) -> List[str]:
@@ -137,8 +147,8 @@ class OpensuseMirrorTest(unittest.TestCase):
         docker = DOCKER
         cmd = F"{docker} image list -q --no-trunc --format {{{{.Repository}}}}:{{{{.Tag}}}}"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        for line in run.out.splitlines():
+        logg.debug("out: %s", run.stdout)
+        for line in run.stdout.splitlines():
             if not pat:
                 continue
             elif "*" in pat:
@@ -153,8 +163,8 @@ class OpensuseMirrorTest(unittest.TestCase):
         docker = DOCKER
         cmd = F"{docker} container list -a --no-trunc --format {{{{.Names}}}}"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        for line in run.out.splitlines():
+        logg.debug("out: %s", run.stdout)
+        for line in run.stdout.splitlines():
             if not pat:
                 continue
             elif "*" in pat:
@@ -243,9 +253,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(ver, run.out.strip())
-        self.assertEqual("", run.err.strip())
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", run.stdout)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50140(self) -> None:
         ver = self.testver()
@@ -254,9 +266,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(ver, run.out.strip())
-        self.assertIn("is not a known os version", run.err.strip())
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertIn("is not a known os version", errs)
         self.coverage()
     def test_50142(self) -> None:
         ver = self.testver()
@@ -265,9 +279,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(ver, run.out.strip())
-        self.assertEqual("", run.err.strip())
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50143(self) -> None:
         ver = self.testver()
@@ -276,9 +292,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(ver, run.out.strip())
-        self.assertEqual("", run.err.strip())
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50151(self) -> None:
         ver = self.testver()
@@ -287,9 +305,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(ver, run.out.strip())
-        self.assertEqual("", run.err.strip())
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50152(self) -> None:
         ver = self.testver()
@@ -298,9 +318,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(ver, run.out.strip())
-        self.assertEqual("", run.err.strip())
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50153(self) -> None:
         ver = self.testver()
@@ -309,9 +331,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(ver, run.out.strip())
-        self.assertEqual("", run.err.strip())
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50154(self) -> None:
         ver = self.testver()
@@ -320,9 +344,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(ver, run.out.strip())
-        self.assertEqual("", run.err.strip())
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50155(self) -> None:
         ver = self.testver()
@@ -331,9 +357,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(ver, run.out.strip())
-        self.assertEqual("", run.err.strip())
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50156(self) -> None:
         ver = self.testver()
@@ -342,9 +370,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(ver, run.out.strip())
-        self.assertEqual("", run.err.strip())
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50159(self) -> None:
         ver = self.testver()
@@ -353,9 +383,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(ver, run.out.strip())
-        self.assertIn("is not a known os version", run.err.strip())
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertIn("is not a known os version", errs)
         self.coverage()
     def test_50160(self) -> None:
         ver = self.testver()
@@ -364,9 +396,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(ver, run.out.strip())
-        self.assertEqual("", run.err.strip())
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50193(self) -> None:
         ver2 = "13"
@@ -375,9 +409,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver2} version"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(ver, run.out.strip())
-        self.assertEqual("", run.err.strip())
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50195(self) -> None:
         ver2 = "15"
@@ -386,9 +422,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver2} version"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(ver, run.out.strip())
-        self.assertEqual("", run.err.strip())
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50196(self) -> None:
         ver2 = "16"
@@ -397,9 +435,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver2} version"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(ver, run.out.strip())
-        self.assertEqual("", run.err.strip())
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50200(self) -> None:
         tmp = self.testdir()
@@ -407,8 +447,9 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} datadir"
         run = runs(cmd, env={"REPODATADIR": tmp})
-        logg.debug("out: %s", run.out)
-        self.assertEqual(tmp, run.out.strip())
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(tmp, have)
         self.coverage()
         self.rm_testdir()
     def test_51001(self) -> None:
@@ -417,8 +458,9 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} datadir --datadir={tmp}"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(tmp, run.out.strip())
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(tmp, have)
         self.coverage()
         self.rm_testdir()
     def test_51002(self) -> None:
@@ -429,9 +471,10 @@ class OpensuseMirrorTest(unittest.TestCase):
         repo = F"{tmp}/repo"
         cmd = F"{cover} {script} datadir --datadir={data} --repodir={repo}"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertNotEqual(data, run.out.strip()) # datadir does not exist
-        self.assertEqual(repo, run.out.strip()) # repodir is fallback
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertNotEqual(data, have) # datadir does now exist
+        self.assertEqual(repo, have) # repodir not a fallback
         self.coverage()
         self.rm_testdir()
     def test_51003(self) -> None:
@@ -443,9 +486,10 @@ class OpensuseMirrorTest(unittest.TestCase):
         os.makedirs(data)
         cmd = F"{cover} {script} datadir --datadir={data} --repodir={repo}"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(data, run.out.strip()) # datadir does now exist
-        self.assertNotEqual(repo, run.out.strip()) # repodir not a fallback
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(data, have) # datadir does now exist
+        self.assertNotEqual(repo, have) # repodir not a fallback
         self.coverage()
         self.rm_testdir()
     def test_51132(self) -> None:
@@ -459,9 +503,9 @@ class OpensuseMirrorTest(unittest.TestCase):
         os.makedirs(data)
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        logg.debug("err: %s", run.err)
-        self.assertEqual(want, run.out.strip())
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
         self.assertTrue(os.path.isdir(os.path.join(want, ".")))
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
@@ -478,9 +522,9 @@ class OpensuseMirrorTest(unittest.TestCase):
         os.makedirs(data)
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        logg.debug("err: %s", run.err)
-        self.assertEqual(want, run.out.strip())
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
         self.assertTrue(os.path.isdir(os.path.join(want, ".")))
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
@@ -497,9 +541,9 @@ class OpensuseMirrorTest(unittest.TestCase):
         os.makedirs(data)
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        logg.debug("err: %s", run.err)
-        self.assertEqual(want, run.out.strip())
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
         self.assertTrue(os.path.isdir(os.path.join(want, ".")))
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
@@ -516,8 +560,9 @@ class OpensuseMirrorTest(unittest.TestCase):
         os.makedirs(data)
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(want, run.out.strip())
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
         self.assertTrue(os.path.isdir(os.path.join(want, ".")))
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
@@ -535,8 +580,9 @@ class OpensuseMirrorTest(unittest.TestCase):
         os.makedirs(data)
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo} -W {war}"
         run = runs(cmd)
-        logg.debug("out: %s", run.out)
-        self.assertEqual(want, run.out.strip())
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
         self.assertTrue(os.path.isdir(os.path.join(want, ".")))
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
@@ -586,7 +632,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         imagesrepo = self.testrepo(testname)
         cmd = F"{cover} {script} {ver} baseimage {VV}"
         run = runs(cmd)
-        baseimage = run.out.strip()
+        baseimage = run.stdout.strip()
         logg.debug("baseimage %s", baseimage)
         cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
@@ -599,12 +645,12 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(0, ret)
         cmd = F"{cover} {mirror} addhost opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         run = runs(cmd)
-        logg.info("show: %s", run.out)
-        addhost = run.out.strip()
+        logg.info("show: %s", run.stdout)
+        addhost = run.stdout.strip()
         self.assertEqual(0, ret)
         cmd = F"{docker} run -d --name {testcontainer} {addhost} {baseimage}"
         run = runs(cmd)
-        logg.info("show: %s", run.out)
+        logg.info("show: %s", run.stdout)
         self.assertEqual(0, ret)
         cmd = F"{cover} {mirror} stop opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         ret = calls(cmd)
