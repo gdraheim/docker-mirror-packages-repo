@@ -52,6 +52,8 @@ class CompletedProc(NamedTuple):
 def runs(cmd: str, **args: Any) -> CompletedProc:
     """ subprocess.run() defaults to shell=False (Python 3.5) and capture_output=False (Python 3.7)"""
     logg.debug("run: %s", cmd)
+    return runs_(cmd, **args)
+def runs_(cmd: str, **args: Any) -> CompletedProc:
     if isinstance(cmd, str):
         proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE, **args)
     else:
@@ -61,6 +63,8 @@ def runs(cmd: str, **args: Any) -> CompletedProc:
 def calls(cmd: str, **args: Any) -> int:
     """ subprocess.call() defaults to shell=False"""
     logg.debug("run: %s", cmd)
+    return calls_(cmd, **args)
+def calls_(cmd: str, **args: Any) -> int:
     if isinstance(cmd, str):
         return call(cmd, shell=True, **args)
     else:
@@ -146,33 +150,35 @@ class OpensuseMirrorTest(unittest.TestCase):
         images: List[str] = []
         docker = DOCKER
         cmd = F"{docker} image list -q --no-trunc --format {{{{.Repository}}}}:{{{{.Tag}}}}"
-        run = runs(cmd)
-        logg.debug("out: %s", run.stdout)
+        run = runs_(cmd)
+        if run.ret:
+            logg.debug("out: %s", run.stdout)
         for line in run.stdout.splitlines():
             if not pat:
                 continue
             elif "*" in pat:
                 if fnmatch(line, pat):
-                    images += [ line ]
+                    images += [ line.rstrip() ]
             else:
                 if line.startswith(pat):
-                    images += [ line ]
+                    images += [ line.rstrip() ]
         return images
     def containerlist(self, pat: Optional[str] = None) -> List[str]:
         images: List[str] = []
         docker = DOCKER
         cmd = F"{docker} container list -a --no-trunc --format {{{{.Names}}}}"
-        run = runs(cmd)
-        logg.debug("out: %s", run.stdout)
+        run = runs_(cmd)
+        if run.ret:
+            logg.debug("out: %s", run.stdout)
         for line in run.stdout.splitlines():
             if not pat:
                 continue
             elif "*" in pat:
                 if fnmatch(line, pat):
-                    images += [ line ]
+                    images += [ line.rstrip() ]
             else:
                 if line.startswith(pat):
-                    images += [ line ]
+                    images += [ line.rstrip() ]
         return images
     def repocontainer(self, testname: str = NIX) -> List[str]: # pylint: disable=unused-argument
         return self.containerlist("opensuse-repo")
@@ -180,7 +186,6 @@ class OpensuseMirrorTest(unittest.TestCase):
         return "localhost:5000/mirror-test"
     def rm_images(self, testname: str = NIX) -> List[str]: # pylint: disable=unused-argument
         pat = self.testrepo()
-        logg.debug("pat = %s", pat)
         images = self.imageslist(pat) + self.imagesdangling()
         docker = DOCKER
         cmd = F"{docker} rmi"
@@ -195,7 +200,6 @@ class OpensuseMirrorTest(unittest.TestCase):
     def rm_container(self, testname: str = NIX) -> List[str]: # pylint: disable=unused-argument
         docker = DOCKER
         pat = "mirror-test-"
-        logg.debug("pat = %s", pat)
         images = self.containerlist(pat) + self.repocontainer()
         cmd = F"{docker} stop"
         if images:
@@ -623,6 +627,7 @@ class OpensuseMirrorTest(unittest.TestCase):
     def test_54156(self) -> None:
         self.check_54(self.testname())
     def check_54(self, testname: str) -> None:
+        self.rm_container(testname)
         ver = self.testver(testname)
         docker = DOCKER
         cover = self.cover()
@@ -652,13 +657,25 @@ class OpensuseMirrorTest(unittest.TestCase):
         ret = calls(cmd)
         logg.info("consume: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} zypper install -y python3"
-        retn = calls(cmd)
-        logg.info("install: %s", ret)
+        cmd = F"{docker} exec {testcontainer} zypper mr --no-gpgcheck --all"
+        ret = calls(cmd)
+        logg.info("install nocheck: %s", ret)
+        cmd = F"{docker} exec {testcontainer} zypper clean --all"
+        ret = calls(cmd)
+        logg.info("install clean: %s", ret)
+        self.assertEqual(0, ret)
+        cmd = F"{docker} exec {testcontainer} zypper install -y python3-lxml"
+        ret = calls(cmd)
+        logg.info("install package: %s", ret)
         self.assertEqual(0, ret)
         cmd = F"{cover} {mirror} stop opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         ret = calls(cmd)
         self.assertEqual(0, ret)
+        cmd = F"{docker} exec {testcontainer} rpm -q --info python3-lxml"
+        run = runs(cmd)
+        val = run.stdout
+        logg.info("install version: %s", val)
+        self.assertIn("Pythonic XML", val)
         self.coverage(testname)
         self.rm_testdir(testname)
         self.rm_container(testname)
