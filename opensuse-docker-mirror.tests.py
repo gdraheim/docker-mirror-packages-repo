@@ -30,6 +30,7 @@ COVERAGE = False
 KEEP = False
 DRY_RSYNC = 1
 DOCKER = "docker"
+SLEEP = 66
 VV="-v"
 SKIPFULLIMAGE = True
 KEEPFULLIMAGE = False
@@ -80,6 +81,31 @@ def decodes(text: Union[str, bytes]) -> str:
         except: # pylint: disable=bare-except
             return text.decode("latin-1")
     return text
+
+def get_HOME(root = False):
+    if root: return "/root"
+    return os.path.expanduser("~")
+def get_CONFIG_HOME(root = False):
+    CONFIG = "/etc"
+    if root: return CONFIG
+    HOME = get_HOME(root)
+    return os.environ.get("XDG_CONFIG_HOME", HOME + "/.config")
+def get_CACHE_HOME(root = False):
+    CACHE = "/var/cache"
+    if root: return CACHE
+    HOME = get_HOME(root)
+    return os.environ.get("XDG_CACHE_HOME", HOME + "/.cache")
+def get_DATA_HOME(root = False):
+    SHARE = "/usr/share"
+    if root: return SHARE
+    HOME = get_HOME(root)
+    return os.environ.get("XDG_DATA_HOME", HOME + "/.local/share")
+def get_LOG_DIR(root = False):
+    LOGDIR = "/var/log"
+    if root: return LOGDIR
+    CONFIG = get_CONFIG_HOME(root)
+    return os.path.join(CONFIG, "log")
+
 
 def get_caller_name() -> str:
     frame = inspect.currentframe().f_back.f_back  # type: ignore
@@ -624,6 +650,14 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(0, ret)
         self.coverage()
         self.rm_testdir()
+    def test_54152(self) -> None:
+        self.check_54(self.testname())
+    def test_54153(self) -> None:
+        self.check_54(self.testname())
+    def test_54154(self) -> None:
+        self.check_54(self.testname())
+    def test_54155(self) -> None:
+        self.check_54(self.testname())
     def test_54156(self) -> None:
         self.check_54(self.testname())
     def check_54(self, testname: str) -> None:
@@ -653,7 +687,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.info("show: %s", run.stdout)
         addhost = run.stdout.strip()
         self.assertEqual(0, ret)
-        cmd = F"{docker} run -d --name {testcontainer} {addhost} {baseimage} sleep 33"
+        cmd = F"{docker} run -d --name {testcontainer} {addhost} {baseimage} sleep {SLEEP}"
         ret = calls(cmd)
         logg.info("consume: %s", ret)
         self.assertEqual(0, ret)
@@ -676,6 +710,17 @@ class OpensuseMirrorTest(unittest.TestCase):
         val = run.stdout
         logg.info("install version: %s", val)
         self.assertIn("Pythonic XML", val)
+        cmd = F"{docker} image list -q --no-trunc --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
+        run = runs_(cmd)
+        images = []
+        for line in run.stdout.splitlines():
+            if line.startswith(imagesrepo) and "opensuse-repo" in line and F":{ver}" in line:
+                images += [ "| " + line.rstrip().replace("\t", " | ").replace("mirror-test", "mirror-packages" )]
+        logg.info("images:\n%s", "\n".join(images))
+        sizesfile = os.path.join(get_CACHE_HOME(), F"opensuse-repo-{ver}.sizes.txt")
+        with open(sizesfile, "w") as f:
+             print("\n".join(images), file=f)
+        logg.debug("written %s", sizesfile)
         self.coverage(testname)
         self.rm_testdir(testname)
         self.rm_container(testname)
@@ -714,6 +759,7 @@ if __name__ == "__main__":
     cmdline.add_option("-D", "--docker", metavar="EXE", default=DOCKER, help="use different docker/podman [%default]")
     cmdline.add_option("--dry-rsync", action="count", default=DRY_RSYNC, help="upstream rsync --dry-run [%default]")
     cmdline.add_option("--real-rsync", action="count", default=0, help="upstream rsync for real [%default]")
+    cmdline.add_option("--sleep", metavar="SEC", default=SLEEP)
     cmdline.add_option("-S", "--skipfullimage", action="count", default=0, help="upstream rsync for real [%default]")
     cmdline.add_option("-K", "--keepfullimage", action="count", default=0, help="upstream rsync for real [%default]")
     cmdline.add_option("--keepbaseimage", action="count", default=0, help="upstream rsync for real [%default]")
@@ -726,6 +772,7 @@ if __name__ == "__main__":
     opt, _args = cmdline.parse_args()
     logging.basicConfig(level=max(0, logging.WARNING - 10 * opt.verbose + 10 * opt.quiet))
     KEEP = opt.keep
+    SLEEP = int(opt.sleep)
     COVERAGE = opt.coverage
     DRY_RSYNC = opt.dry_rsync - opt.real_rsync
     DOCKER = opt.docker

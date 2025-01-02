@@ -75,7 +75,6 @@ LAYER = "base"
 RETRY = 3
 
 BASEVERSION: Dict[str, str] = {}
-BASEVERSION["15.4"] = "15.3"  # image:opensuse/base
 BASEVERSION["16.0"] = "15.6"  # image:opensuse/base
 
 SUBDIRS15: Dict[str, List[str]] = OrderedDict()
@@ -330,7 +329,7 @@ def opensuse_repo(onlybase: bool = False) -> str:
                 base = dist
                 sh___(F"{docker} exec {cname} bash -c \"find /srv/repo/{subdir} -name repomd.xml -exec {python} /srv/scripts/repodata-fix.py {{}} -v ';'\" ")
             else:
-                logg.info("did not find pooldir %s", pooldir)
+                logg.warning("did not find pooldir %s", pooldir)
         if dist in ["update"]:
             # sh___("{docker} exec {cname} rm -r /srv/repo/{dist}/{leap}".format(**locals()))
             sh___(F"{docker} exec {cname} ln -s /srv/repo/{dist}/leap/{leap}/oss /srv/repo/{dist}/{leap}")
