@@ -48,7 +48,7 @@ class CompletedProc(NamedTuple):
         return self.ret
     def check_returncode(self) -> None:
         if self.returncode != 0:
-            raise CalledProcessError(returncode=self.returncode, cmd = [], output=None, output=self.stdout, stderr=self.stderr)
+            raise CalledProcessError(returncode=self.returncode, cmd = [], output=self.stdout, stderr=self.stderr)
 def runs(cmd: str, **args: Any) -> CompletedProc:
     """ subprocess.run() defaults to shell=False (Python 3.5) and capture_output=False (Python 3.7)"""
     logg.debug("run: %s", cmd)
@@ -648,9 +648,13 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.info("show: %s", run.stdout)
         addhost = run.stdout.strip()
         self.assertEqual(0, ret)
-        cmd = F"{docker} run -d --name {testcontainer} {addhost} {baseimage}"
-        run = runs(cmd)
-        logg.info("show: %s", run.stdout)
+        cmd = F"{docker} run -d --name {testcontainer} {addhost} {baseimage} sleep 33"
+        ret = calls(cmd)
+        logg.info("consume: %s", ret)
+        self.assertEqual(0, ret)
+        cmd = F"{docker} exec {testcontainer} zypper install -y python3"
+        retn = calls(cmd)
+        logg.info("install: %s", ret)
         self.assertEqual(0, ret)
         cmd = F"{cover} {mirror} stop opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         ret = calls(cmd)
