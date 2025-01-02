@@ -12,6 +12,7 @@ import unittest
 import sys
 import os
 import re
+import time
 from fnmatch import fnmatchcase as fnmatch
 from subprocess import getoutput, Popen, PIPE, call
 
@@ -24,11 +25,15 @@ LIST: List[str] = []
 
 PYTHON = "python3"
 SCRIPT = "opensuse-docker-mirror.py"
+MIRROR = "docker_mirror.py"
 COVERAGE = False
 KEEP = False
 DRY_RSYNC = 1
 DOCKER = "docker"
 VV="-v"
+SKIPFULLIMAGE = True
+KEEPFULLIMAGE = False
+KEEPBASEIMAGE = False
 
 def sh(cmd: str, **args: Any) -> str:
     logg.debug("sh %s", cmd)
@@ -38,7 +43,7 @@ class Proc(NamedTuple):
     err: str
     ret: int
 def runs(cmd: str, **args: Any) -> Proc:
-    logg.debug("run %s", cmd)
+    logg.debug("run: %s", cmd)
     if isinstance(cmd, str):
         proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE, **args)
     else:
@@ -46,6 +51,7 @@ def runs(cmd: str, **args: Any) -> Proc:
     out, err = proc.communicate()
     return Proc(decodes(out), decodes(err), proc.returncode)
 def calls(cmd: str, **args: Any) -> int:
+    logg.debug("run: %s", cmd)
     if isinstance(cmd, str):
         return call(cmd, shell=True, **args)
     else:
@@ -129,7 +135,7 @@ class OpensuseMirrorTest(unittest.TestCase):
     def imageslist(self, pat: Optional[str] = None) -> List[str]:
         images: List[str] = []
         docker = DOCKER
-        cmd = F"{docker} image list -q --format {{{{.Repository}}}}:{{{{.Tag}}}}"
+        cmd = F"{docker} image list -q --no-trunc --format {{{{.Repository}}}}:{{{{.Tag}}}}"
         run = runs(cmd)
         logg.debug("out: %s", run.out)
         for line in run.out.splitlines():
@@ -142,17 +148,53 @@ class OpensuseMirrorTest(unittest.TestCase):
                 if line.startswith(pat):
                     images += [ line ]
         return images
-    def testrepo(self, testname: Optional[str] = None) -> str:
-        testname = testname or self.caller_testname()
-        return F"localhost:5000/{testname}/"
-    def rm_images(self, pat: Optional[str] = None) -> List[str]:
-        if not pat:
-            testname =self.caller_testname()
-            pat = F"localhost:5000/{testname}/"
+    def containerlist(self, pat: Optional[str] = None) -> List[str]:
+        images: List[str] = []
+        docker = DOCKER
+        cmd = F"{docker} container list -a --no-trunc --format {{{{.Names}}}}"
+        run = runs(cmd)
+        logg.debug("out: %s", run.out)
+        for line in run.out.splitlines():
+            if not pat:
+                continue
+            elif "*" in pat:
+                if fnmatch(line, pat):
+                    images += [ line ]
+            else:
+                if line.startswith(pat):
+                    images += [ line ]
+        return images
+    def repocontainer(self) -> List[str]:
+        return self.containerlist("opensuse-repo")
+    def testrepo(self) -> str:
+        return "localhost:5000/mirror-test"
+    def rm_images(self) -> List[str]:
+        pat = self.testrepo()
         logg.debug("pat = %s", pat)
         images = self.imageslist(pat) + self.imagesdangling()
         docker = DOCKER
         cmd = F"{docker} rmi"
+        if images:
+            for image in images:
+                cmd += F" {image}"
+            calls(cmd)
+        return images
+    def testcontainer(self) -> str:
+        name = self.caller_testname()
+        return F"mirror-test-{name}"
+    def rm_container(self) -> List[str]:
+        docker = DOCKER
+        pat = "mirror-test-"
+        logg.debug("pat = %s", pat)
+        images = self.containerlist(pat) + self.repocontainer()
+        cmd = F"{docker} stop"
+        if images:
+            for image in images:
+                cmd += F" {image}"
+            calls(cmd)
+        time.sleep(1)
+        images = self.containerlist(pat) + self.repocontainer()
+        cmd = F"{docker} rm -f"
         if images:
             for image in images:
                 cmd += F" {image}"
@@ -511,7 +553,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         os.makedirs(data)
         cmd = F"{cover} {script} {ver} sync {VV} --datadir={data} --repodir={repo} -W {war}"
         if DRY_RSYNC:
-             cmd += " --rsync='rsync --dry-run'"
+            cmd += " --rsync='rsync --dry-run'"
         ret = calls(cmd)
         self.assertEqual(0, ret)
         self.coverage()
@@ -527,27 +569,50 @@ class OpensuseMirrorTest(unittest.TestCase):
         os.makedirs(data)
         cmd = F"{cover} {script} {ver} sync {VV} --datadir={data} --repodir={repo} -W {war}"
         if DRY_RSYNC:
-             cmd += " --rsync='rsync --dry-run'"
+            cmd += " --rsync='rsync --dry-run'"
         ret = calls(cmd)
         self.assertEqual(0, ret)
         self.coverage()
         self.rm_testdir()
-    def test_54156(self, clean=True) -> None:
+    def test_54156(self) -> None:
         ver = self.testver()
         docker = DOCKER
         cover = self.cover()
         script = SCRIPT
+        mirror = MIRROR
+        testcontainer = self.testcontainer()
         imagesrepo = self.testrepo()
+        cmd = F"{cover} {script} {ver} baseimage {VV}"
+        run = runs(cmd)
+        baseimage = run.out
+        logg.debug("baseimage %s", baseimage)
         cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
-        cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -vvv"
+        if not SKIPFULLIMAGE:
+            cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -vvv"
+            ret = calls(cmd)
+            self.assertEqual(0, ret)
+        cmd = F"{cover} {mirror} start opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        ret = calls(cmd)
+        self.assertEqual(0, ret)
+        cmd = F"{cover} {mirror} addhost opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        run = runs(cmd)
+        logg.info("show: %s", run.out)
+        addhost = run.out.strip()
+        self.assertEqual(0, ret)
+        cmd = F"{docker} run -d --name {testcontainer} {addhost} {baseimage}"
+        run = runs(cmd)
+        logg.info("show: %s", run.out)
+        self.assertEqual(0, ret)
+        cmd = F"{cover} {mirror} stop opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         ret = calls(cmd)
         self.assertEqual(0, ret)
         self.coverage()
         self.rm_testdir()
-        if clean:
+        self.rm_container()
+        if not KEEPFULLIMAGE:
             self.rm_images()
-    def test_54160(self, clean=True) -> None:
+    def test_54160(self) -> None:
         ver = self.testver()
         docker = DOCKER
         cover = self.cover()
@@ -555,14 +620,14 @@ class OpensuseMirrorTest(unittest.TestCase):
         imagesrepo = self.testrepo()
         cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
-        cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
-        cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
-        ret = calls(cmd)
-        self.assertEqual(0, ret)
+        if not SKIPFULLIMAGE:
+            cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
+            ret = calls(cmd)
+            self.assertEqual(0, ret)
         self.coverage()
         self.rm_testdir()
-        if clean:
-           self.rm_images()
+        if not KEEPFULLIMAGE:
+            self.rm_images()
     def test_59999(self) -> None:
         if COVERAGE:
             o1 = sh(F" {PYTHON} -m coverage combine")
@@ -580,6 +645,9 @@ if __name__ == "__main__":
     cmdline.add_option("-D", "--docker", metavar="EXE", default=DOCKER, help="use different docker/podman [%default]")
     cmdline.add_option("--dry-rsync", action="count", default=DRY_RSYNC, help="upstream rsync --dry-run [%default]")
     cmdline.add_option("--real-rsync", action="count", default=0, help="upstream rsync for real [%default]")
+    cmdline.add_option("-S", "--skipfullimage", action="count", default=0, help="upstream rsync for real [%default]")
+    cmdline.add_option("-K", "--keepfullimage", action="count", default=0, help="upstream rsync for real [%default]")
+    cmdline.add_option("--keepbaseimage", action="count", default=0, help="upstream rsync for real [%default]")
     cmdline.add_option("--coverage", action="store_true", default=False,
                        help="Generate coverage data. [%default]")
     cmdline.add_option("--failfast", action="store_true", default=False,
@@ -592,6 +660,9 @@ if __name__ == "__main__":
     COVERAGE = opt.coverage
     DRY_RSYNC = opt.dry_rsync - opt.real_rsync
     DOCKER = opt.docker
+    SKIPFULLIMAGE = opt.skipfullimage
+    KEEPFULLIMAGE = opt.keepfullimage
+    KEEPBASEIMAGE = opt.keepbaseimage
     if opt.verbose:
         VV= "-" + "v" * int(opt.verbose)
     if not _args:

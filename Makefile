@@ -116,7 +116,10 @@ untag:
 # ..............................................
 
 K=
-test_%: ; ./docker_mirror.tests.py $@ -vv $V $K 
+test_1%: ; ./docker_mirror.tests.py $@ -vv $V $K 
+test_2%: ; ./docker_mirror.tests.py $@ -vv $V $K 
+test_3%: ; ./docker_mirror.tests.py $@ -vv $V $K 
+test_5%: ; ./opensuse-docker-mirror.tests.py $@ -vv $V $K 
 m_%: ; ./docker_mirror.tests.py $@ -vv $V $K 
 o_%: ; ./opensuse-docker-mirror.tests.py $@ -vv $V $K 
 

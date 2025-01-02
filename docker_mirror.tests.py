@@ -1342,7 +1342,7 @@ class DockerMirrorPackagesTest(unittest.TestCase):
 if __name__ == "__main__":
     from optparse import OptionParser
     _o = OptionParser("%prog [options] test*",
-                      epilog=__doc__.strip().split("\n")[0])
+                      epilog=__doc__.strip().split("\n", 1)[0])
     _o.add_option("-v", "--verbose", action="count", default=0,
                   help="increase logging level [%default]")
     _o.add_option("-p", "--prefix", metavar="HOST", default=PREFIX,

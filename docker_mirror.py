@@ -24,6 +24,7 @@ if sys.version[0] != '2':
     basestring = str
 
 logg = logging.getLogger("mirror")
+IMAGESREPO = "localhost:5000/mirror-packages"
 DOCKER = "docker"
 ADDHOSTS = False
 ADDEPEL = False
@@ -388,7 +389,7 @@ class DockerMirrorPackagesRepo:
             docker container with a ubunut repo mirror. It
             will return the extra_hosts setting to start
             other docker containers"""
-        rmi = "localhost:5000/mirror-packages"
+        rmi = IMAGESREPO
         rep = "ubuntu-repo"
         if UPDATES: rep = "ubuntu-repo/updates"
         if UNIVERSE: rep = "ubuntu-repo/universe"
@@ -450,7 +451,7 @@ class DockerMirrorPackagesRepo:
             distro, ver = image.split(":", 1)
         else:
             distro, ver = "centos", image
-        rmi = "localhost:5000/mirror-packages"
+        rmi = IMAGESREPO
         rep = F"{distro}-repo"
         ver = self.get_centos_latest_version(onlyversion(image))
         logg.debug("    mirror for %s (%s)", ver, image)
@@ -503,7 +504,7 @@ class DockerMirrorPackagesRepo:
             docker container with a centos repo mirror. It
             will return the extra_hosts setting to start
             other docker containers"""
-        rmi = "localhost:5000/mirror-packages"
+        rmi = IMAGESREPO
         rep = "opensuse-repo"
         ver = self.get_opensuse_latest_version(onlyversion(image))
         return self.docker_mirror(rmi, rep, ver, "download.opensuse.org")
@@ -536,7 +537,7 @@ class DockerMirrorPackagesRepo:
             docker container with a epel repo mirror. It
             will return the setting for extrahosts"""
         docker = DOCKER
-        rmi = "localhost:5000/mirror-packages"
+        rmi = IMAGESREPO
         rep = "epel-repo"
         ver = onlyversion(image)
         version = self.get_centos_latest_version(ver)
@@ -774,6 +775,7 @@ class DockerMirrorPackagesRepo:
             return json.dumps(mirrors, indent=2)
     def wait_mirrors(self, hosts):
         results = {}
+        started = time.monotonic()
         for url, addr in hosts.items():
             if not addr:
                 continue
@@ -788,7 +790,7 @@ class DockerMirrorPackagesRepo:
                         results[url] = 0
                         break
                     except ConnectionRefusedError as e:
-                        logg.info(" wait %s:443 = %s", url, e)
+                        logg.debug("wait %s:443 = %s", url, e)
                         results[url] += 1
                         time.sleep(1)
             else:
@@ -801,9 +803,14 @@ class DockerMirrorPackagesRepo:
                         results[url] = 0
                         break
                     except ConnectionRefusedError as e:
-                        logg.info(" wait %s:80 = %s", url, e)
+                        logg.debug("wait %s:80 = %s", url, e)
                         results[url] += 1
                         time.sleep(1)
+            if attempt:
+                logg.debug("wait %s:80 - OK", url)
+        took = time.monotonic() - started
+        if took > 1.1:
+            logg.debug("wait %3.3f sec", took)
         return sum(results.values())
     def infos(self, image=None):
         image = self.detect(image)
@@ -856,6 +863,10 @@ if __name__ == "__main__":
     cmdline.add_argument("-v", "--verbose", action="count", default=0, help="more logging")
     cmdline.add_argument("-a", "--add-hosts", "--add-host", action="store_true", default=ADDHOSTS,
                          help="show addhost options for 'docker run' [%(default)s]")
+    cmdline.add_argument("-D", "--docker", metavar="EXE", default=DOCKER,
+                         help="use other docker exe or podman [%(default)s]")
+    cmdline.add_argument("--imagesrepo", metavar="PREFIX", default=IMAGESREPO,
+                         help="set $IMAGESREPO [%(default)s]")
     cmdline.add_argument("--epel", action="store_true", default=ADDEPEL,
                          help="addhosts for epel as well [%(default)s]")
     cmdline.add_argument("--updates", "--update", action="store_true", default=UPDATES,
@@ -873,6 +884,8 @@ if __name__ == "__main__":
     cmdline.add_argument("image", nargs="?", default=None, help="defaults to image name matching the local host system")
     opt = cmdline.parse_args()
     logging.basicConfig(level=max(0, logging.WARNING - opt.verbose * 10))
+    DOCKER = opt.docker
+    IMAGESREPO = opt.imagesrepo
     ADDHOSTS = opt.add_hosts
     ADDEPEL = opt.epel  # centos epel-repo
     # UPDATES = opt.updates
