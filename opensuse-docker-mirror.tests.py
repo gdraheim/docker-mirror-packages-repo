@@ -82,12 +82,12 @@ class OpensuseMirrorTest(unittest.TestCase):
         x2 = name.find("_", x1 + 1)
         if x2 < 0: return name
         return name[:x2]
-    def testname(self, suffix: Optional[str] = None) -> str:
+    def testname(self, suffix: str = NIX) -> str:
         name = self.caller_testname()
         if suffix:
             return name + "_" + suffix
         return name
-    def testdir(self, testname: Optional[str] = None, keep: bool = False) -> str:
+    def testdir(self, testname: str = NIX, keep: bool = False) -> str:
         testname = testname or self.caller_testname()
         newdir = "tmp/tmp." + testname
         if os.path.isdir(newdir) and not keep:
@@ -95,14 +95,14 @@ class OpensuseMirrorTest(unittest.TestCase):
         if not os.path.isdir(newdir):
             os.makedirs(newdir)
         return newdir
-    def rm_testdir(self, testname: Optional[str] = None) -> str:
+    def rm_testdir(self, testname: str = NIX) -> str:
         testname = testname or self.caller_testname()
         newdir = "tmp/tmp." + testname
         if os.path.isdir(newdir):
             if not KEEP:
                 shutil.rmtree(newdir)
         return newdir
-    def coverage(self, testname: Optional[str] = None) -> None:
+    def coverage(self, testname: str = NIX) -> None:
         testname = testname or self.caller_testname()
         newcoverage = ".coverage."+testname
         if os.path.isfile(".coverage"):
@@ -118,7 +118,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         python = PYTHON
         cover = F"{python} -m coverage run" if COVERAGE else python
         return cover
-    def testver(self, testname: Optional[str] = None) -> None:
+    def testver(self, testname: str = NIX) -> None:
         testname = testname or self.caller_testname()
         ver3 = testname[-3:]
         if ver3.startswith("14"):
@@ -164,11 +164,11 @@ class OpensuseMirrorTest(unittest.TestCase):
                 if line.startswith(pat):
                     images += [ line ]
         return images
-    def repocontainer(self) -> List[str]:
+    def repocontainer(self, testname: str = NIX) -> List[str]: # pylint: disable=unused-argument
         return self.containerlist("opensuse-repo")
-    def testrepo(self) -> str:
+    def testrepo(self, testname: str = NIX) -> str: # pylint: disable=unused-argument
         return "localhost:5000/mirror-test"
-    def rm_images(self) -> List[str]:
+    def rm_images(self, testname: str = NIX) -> List[str]: # pylint: disable=unused-argument
         pat = self.testrepo()
         logg.debug("pat = %s", pat)
         images = self.imageslist(pat) + self.imagesdangling()
@@ -179,10 +179,10 @@ class OpensuseMirrorTest(unittest.TestCase):
                 cmd += F" {image}"
             calls(cmd)
         return images
-    def testcontainer(self) -> str:
-        name = self.caller_testname()
+    def testcontainer(self, testname: str = NIX) -> str:
+        name = testname or self.caller_testname()
         return F"mirror-test-{name}"
-    def rm_container(self) -> List[str]:
+    def rm_container(self, testname: str = NIX) -> List[str]: # pylint: disable=unused-argument
         docker = DOCKER
         pat = "mirror-test-"
         logg.debug("pat = %s", pat)
@@ -575,16 +575,18 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.coverage()
         self.rm_testdir()
     def test_54156(self) -> None:
-        ver = self.testver()
+        self.check_54(self.testname())
+    def check_54(self, testname: str) -> None:
+        ver = self.testver(testname)
         docker = DOCKER
         cover = self.cover()
         script = SCRIPT
         mirror = MIRROR
-        testcontainer = self.testcontainer()
-        imagesrepo = self.testrepo()
+        testcontainer = self.testcontainer(testname)
+        imagesrepo = self.testrepo(testname)
         cmd = F"{cover} {script} {ver} baseimage {VV}"
         run = runs(cmd)
-        baseimage = run.out
+        baseimage = run.out.strip()
         logg.debug("baseimage %s", baseimage)
         cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
@@ -607,11 +609,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         cmd = F"{cover} {mirror} stop opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        self.coverage()
-        self.rm_testdir()
-        self.rm_container()
+        self.coverage(testname)
+        self.rm_testdir(testname)
+        self.rm_container(testname)
         if not KEEPFULLIMAGE:
-            self.rm_images()
+            self.rm_images(testname)
     def test_54160(self) -> None:
         ver = self.testver()
         docker = DOCKER
