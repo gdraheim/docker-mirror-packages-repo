@@ -92,8 +92,8 @@ def opensuse_make() -> None:
     opensuse_sync()
     opensuse_repo()
 
-def opensuse_sync() -> None:
-    opensuse_dir()
+def opensuse_sync(*, variant:str = NIX) -> None:
+    opensuse_dir(variant=variant)
     for dist in SUBDIRS15:
         for repo in SUBDIRS15[dist]:
             if repo in FILTERS15:
@@ -112,12 +112,13 @@ def opensuse_datadir() -> str:
             return data
     return REPODIR
 
-def opensuse_dir(suffix: str = "") -> str:
+def opensuse_dir(variant: str = "") -> str:
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
-    version = F"{leap}.{VARIANT}" if VARIANT else leap
-    dirname = F"{distro}.{version}{suffix}"
+    variant = variant or VARIANT
+    version = F"{leap}.{variant}" if variant else leap
+    dirname = F"{distro}.{version}"
     dirlink = path.join(repodir, dirname)
     if not path.isdir(repodir):
         os.mkdir(repodir)
@@ -150,7 +151,7 @@ def opensuse_save() -> None:
     repodir = REPODIR
     version = F"{leap}.{VARIANT}" if VARIANT else leap
     src = F"{repodir}/{distro}.{version}/."
-    dst = opensuse_dir("." + yymmdd) + "/."
+    dst = opensuse_dir(variant=yymmdd) + "/."
     logg.info("src = %s", src)
     logg.info("dst = %s", dst)
     for srcpath, dirnames, filenames in os.walk(src):
@@ -357,7 +358,7 @@ def opensuse_disk(onlybase: bool = False) -> str:
     imagesrepo = IMAGESREPO
     scripts = repo_scripts()
     version = F"{leap}.{VARIANT}" if VARIANT else leap
-    rootdir = opensuse_dir(suffix=".disk")
+    rootdir = opensuse_dir(variant=F"disk{VARIANT}")
     srv = F"{rootdir}/srv"
     logg.info("srv = %s", srv)
     dists: Dict[str, List[str]] = OrderedDict()
@@ -390,7 +391,7 @@ def opensuse_disk(onlybase: bool = False) -> str:
     return F"\nmount = {path_srv}/repo\n"
 
 def opensuse_diskpath() -> str:
-    rootdir = opensuse_dir(suffix=".disk")
+    rootdir = opensuse_dir(variant=F"{VARIANT}disk")
     srv = F"{rootdir}/srv"
     path_srv = os.path.realpath(srv)
     return F"{path_srv}/repo\n"

@@ -523,71 +523,25 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.coverage()
         self.rm_testdir()
     def test_51132(self) -> None:
-        ver = self.testver()
-        tmp = self.testdir()
-        cover = self.cover()
-        script = SCRIPT
-        data = F"{tmp}/data"
-        repo = F"{tmp}/repo"
-        want = F"{repo}/opensuse.{ver}"
-        os.makedirs(data)
-        cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
-        run = runs(cmd)
-        have = run.stdout.strip()
-        logg.debug("out: %s", have)
-        self.assertEqual(want, have)
-        self.assertTrue(os.path.isdir(os.path.join(want, ".")))
-        self.assertTrue(os.path.islink(want))
-        self.assertIn(data, os.readlink(want))
-        self.coverage()
-        self.rm_testdir()
+        self.check_51(self.testname())
     def test_51142(self) -> None:
-        ver = self.testver()
-        tmp = self.testdir()
-        cover = self.cover()
-        script = SCRIPT
-        data = F"{tmp}/data"
-        repo = F"{tmp}/repo"
-        want = F"{repo}/opensuse.{ver}"
-        os.makedirs(data)
-        cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
-        run = runs(cmd)
-        have = run.stdout.strip()
-        logg.debug("out: %s", have)
-        self.assertEqual(want, have)
-        self.assertTrue(os.path.isdir(os.path.join(want, ".")))
-        self.assertTrue(os.path.islink(want))
-        self.assertIn(data, os.readlink(want))
-        self.coverage()
-        self.rm_testdir()
+        self.check_51(self.testname())
+    def test_51152(self) -> None:
+        self.check_51(self.testname())
     def test_51153(self) -> None:
-        ver = self.testver()
-        tmp = self.testdir()
-        cover = self.cover()
-        script = SCRIPT
-        data = F"{tmp}/data"
-        repo = F"{tmp}/repo"
-        want = F"{repo}/opensuse.{ver}"
-        os.makedirs(data)
-        cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
-        run = runs(cmd)
-        have = run.stdout.strip()
-        logg.debug("out: %s", have)
-        self.assertEqual(want, have)
-        self.assertTrue(os.path.isdir(os.path.join(want, ".")))
-        self.assertTrue(os.path.islink(want))
-        self.assertIn(data, os.readlink(want))
-        self.coverage()
-        self.rm_testdir()
+        self.check_51(self.testname())
     def test_51160(self) -> None:
-        ver = self.testver()
-        tmp = self.testdir()
+        self.check_51(self.testname())
+    def check_51(self, testname: str) -> None:
+        ver = self.testver(testname)
+        tmp = self.testdir(testname)
         cover = self.cover()
         script = SCRIPT
         data = F"{tmp}/data"
         repo = F"{tmp}/repo"
         want = F"{repo}/opensuse.{ver}"
         os.makedirs(data)
+        #
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
         run = runs(cmd)
         have = run.stdout.strip()
@@ -596,8 +550,33 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertTrue(os.path.isdir(os.path.join(want, ".")))
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
-        self.coverage()
-        self.rm_testdir()
+        #
+        want = F"{repo}/opensuse.{ver}.alt"
+        cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo} --variant=alt"
+        run = runs(cmd)
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertTrue(os.path.isdir(os.path.join(want, ".")))
+        self.assertTrue(os.path.islink(want))
+        self.assertIn(data, os.readlink(want))
+        #
+        want = os.path.abspath(F"{data}/opensuse.{ver}.disk/srv/repo")
+        cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo}"
+        run = runs(cmd)
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        #
+        want = os.path.abspath(F"{data}/opensuse.{ver}.altdisk/srv/repo")
+        cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo} --variant=alt"
+        run = runs(cmd)
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        #
+        self.coverage(testname)
+        self.rm_testdir(testname)
     def test_52160(self) -> None:
         war = "disk"
         ver = self.testver()
@@ -740,6 +719,80 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.rm_testdir()
         if not KEEPFULLIMAGE:
             self.rm_images()
+    def test_55152(self) -> None:
+        self.check_54(self.testname())
+    def test_55154(self) -> None:
+        self.check_54(self.testname())
+    def test_55155(self) -> None:
+        self.check_54(self.testname())
+    def test_55156(self) -> None:
+        self.check_54(self.testname())
+    def check_55(self, testname: str) -> None:
+        self.rm_container(testname)
+        ver = self.testver(testname)
+        docker = DOCKER
+        cover = self.cover()
+        script = SCRIPT
+        mirror = MIRROR
+        testcontainer = self.testcontainer(testname)
+        imagesrepo = self.testrepo(testname)
+        cmd = F"{cover} {script} {ver} baseimage {VV}"
+        run = runs(cmd)
+        baseimage = run.stdout.strip()
+        logg.debug("baseimage %s", baseimage)
+        cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
+        ret = calls(cmd)
+        if not SKIPFULLIMAGE:
+            cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -vvv"
+            ret = calls(cmd)
+            self.assertEqual(0, ret)
+        cmd = F"{cover} {mirror} start opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        ret = calls(cmd)
+        self.assertEqual(0, ret)
+        cmd = F"{cover} {mirror} addhost opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        run = runs(cmd)
+        logg.info("show: %s", run.stdout)
+        addhost = run.stdout.strip()
+        self.assertEqual(0, ret)
+        cmd = F"{docker} run -d --name {testcontainer} {addhost} {baseimage} sleep {SLEEP}"
+        ret = calls(cmd)
+        logg.info("consume: %s", ret)
+        self.assertEqual(0, ret)
+        cmd = F"{docker} exec {testcontainer} zypper mr --no-gpgcheck --all"
+        ret = calls(cmd)
+        logg.info("install nocheck: %s", ret)
+        cmd = F"{docker} exec {testcontainer} zypper clean --all"
+        ret = calls(cmd)
+        logg.info("install clean: %s", ret)
+        self.assertEqual(0, ret)
+        cmd = F"{docker} exec {testcontainer} zypper install -y python3-lxml"
+        ret = calls(cmd)
+        logg.info("install package: %s", ret)
+        self.assertEqual(0, ret)
+        cmd = F"{cover} {mirror} stop opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        ret = calls(cmd)
+        self.assertEqual(0, ret)
+        cmd = F"{docker} exec {testcontainer} rpm -q --info python3-lxml"
+        run = runs(cmd)
+        val = run.stdout
+        logg.info("install version: %s", val)
+        self.assertIn("Pythonic XML", val)
+        cmd = F"{docker} image list -q --no-trunc --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
+        run = runs_(cmd)
+        images = []
+        for line in run.stdout.splitlines():
+            if line.startswith(imagesrepo) and "opensuse-repo" in line and F":{ver}" in line:
+                images += [ "| " + line.rstrip().replace("\t", " | ").replace("mirror-test", "mirror-packages" )]
+        logg.info("images:\n%s", "\n".join(images))
+        sizesfile = os.path.join(get_CACHE_HOME(), F"opensuse-repo-{ver}.sizes.txt")
+        with open(sizesfile, "w") as f:
+             print("\n".join(images), file=f)
+        logg.debug("written %s", sizesfile)
+        self.coverage(testname)
+        self.rm_testdir(testname)
+        self.rm_container(testname)
+        if not KEEPFULLIMAGE:
+            self.rm_images(testname)
     def test_59999(self) -> None:
         if COVERAGE:
             o1 = sh(F" {PYTHON} -m coverage combine")
