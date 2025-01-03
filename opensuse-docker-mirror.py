@@ -11,7 +11,7 @@ __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7005"
 
 # from __future__ import literal_string_interpolation # PEP498 Python3.6
-from typing import Optional, Dict, List, Tuple, Union
+from typing import Optional, Dict, List, Union, Any, NamedTuple
 from collections import OrderedDict
 import os
 import os.path as path
@@ -252,8 +252,8 @@ def opensuse_games(suffix: str = "") -> None:
                 if filename.endswith(".rpm"):
                     rpm = path.join(dirpath, filename)
                     # if "tux" not in rpm: continue
-                    out, _end = output2(F"rpm -q --info {rpm}")
-                    for line in out.splitlines():
+                    run = runs(F"rpm -q --info {rpm}")
+                    for line in run.stdout.splitlines():
                         if line.startswith("Group"):
                             if "/Games/" in line:
                                 games[filename] = line.split(":", 1)[1].strip()
@@ -468,36 +468,37 @@ def sx___(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -
         if debugs:
             logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.call(cmd, shell=shell)
-def output(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -> str:
-    if isinstance(cmd, stringtypes):
-        if debugs:
-            logg.info(": %s", cmd)
+
+class CompletedProc(NamedTuple):
+    """ aligned with subprocess.CompletedProcess (Python 3.5) """
+    stdout: str
+    stderr: str
+    returncode: int
+    def getvalue(self) -> str:
+        return self.stdout.rstrip()
+    @property
+    def val(self) -> str:
+        return self.getvalue()
+    @property
+    def err(self) -> str:
+        return self.stderr.rstrip()
+    @property
+    def ret(self) -> int:
+        return self.returncode
+    def check_returncode(self) -> None:
+        if self.returncode != 0:
+            raise subprocess.CalledProcessError(returncode=self.returncode, cmd = [], output=self.stdout, stderr=self.stderr)
+def runs(cmd: str, **args: Any) -> CompletedProc:
+    """ subprocess.run() defaults to shell=False (Python 3.5) and capture_output=False (Python 3.7)"""
+    logg.debug("run: %s", cmd)
+    return runs_(cmd, **args)
+def runs_(cmd: str, **args: Any) -> CompletedProc:
+    if isinstance(cmd, str):
+        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **args)
     else:
-        if debugs:
-            logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
-    run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
-    out, _err = run.communicate()
-    return decodes(out)
-def output2(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -> Tuple[str, int]:
-    if isinstance(cmd, stringtypes):
-        if debugs:
-            logg.info(": %s", cmd)
-    else:
-        if debugs:
-            logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
-    run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
-    out, _err = run.communicate()
-    return decodes(out), run.returncode
-def output3(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -> Tuple[str, str, int]:
-    if isinstance(cmd, stringtypes):
-        if debugs:
-            logg.info(": %s", cmd)
-    else:
-        if debugs:
-            logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
-    run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = run.communicate()
-    return decodes(out), decodes(err), run.returncode
+        proc = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **args)
+    out, err = proc.communicate()
+    return CompletedProc(decodes(out), decodes(err), proc.returncode)
 
 #############################################################################
 
@@ -549,7 +550,7 @@ def LEAP_set(leap: str) -> str:
     LEAP = leap
     return LEAP
 
-def _main(args: List[str]) -> int:  # pylint: disable=redefined-outer-name
+def _main(args: List[str]) -> int:
     for arg in args:
         if arg[0] in "123456789":
             LEAP_set(arg)
@@ -598,7 +599,7 @@ if __name__ == "__main__":
                        help="use other opensuse/leap version [%default]")
     cmdline.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
                        help=F"use other arch list {ARCHS}")
-    opt, args = cmdline.parse_args()
+    opt, cmdline_args = cmdline.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
     if opt.arch:
         badarchs = [arch for arch in opt.arch if arch not in ARCHLIST]
@@ -618,4 +619,4 @@ if __name__ == "__main__":
     RSYNC = opt.rsync
     PYTHON = opt.python
     LEAP_set(opt.ver)
-    sys.exit(_main(args or ["make"]))
+    sys.exit(_main(cmdline_args or ["make"]))

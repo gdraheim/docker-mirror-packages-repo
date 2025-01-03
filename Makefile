@@ -128,7 +128,7 @@ check: mm oo cc uu
 mm: ; ./docker_mirror.tests.py -vv $V $K
 oo: ; ./opensuse-docker-mirror.tests.py -v $V $K
 
-ooo: ; ./opensuse-docker-mirror.tests.py -v $V $K --coverage
+ooo: ; ./opensuse-docker-mirror.tests.py -v $V $K --coverage --only 15.6
 
 tests: ; $(PYTHON3) dockerdir-tests.py $K
 

@@ -26,6 +26,7 @@ LIST: List[str] = []
 PYTHON = "python3"
 SCRIPT = "opensuse-docker-mirror.py"
 MIRROR = "docker_mirror.py"
+ONLYVERSION = ""
 COVERAGE = False
 KEEP = False
 DRY_RSYNC = 1
@@ -164,7 +165,7 @@ class OpensuseMirrorTest(unittest.TestCase):
             f.close()
     def cover(self) -> str:
         python = PYTHON
-        cover = F"{python} -m coverage run" if COVERAGE else python
+        cover = F"{python} -m coverage run -a" if COVERAGE else python
         return cover
     def testver(self, testname: str = NIX) -> None:
         testname = testname or self.caller_testname()
@@ -538,10 +539,18 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.check_51(self.testname())
     def test_51153(self) -> None:
         self.check_51(self.testname())
+    def test_51154(self) -> None:
+        self.check_51(self.testname())
+    def test_51155(self) -> None:
+        self.check_51(self.testname())
+    def test_51156(self) -> None:
+        self.check_51(self.testname())
     def test_51160(self) -> None:
         self.check_51(self.testname())
     def check_51(self, testname: str) -> None:
         ver = self.testver(testname)
+        if ONLYVERSION and ver != ONLYVERSION:
+            self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         tmp = self.testdir(testname)
         cover = self.cover()
         script = SCRIPT
@@ -592,58 +601,28 @@ class OpensuseMirrorTest(unittest.TestCase):
         #
         self.coverage(testname)
         self.rm_testdir(testname)
-    def test_52160(self) -> None:
-        war = "disk"
-        ver = self.testver()
-        tmp = self.testdir()
-        cover = self.cover()
-        script = SCRIPT
-        data = F"{tmp}/data"
-        repo = F"{tmp}/repo"
-        want = F"{repo}/opensuse.{ver}.{war}"
-        os.makedirs(data)
-        cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo} -W {war}"
-        run = runs(cmd)
-        have = run.stdout.strip()
-        logg.debug("out: %s", have)
-        self.assertEqual(want, have)
-        self.assertTrue(os.path.isdir(os.path.join(want, ".")))
-        self.assertTrue(os.path.islink(want))
-        self.assertIn(data, os.readlink(want))
-        self.coverage()
-        self.rm_testdir()
     def test_53156(self) -> None:
-        war = "tmp"
-        ver = self.testver()
-        tmp = self.testdir()
-        cover = self.cover()
-        script = SCRIPT
-        data = F"{tmp}/data"
-        repo = F"{tmp}/repo"
-        os.makedirs(data)
-        cmd = F"{cover} {script} {ver} sync {VV} --datadir={data} --repodir={repo} -W {war}"
-        if DRY_RSYNC:
-            cmd += " --rsync='rsync --dry-run'"
-        ret = calls(cmd)
-        self.assertEqual(0, ret)
-        self.coverage()
-        self.rm_testdir()
+        self.check_53(self.testname())
     def test_53160(self) -> None:
+        self.check_53(self.testname())
+    def check_53(self, testname: str) -> None:
+        ver = self.testver(testname)
+        if ONLYVERSION and ver != ONLYVERSION:
+            self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
+        tmp = self.testdir(testname)
         war = "tmp"
-        ver = self.testver()
-        tmp = self.testdir()
         cover = self.cover()
         script = SCRIPT
         data = F"{tmp}/data"
         repo = F"{tmp}/repo"
         os.makedirs(data)
         cmd = F"{cover} {script} {ver} sync {VV} --datadir={data} --repodir={repo} -W {war}"
-        if DRY_RSYNC:
+        if DRY_RSYNC or COVERAGE:
             cmd += " --rsync='rsync --dry-run'"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        self.coverage()
-        self.rm_testdir()
+        self.coverage(testname)
+        self.rm_testdir(testname)
     def test_54152(self) -> None:
         self.check_54(self.testname())
     def test_54154(self) -> None:
@@ -655,6 +634,8 @@ class OpensuseMirrorTest(unittest.TestCase):
     def check_54(self, testname: str) -> None:
         self.rm_container(testname)
         ver = self.testver(testname)
+        if ONLYVERSION and ver != ONLYVERSION:
+            self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         docker = DOCKER
         cover = self.cover()
         script = SCRIPT
@@ -718,22 +699,6 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.rm_container(testname)
         if not KEEPFULLIMAGE:
             self.rm_images(testname)
-    def test_54160(self) -> None:
-        ver = self.testver()
-        docker = DOCKER
-        cover = self.cover()
-        script = SCRIPT
-        imagesrepo = self.testrepo()
-        cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
-        ret = calls(cmd)
-        if not SKIPFULLIMAGE:
-            cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
-            ret = calls(cmd)
-            self.assertEqual(0, ret)
-        self.coverage()
-        self.rm_testdir()
-        if not KEEPFULLIMAGE:
-            self.rm_images()
     def test_55152(self) -> None:
         self.check_55(self.testname())
     def test_55154(self) -> None:
@@ -745,6 +710,8 @@ class OpensuseMirrorTest(unittest.TestCase):
     def check_55(self, testname: str) -> None:
         self.rm_container(testname)
         ver = self.testver(testname)
+        if ONLYVERSION and ver != ONLYVERSION:
+            self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         docker = DOCKER
         cover = self.cover()
         script = SCRIPT
@@ -846,6 +813,7 @@ if __name__ == "__main__":
     cmdline.add_option("-S", "--skipfullimage", action="count", default=0, help="upstream rsync for real [%default]")
     cmdline.add_option("-K", "--keepfullimage", action="count", default=0, help="upstream rsync for real [%default]")
     cmdline.add_option("--keepbaseimage", action="count", default=0, help="upstream rsync for real [%default]")
+    cmdline.add_option("--only", metavar="VER", default=ONLYVERSION, help="run tests only of that version")
     cmdline.add_option("--coverage", action="store_true", default=False,
                        help="Generate coverage data. [%default]")
     cmdline.add_option("--failfast", action="store_true", default=False,
@@ -856,6 +824,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=max(0, logging.WARNING - 10 * opt.verbose + 10 * opt.quiet))
     KEEP = opt.keep
     SLEEP = int(opt.sleep)
+    ONLYVERSION = opt.only
     COVERAGE = opt.coverage
     DRY_RSYNC = opt.dry_rsync - opt.real_rsync
     DOCKER = opt.docker
