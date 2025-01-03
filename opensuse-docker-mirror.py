@@ -24,11 +24,14 @@ import shutil
 import logging
 logg = logging.getLogger("MIRROR")
 
-if sys.version[0] == '3':
-    basestring = str # pylint: disable=invalid-name
-    xrange = range # pylint: disable=invalid-name
+if sys.version[0] == '2':
+    range = xrange # pylint: disable=redefined-builtin, used-before-assignment, undefined-variable
+    stringtypes = basestring # pylint: disable=undefined-variable
+else:
+    stringtypes = str
 
 NIX = ""
+TRUE = 1
 NOBASE = False
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
@@ -88,7 +91,6 @@ FILTERS15["sle"] = ["kernel-*", "eclipse-*", "cross-*"]
 def opensuse_make() -> None:
     opensuse_sync()
     opensuse_repo()
-    opensuse_test()
 
 def opensuse_sync() -> None:
     opensuse_dir()
@@ -175,7 +177,8 @@ skipfiles = [
     "*.src.rpm", "*.29041k"
 ]
 
-def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
+def opensuse_sync_repo_(dist: str, repo: str, filters: Optional[List[str]] = None) -> None:
+    filters = [] if filters is None else filters
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
@@ -191,14 +194,15 @@ def opensuse_sync_repo_(dist: str, repo: str, filters: List[str] = []) -> None:
     # retry:
     cmd = F"{rsync} -rv {mirror}/{dist}/leap/{leap}/repo/{repo} {leaprepo}/ {excludes}"
     logfile = F"{repodir}/{distro}.{version}.log"
-    for attempt in xrange(RETRY):
+    for _attempt in range(RETRY):
         try:
             sh___(F"set -o pipefail ; {cmd} |& tee {logfile}")
         except subprocess.CalledProcessError as e:
             logg.warning("[%s] %s", e.returncode, cmd)
             raise
 
-def opensuse_sync_pack_(dist: str, repo: str, filters: List[str] = []) -> None:
+def opensuse_sync_pack_(dist: str, repo: str, filters: Optional[List[str]] = None) -> None:
+    filters = [] if filters is None else filters
     distro = DISTRO
     leap = LEAP
     repodir = REPODIR
@@ -214,7 +218,7 @@ def opensuse_sync_pack_(dist: str, repo: str, filters: List[str] = []) -> None:
     # retry:
     cmd = F"{rsync} -rv {mirror}/{dist}/leap/{leap}/{repo} {leaprepo}/ {excludes}"
     logfile = F"{repodir}/{distro}.{version}.log"
-    for attempt in xrange(RETRY):
+    for _attempt in range(RETRY):
         try:
             sh___(F"set -o pipefail ; {cmd} |& tee {logfile}")
         except subprocess.CalledProcessError as e:
@@ -241,12 +245,12 @@ def opensuse_games(suffix: str = "") -> None:
     basedir = dirname + "/."
     logg.info("check %s", basedir)
     if path.isdir(basedir):
-        for dirpath, dirnames, filenames in os.walk(basedir):
+        for dirpath, _dirnames, filenames in os.walk(basedir):
             for filename in filenames:
                 if filename.endswith(".rpm"):
                     rpm = path.join(dirpath, filename)
                     # if "tux" not in rpm: continue
-                    out, end = output2(F"rpm -q --info {rpm}")
+                    out, _end = output2(F"rpm -q --info {rpm}")
                     for line in out.splitlines():
                         if line.startswith("Group"):
                             if "/Games/" in line:
@@ -285,7 +289,7 @@ def opensuse_repo(onlybase: bool = False) -> str:
     if bind_repo:
         oss = "local-repo"
         sh___(F"{docker} exec {cname} zypper ar --no-gpgcheck file:///base-repo {oss}")
-    if True:
+    if TRUE:
         sh___(F"{docker} exec {cname} zypper install -y -r {oss} {python}")
         sh___(F"{docker} exec {cname} zypper install -y -r {oss} {python}-xml")
     if leap in XXLEAP:
@@ -315,7 +319,7 @@ def opensuse_repo(onlybase: bool = False) -> str:
                     continue
                 logg.info("loaded %s files from %s", len(clean), gamesfile)
                 remove: Dict[str, str] = {}
-                for dirpath, dirfiles, filenames in os.walk(basedir):
+                for dirpath, _dirfiles, filenames in os.walk(basedir):
                     for filename in filenames:
                         if filename in clean:
                             repopath = dirpath.replace(basedir, "/srv/repo")
@@ -353,7 +357,7 @@ def opensuse_disk(onlybase: bool = False) -> str:
     imagesrepo = IMAGESREPO
     scripts = repo_scripts()
     version = F"{leap}.{VARIANT}" if VARIANT else leap
-    rootdir = opensuse_dir(suffix=F".disk")
+    rootdir = opensuse_dir(suffix=".disk")
     srv = F"{rootdir}/srv"
     logg.info("srv = %s", srv)
     dists: Dict[str, List[str]] = OrderedDict()
@@ -364,13 +368,10 @@ def opensuse_disk(onlybase: bool = False) -> str:
     sh___(F"test ! -d {srv} || rm -rf {srv}")
     sh___(F"mkdir -p {srv}/repo")
     for dist in dists:
-        clean: Dict[str, str] = {}
         for subdir in dists[dist]:
-            basedir = F"{repodir}/{distro}.{version}/."
             pooldir = F"{repodir}/{distro}.{version}/{subdir}"
             if path.isdir(pooldir):
                 sh___(F"cp -r --link --no-clobber {pooldir} {srv}/repo/")
-                base = dist
                 sh___(F"find {srv}/repo/{subdir} -name repomd.xml -exec {scripts}/repodata-fix.py {{}} -v ';' ")
         if dist in ["update"]:
             # sh___("{docker} exec {cname} rm -r /srv/repo/{dist}/{leap}".format(**locals()))
@@ -389,29 +390,17 @@ def opensuse_disk(onlybase: bool = False) -> str:
     return F"\nmount = {path_srv}/repo\n"
 
 def opensuse_diskpath() -> str:
-    rootdir = opensuse_dir(suffix=F".disk")
+    rootdir = opensuse_dir(suffix=".disk")
     srv = F"{rootdir}/srv"
     path_srv = os.path.realpath(srv)
     return F"{path_srv}/repo\n"
 
-def find_path(bin: str, default: str = NIX) -> str:
+def find_path(exe: str, default: str = NIX) -> str:
     for dirpath in os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin"):
-        filepath = os.path.join(dirpath, bin)
+        filepath = os.path.join(dirpath, exe)
         if os.path.exists(filepath):
             return filepath
     return default
-
-def opensuse_test() -> None:
-    distro = DISTRO
-    leap = LEAP
-    # cat opensuse-compose.yml | sed \
-    #    -e 's|opensuse-repo:.*"|opensuse/repo:$(LEAP)"|' \
-    #    -e 's|opensuse:.*"|$(OPENSUSE):$(LEAP)"|' \
-    #    > opensuse-compose.yml.tmp
-    # - docker-compose -p $@ -f opensuse-compose.yml.tmp down
-    # docker-compose -p $@ -f opensuse-compose.yml.tmp up -d
-    # docker exec $@_host_1 zypper install -y firefox
-    # docker-compose -p $@ -f opensuse-compose.yml.tmp down
 
 def opensuse_scripts() -> None:
     print(repo_scripts())
@@ -438,12 +427,12 @@ def decodes(text: Union[bytes, str]) -> str:
             encoded = "utf-8"
         try:
             return text.decode(encoded)
-        except:
+        except UnicodeDecodeError:
             return text.decode("latin-1")
     return text
 
 def sh___(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -> int:
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, stringtypes):
         if debugs:
             logg.info(": %s", cmd)
     else:
@@ -452,7 +441,7 @@ def sh___(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -
     return subprocess.check_call(cmd, shell=shell)
 
 def sx___(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -> int:
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, stringtypes):
         if debugs:
             logg.info(": %s", cmd)
     else:
@@ -460,27 +449,27 @@ def sx___(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -
             logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.call(cmd, shell=shell)
 def output(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -> str:
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, stringtypes):
         if debugs:
             logg.info(": %s", cmd)
     else:
         if debugs:
             logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
-    out, err = run.communicate()
+    out, _err = run.communicate()
     return decodes(out)
 def output2(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -> Tuple[str, int]:
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, stringtypes):
         if debugs:
             logg.info(": %s", cmd)
     else:
         if debugs:
             logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
-    out, err = run.communicate()
+    out, _err = run.communicate()
     return decodes(out), run.returncode
 def output3(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -> Tuple[str, str, int]:
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, stringtypes):
         if debugs:
             logg.info(": %s", cmd)
     else:
@@ -493,7 +482,7 @@ def output3(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True)
 #############################################################################
 
 def path_find(base: str, name: str) -> Optional[str]:
-    for dirpath, dirnames, filenames in os.walk(base):
+    for dirpath, _dirnames, filenames in os.walk(base):
         if name in filenames:
             return path.join(dirpath, name)
     return None
@@ -531,7 +520,7 @@ def opensuse_pull(distro: str = NIX, leap: str = NIX) -> str:
 def opensuse_version(distro: str = NIX, leap: str = NIX) -> str:
     return LEAP
 def LEAP_set(leap: str) -> str:
-    global LEAP
+    global LEAP # pylint: disable=global-statement
     if len(leap) <= 2:
         LEAP = max([os for os in OPENSUSE if os.startswith(leap) and not os.startswith("42")])
         return LEAP
@@ -541,7 +530,7 @@ def LEAP_set(leap: str) -> str:
     return LEAP
 
 if __name__ == "__main__":
-    from optparse import OptionParser
+    from optparse import OptionParser # allow_abbrev=False, pylint: disable=deprecated-module
     cmdline = OptionParser("%%prog [-options] [%s]" % opensuse_commands(),
                       epilog=re.sub("\\s+", " ", __doc__).strip())
     cmdline.formatter.max_help_position = 30
@@ -595,11 +584,11 @@ if __name__ == "__main__":
         funcname = "opensuse_" + arg.replace("-", "_")
         allnames = globals()
         if funcname in globals():
-            func = globals()[funcname]
-            if callable(func):
-                result = func()
-                if isinstance(result, str):
-                    print(result)
+            funcdefinition = globals()[funcname]
+            if callable(funcdefinition):
+                funcresult = funcdefinition()
+                if isinstance(funcresult, str):
+                    print(funcresult)
             else:
                 logg.error("%s is not callable", funcname)
                 sys.exit(1)
