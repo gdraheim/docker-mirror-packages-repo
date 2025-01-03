@@ -652,8 +652,6 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.rm_testdir()
     def test_54152(self) -> None:
         self.check_54(self.testname())
-    def test_54153(self) -> None:
-        self.check_54(self.testname())
     def test_54154(self) -> None:
         self.check_54(self.testname())
     def test_54155(self) -> None:
