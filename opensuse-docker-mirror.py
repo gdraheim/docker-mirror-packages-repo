@@ -529,6 +529,26 @@ def LEAP_set(leap: str) -> str:
     LEAP = leap
     return LEAP
 
+def _main(args: List[str]) -> int:  # pylint: disable=redefined-outer-name
+    for arg in args:
+        if arg[0] in "123456789":
+            LEAP_set(arg)
+            continue
+        funcname = "opensuse_" + arg.replace("-", "_")
+        allnames = globals()
+        if funcname in allnames:
+            funcdefinition = globals()[funcname]
+            if callable(funcdefinition):
+                funcresult = funcdefinition()
+                if isinstance(funcresult, str):
+                    print(funcresult)
+            else:
+                logg.error("%s is not callable", funcname)
+                sys.exit(1)
+        else:
+            logg.error("%s does not exist", funcname)
+            sys.exit(1)
+
 if __name__ == "__main__":
     from optparse import OptionParser # allow_abbrev=False, pylint: disable=deprecated-module
     cmdline = OptionParser("%%prog [-options] [%s]" % opensuse_commands(),
@@ -575,23 +595,4 @@ if __name__ == "__main__":
     RSYNC = opt.rsync
     PYTHON = opt.python
     LEAP_set(opt.ver)
-    #
-    if not args: args = ["make"]
-    for arg in args:
-        if arg[0] in "123456789":
-            LEAP_set(arg)
-            continue
-        funcname = "opensuse_" + arg.replace("-", "_")
-        allnames = globals()
-        if funcname in globals():
-            funcdefinition = globals()[funcname]
-            if callable(funcdefinition):
-                funcresult = funcdefinition()
-                if isinstance(funcresult, str):
-                    print(funcresult)
-            else:
-                logg.error("%s is not callable", funcname)
-                sys.exit(1)
-        else:
-            logg.error("%s does not exist", funcname)
-            sys.exit(1)
+    sys.exit(_main(args or ["make"]))
