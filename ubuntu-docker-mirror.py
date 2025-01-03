@@ -5,10 +5,10 @@
     would be 'mirror.py 19.10 sync repo -v'. If no argument is given
     then 'make' the last version = 'sync repo test'."""
 
-__copyright__ = "(C) 2024 Guido Draheim"
+__copyright__ = "(C) 2025 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.7.6334"
+__version__ = "1.7.7005"
 
 # from __future__ import literal_string_interpolation # PEP498 Python3.6
 from typing import Optional, Dict, List, Tuple, Union

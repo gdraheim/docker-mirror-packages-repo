@@ -1,10 +1,10 @@
 #! /usr/bin/python3
 # from __future__ import print_function
 
-__copyright__ = "(C) 2024 Guido Draheim"
+__copyright__ = "(C) 2025 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.7.6334"
+__version__ = "1.7.7005"
 
 from collections import OrderedDict, namedtuple
 import os.path

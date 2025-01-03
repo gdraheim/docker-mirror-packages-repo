@@ -1,8 +1,8 @@
 #! /usr/bin/env python3
-__copyright__ = "(C) 2024 Guido Draheim"
+__copyright__ = "(C) 2025 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.7.6334"
+__version__ = "1.7.7005"
 
 # pylint: disable=unused-import,line-too-long
 from typing import Optional, Union, Dict, List, Any, Sequence, Callable, Iterable, cast, NamedTuple
