@@ -11,7 +11,7 @@ __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7005"
 
 # from __future__ import literal_string_interpolation # PEP498 Python3.6
-from typing import Optional, Dict, List, Union, Any, NamedTuple
+from typing import Optional, Dict, List, Union
 from collections import OrderedDict
 import os
 import os.path as path
@@ -75,6 +75,7 @@ PYTHON = "python3"
 RSYNC = "rsync"
 DOCKER = "docker"
 BASELAYER = "base"
+MAKEMINI = False
 DISKSUFFIX = "disk" # suffix
 RETRY = 3
 
@@ -145,32 +146,6 @@ def opensuse_dir(variant: str = "") -> str:
         logg.warning("%s/. local dir", dirlink)
     return dirlink
 
-def opensuse_save() -> None:
-    yymmdd = datetime.date.today().strftime("%Y.%m%d")
-    distro = DISTRO
-    leap = LEAP
-    repodir = REPODIR
-    version = F"{leap}.{VARIANT}" if VARIANT else leap
-    src = F"{repodir}/{distro}.{version}/."
-    dst = opensuse_dir(variant=yymmdd) + "/."
-    logg.info("src = %s", src)
-    logg.info("dst = %s", dst)
-    for srcpath, dirnames, filenames in os.walk(src):
-        logg.info("dirpath %s dirnames %s", srcpath, dirnames)
-        dstpath = srcpath.replace(src, dst)
-        for dirname in dirnames:
-            dirpath = path.join(dstpath, dirname)
-            if not path.isdir(dirpath):
-                os.mkdir(dirpath)
-        for filename in filenames:
-            srcfile = path.join(srcpath, filename)
-            dstfile = path.join(dstpath, filename)
-            if not path.exists(dstfile):
-                if dstfile.endswith(".rpm"):
-                    os.link(srcfile, dstfile)
-                else:
-                    shutil.copy(srcfile, dstfile)
-
 skipdirs = [
     "boot", "EFI", "160.3-boot", "20.8-boot", "24.5-boot",
     "aarch64", "s390x", "ppc", "ppc64le", ]
@@ -236,32 +211,6 @@ def opensuse_sync_pack_(dist: str, repo: str, filters: Optional[List[str]] = Non
 # /etc/zypp/repos.d/oss.repo:baseurl=http://download.opensuse.org/distribution/leap/42.2/repo/oss/
 # /etc/zypp/repos.d/non-oss.repo:baseurl=http://download.opensuse.org/distribution/leap/42.2/repo/non-oss/
 
-# noarch/supertuxkart-data-1.1-lp152.1.2.noarch.rpm: Group       : Amusements/Games/3D/Race
-def opensuse_games(suffix: str = "") -> None:
-    games: Dict[str, str] = {}
-    distro = DISTRO
-    leap = LEAP
-    repodir = REPODIR
-    version = F"{leap}.{VARIANT}" if VARIANT else leap
-    dirname = F"{repodir}/{distro}.{version}{suffix}"
-    basedir = dirname + "/."
-    logg.info("check %s", basedir)
-    if path.isdir(basedir):
-        for dirpath, _dirnames, filenames in os.walk(basedir):
-            for filename in filenames:
-                if filename.endswith(".rpm"):
-                    rpm = path.join(dirpath, filename)
-                    # if "tux" not in rpm: continue
-                    run = runs(F"rpm -q --info {rpm}")
-                    for line in run.stdout.splitlines():
-                        if line.startswith("Group"):
-                            if "/Games/" in line:
-                                games[filename] = line.split(":", 1)[1].strip()
-    gameslist = dirname + "-games.json"
-    if games:
-        json.dump(games, open(gameslist, "w"), indent=2, ensure_ascii=False, sort_keys=True)
-        logg.info("found %s games, written to %s", len(games), gameslist)
-
 opensuserepo_CMD = [F"/usr/bin/{PYTHON}", "/srv/scripts/filelist.py", "--data", "/srv/repo"]
 opensuserepo_PORT = "80"
 def opensuse_base() -> str:
@@ -304,7 +253,6 @@ def opensuse_repo(onlybase: bool = False) -> str:
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
     dists: Dict[str, List[str]] = OrderedDict()
     if not onlybase:
-        # dists["mini"] = ["distribution", "-games"]
         dists["main"] = ["distribution"]
         dists["update"] = ["update"]
     for dist in dists:
@@ -314,23 +262,7 @@ def opensuse_repo(onlybase: bool = False) -> str:
         for subdir in dists[dist]:
             basedir = F"{repodir}/{distro}.{version}/."
             pooldir = F"{repodir}/{distro}.{version}/{subdir}"
-            if subdir.startswith("-"):
-                gamesfile = F"{repodir}/{distro}.{version}{subdir}.json"
-                clean = json.load(open(gamesfile))
-                if not clean:
-                    continue
-                logg.info("loaded %s files from %s", len(clean), gamesfile)
-                remove: Dict[str, str] = {}
-                for dirpath, _dirfiles, filenames in os.walk(basedir):
-                    for filename in filenames:
-                        if filename in clean:
-                            repopath = dirpath.replace(basedir, "/srv/repo")
-                            filepath = path.join(repopath, filename)
-                            remove[filepath] = filename
-                logg.info("removing %s files from %s", len(remove), subdir)
-                removes = " ".join(remove.keys())
-                sh___(F"{docker} exec {cname} rm -f {removes}", debugs=False)
-            elif path.isdir(pooldir):
+            if path.isdir(pooldir):
                 sh___(F"{docker} cp {pooldir} {cname}:/srv/repo/")
                 base = dist
                 sh___(F"{docker} exec {cname} bash -c \"find /srv/repo/{subdir} -name repomd.xml -exec {python} /srv/scripts/repodata-fix.py {{}} -v ';'\" ")
@@ -469,37 +401,6 @@ def sx___(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -
             logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.call(cmd, shell=shell)
 
-class CompletedProc(NamedTuple):
-    """ aligned with subprocess.CompletedProcess (Python 3.5) """
-    stdout: str
-    stderr: str
-    returncode: int
-    def getvalue(self) -> str:
-        return self.stdout.rstrip()
-    @property
-    def val(self) -> str:
-        return self.getvalue()
-    @property
-    def err(self) -> str:
-        return self.stderr.rstrip()
-    @property
-    def ret(self) -> int:
-        return self.returncode
-    def check_returncode(self) -> None:
-        if self.returncode != 0:
-            raise subprocess.CalledProcessError(returncode=self.returncode, cmd = [], output=self.stdout, stderr=self.stderr)
-def runs(cmd: str, **args: Any) -> CompletedProc:
-    """ subprocess.run() defaults to shell=False (Python 3.5) and capture_output=False (Python 3.7)"""
-    logg.debug("run: %s", cmd)
-    return runs_(cmd, **args)
-def runs_(cmd: str, **args: Any) -> CompletedProc:
-    if isinstance(cmd, str):
-        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **args)
-    else:
-        proc = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **args)
-    out, err = proc.communicate()
-    return CompletedProc(decodes(out), decodes(err), proc.returncode)
-
 #############################################################################
 
 def path_find(base: str, name: str) -> Optional[str]:
@@ -599,8 +500,11 @@ if __name__ == "__main__":
                        help="use other opensuse/leap version [%default]")
     cmdline.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
                        help=F"use other arch list {ARCHS}")
+    cmdline.add_option("--mini", action="store_true", default=MAKEMINI,
+                       help="make /mini repo layer [%default]")
     opt, cmdline_args = cmdline.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
+    MAKEMINI = opt.mini
     if opt.arch:
         badarchs = [arch for arch in opt.arch if arch not in ARCHLIST]
         if badarchs:
