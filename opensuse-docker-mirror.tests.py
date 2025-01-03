@@ -270,6 +270,14 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertIn("|datadir|", out)
         self.assertIn("|version", out)
         self.coverage()
+    def test_50108(self) -> None:
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} badcommand"
+        run = runs(cmd)
+        logg.debug("out: %s", run.val)
+        self.assertEqual(1, run.ret)
+        self.coverage()
     def test_50110(self) -> None:
         cover = self.cover()
         script = SCRIPT

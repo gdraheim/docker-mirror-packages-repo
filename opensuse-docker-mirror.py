@@ -464,7 +464,7 @@ def _main(args: List[str]) -> int:
                 funcresult = funcdefinition()
                 if isinstance(funcresult, str):
                     print(funcresult)
-            else:
+            else: # pragma: nocover
                 logg.error("%s is not callable", funcname)
                 sys.exit(1)
         else:
