@@ -74,7 +74,8 @@ ARCHS = ["x86_64"]
 PYTHON = "python3"
 RSYNC = "rsync"
 DOCKER = "docker"
-LAYER = "base"
+BASELAYER = "base"
+DISKSUFFIX = "disk" # suffix
 RETRY = 3
 
 BASEVERSION: Dict[str, str] = {}
@@ -299,7 +300,7 @@ def opensuse_repo(onlybase: bool = False) -> str:
         sh___(F"{docker} exec {cname} zypper rr {oss}")
     CMD = str(opensuserepo_CMD).replace("'", '"')
     PORT = opensuserepo_PORT
-    base = "base"
+    base = BASELAYER
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
     dists: Dict[str, List[str]] = OrderedDict()
     if not onlybase:
@@ -343,11 +344,19 @@ def opensuse_repo(onlybase: bool = False) -> str:
         if base == dist:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
     sh___(F"{docker} rm --force {cname}")
-    if base != "base":
+    if base != BASELAYER:
         sh___(F"{docker} tag {imagesrepo}/{distro}-repo/{base}:{version} {imagesrepo}/{distro}-repo:{version}")
     if NOBASE:
         sh___(F"{docker} rmi {imagesrepo}/{distro}-repo/base:{version}")  # untag non-packages base
     return F"\n[{baseimage}]\nimage = {imagesrepo}/{distro}-repo/{base}:{version}\n"
+
+def opensuse_baserepo(distro: str = NIX, leap: str = NIX) -> str:
+    imagesrepo = IMAGESREPO
+    distro = distro or DISTRO
+    leap = leap or LEAP
+    version = F"{leap}.{VARIANT}" if VARIANT else leap
+    base = BASELAYER
+    return F"{imagesrepo}/{distro}-repo/{base}:{version}"
 
 def opensuse_disk(onlybase: bool = False) -> str:
     createrepo = find_path("createrepo")
@@ -358,7 +367,7 @@ def opensuse_disk(onlybase: bool = False) -> str:
     imagesrepo = IMAGESREPO
     scripts = repo_scripts()
     version = F"{leap}.{VARIANT}" if VARIANT else leap
-    rootdir = opensuse_dir(variant=F"disk{VARIANT}")
+    rootdir = opensuse_dir(variant=F"{VARIANT}{DISKSUFFIX}")
     srv = F"{rootdir}/srv"
     logg.info("srv = %s", srv)
     dists: Dict[str, List[str]] = OrderedDict()
@@ -374,6 +383,8 @@ def opensuse_disk(onlybase: bool = False) -> str:
             if path.isdir(pooldir):
                 sh___(F"cp -r --link --no-clobber {pooldir} {srv}/repo/")
                 sh___(F"find {srv}/repo/{subdir} -name repomd.xml -exec {scripts}/repodata-fix.py {{}} -v ';' ")
+            else:
+                logg.warning("no such pooldir: %s", pooldir)
         if dist in ["update"]:
             # sh___("{docker} exec {cname} rm -r /srv/repo/{dist}/{leap}".format(**locals()))
             sh___(F"ln -s {srv}/repo/{dist}/leap/{leap}/oss {srv}/repo/{dist}/{leap}")
@@ -391,10 +402,18 @@ def opensuse_disk(onlybase: bool = False) -> str:
     return F"\nmount = {path_srv}/repo\n"
 
 def opensuse_diskpath() -> str:
-    rootdir = opensuse_dir(variant=F"{VARIANT}disk")
+    rootdir = opensuse_dir(variant=F"{VARIANT}{DISKSUFFIX}")
     srv = F"{rootdir}/srv"
     path_srv = os.path.realpath(srv)
     return F"{path_srv}/repo\n"
+
+def opensuse_dropdisk() -> str:
+    rootdir = opensuse_dir(variant=F"{VARIANT}{DISKSUFFIX}")
+    srv = F"{rootdir}/srv"
+    path_srv = os.path.realpath(srv)
+    if os.path.isdir(path_srv):
+        shutil.rmtree(path_srv)
+    return path_srv
 
 def find_path(exe: str, default: str = NIX) -> str:
     for dirpath in os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin"):
@@ -571,6 +590,8 @@ if __name__ == "__main__":
                        help="set $REPODATADIR -> "+(REPODATADIR if REPODATADIR else opensuse_datadir()))
     cmdline.add_option("--imagesrepo", metavar="PREFIX", default=IMAGESREPO,
                        help="set $IMAGESREPO [%default]")
+    cmdline.add_option("--disksuffix", metavar="NAME", default=DISKSUFFIX,
+                       help="use disk suffix for testing [%default]")
     cmdline.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
                        help="use variant suffix for testing [%default]")
     cmdline.add_option("-V", "--ver", metavar="NUM", default=LEAP,
@@ -590,6 +611,7 @@ if __name__ == "__main__":
         REPODATADIR = opt.datadir
         DATADIRS = [ REPODATADIR ]
     IMAGESREPO = opt.imagesrepo
+    DISKSUFFIX = opt.disksuffix
     VARIANT = opt.variant
     NOBASE = opt.nobase
     DOCKER = opt.docker

@@ -43,10 +43,18 @@ class CompletedProc(NamedTuple):
     """ aligned with subprocess.CompletedProcess (Python 3.5) """
     stdout: str
     stderr: str
-    ret: int
+    returncode: int
+    def getvalue(self) -> str:
+        return self.stdout.rstrip()
     @property
-    def returncode(self) -> int:
-        return self.ret
+    def val(self) -> str:
+        return self.getvalue()
+    @property
+    def err(self) -> str:
+        return self.stderr.rstrip()
+    @property
+    def ret(self) -> int:
+        return self.returncode
     def check_returncode(self) -> None:
         if self.returncode != 0:
             raise CalledProcessError(returncode=self.returncode, cmd = [], output=self.stdout, stderr=self.stderr)
@@ -575,6 +583,13 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.debug("out: %s", have)
         self.assertEqual(want, have)
         #
+        want = os.path.abspath(F"{data}/opensuse.{ver}.altdisktmp/srv/repo")
+        cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo} --variant=alt --disksuffix=disktmp"
+        run = runs(cmd)
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        #
         self.coverage(testname)
         self.rm_testdir(testname)
     def test_52160(self) -> None:
@@ -720,13 +735,13 @@ class OpensuseMirrorTest(unittest.TestCase):
         if not KEEPFULLIMAGE:
             self.rm_images()
     def test_55152(self) -> None:
-        self.check_54(self.testname())
+        self.check_55(self.testname())
     def test_55154(self) -> None:
-        self.check_54(self.testname())
+        self.check_55(self.testname())
     def test_55155(self) -> None:
-        self.check_54(self.testname())
+        self.check_55(self.testname())
     def test_55156(self) -> None:
-        self.check_54(self.testname())
+        self.check_55(self.testname())
     def check_55(self, testname: str) -> None:
         self.rm_container(testname)
         ver = self.testver(testname)
@@ -736,24 +751,48 @@ class OpensuseMirrorTest(unittest.TestCase):
         mirror = MIRROR
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
+        cmd = F"{cover} {script} {ver} diskpath {VV} --disksuffix={testname}_disk"
+        run = runs(cmd)
+        diskpath = run.val
+        logg.debug("diskpath = %s", diskpath)
+        self.assertIn(testname, diskpath)
+        if os.path.isdir(diskpath):
+            cmd = F"{cover} {script} {ver} dropdisk {VV} --disksuffix={testname}_disk"
+            ret = calls(cmd)
+        self.assertFalse(os.path.isdir(diskpath))
+        cmd = F"{cover} {script} {ver} disk {VV} --disksuffix={testname}_disk"
+        ret = calls(cmd)
+        self.assertTrue(os.path.isdir(diskpath))
+        cmd = F"{cover} {script} {ver} base {VV} --imagesrepo={imagesrepo}"
+        run = runs(cmd)
+        basemade = run.val
+        logg.info("basemade = %s", basemade)
+        cmd = F"{cover} {script} {ver} baserepo {VV} --imagesrepo={imagesrepo}"
+        run = runs(cmd)
+        baserepo = run.val
+        logg.info("baserepo = %s", baserepo)
+        cmd = F"{cover} {script} {ver} image {VV} --imagesrepo={imagesrepo}"
+        run = runs(cmd)
+        image = run.val
+        logg.info("image = %s", image)
+        tmp = self.testdir(testname)
+        configfile = os.path.join(tmp, "mirror.ini")
+        with open(configfile, "w") as cfg:
+            print(F"[{image}]", file=cfg)
+            print(F"image = {baserepo}", file=cfg)
+            print(F"mount = {diskpath}", file=cfg)
+        cmd = F"{cover} {mirror} start opensuse:{ver} {VV} --docker='{docker}' -C {configfile}"
+        ret = calls(cmd)
+        self.assertEqual(0, ret)
+        cmd = F"{cover} {mirror} addhost opensuse:{ver} {VV} --docker='{docker}' -C {configfile}"
+        run = runs(cmd)
+        addhost = run.stdout.strip()
+        logg.info("addhost = %s", addhost)
+        self.assertEqual(0, ret)
         cmd = F"{cover} {script} {ver} baseimage {VV}"
         run = runs(cmd)
         baseimage = run.stdout.strip()
-        logg.debug("baseimage %s", baseimage)
-        cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
-        ret = calls(cmd)
-        if not SKIPFULLIMAGE:
-            cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -vvv"
-            ret = calls(cmd)
-            self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} start opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
-        ret = calls(cmd)
-        self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} addhost opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
-        run = runs(cmd)
-        logg.info("show: %s", run.stdout)
-        addhost = run.stdout.strip()
-        self.assertEqual(0, ret)
+        logg.debug("baseimage = %s", baseimage)
         cmd = F"{docker} run -d --name {testcontainer} {addhost} {baseimage} sleep {SLEEP}"
         ret = calls(cmd)
         logg.info("consume: %s", ret)
@@ -769,25 +808,18 @@ class OpensuseMirrorTest(unittest.TestCase):
         ret = calls(cmd)
         logg.info("install package: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} stop opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        cmd = F"{cover} {mirror} stop opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C {configfile}"
         ret = calls(cmd)
         self.assertEqual(0, ret)
         cmd = F"{docker} exec {testcontainer} rpm -q --info python3-lxml"
         run = runs(cmd)
-        val = run.stdout
+        val = run.val
         logg.info("install version: %s", val)
         self.assertIn("Pythonic XML", val)
-        cmd = F"{docker} image list -q --no-trunc --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
-        run = runs_(cmd)
-        images = []
-        for line in run.stdout.splitlines():
-            if line.startswith(imagesrepo) and "opensuse-repo" in line and F":{ver}" in line:
-                images += [ "| " + line.rstrip().replace("\t", " | ").replace("mirror-test", "mirror-packages" )]
-        logg.info("images:\n%s", "\n".join(images))
-        sizesfile = os.path.join(get_CACHE_HOME(), F"opensuse-repo-{ver}.sizes.txt")
-        with open(sizesfile, "w") as f:
-             print("\n".join(images), file=f)
-        logg.debug("written %s", sizesfile)
+        #
+        if os.path.isdir(diskpath) and not KEEPFULLIMAGE:
+            cmd = F"{cover} {script} {ver} dropdisk {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' --disksuffix={testname}_"
+            ret = calls(cmd)
         self.coverage(testname)
         self.rm_testdir(testname)
         self.rm_container(testname)
