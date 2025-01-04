@@ -664,7 +664,7 @@ class OpensuseMirrorTest(unittest.TestCase):
             cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -vvv"
             ret = calls(cmd)
             self.assertEqual(0, ret)
-        cmd = F"{cover} {script} list --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        cmd = F"{cover} {script} list --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
         self.assertEqual(0, ret)
         cmd = F"{cover} {mirror} start opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
