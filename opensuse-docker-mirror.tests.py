@@ -707,7 +707,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.info("images:\n%s", "\n".join(images))
         sizesfile = os.path.join(get_CACHE_HOME(), F"opensuse-repo-{ver}.sizes.txt")
         with open(sizesfile, "w") as f:
-             print("\n".join(images), file=f)
+            print("\n".join(images), file=f)
         logg.debug("written %s", sizesfile)
         self.coverage(testname)
         self.rm_testdir(testname)

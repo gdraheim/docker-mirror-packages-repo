@@ -252,7 +252,6 @@ def opensuse_repo(onlybase: bool = False) -> str:
     for dist in dists:
         sx___(F"{docker} rm --force {cname}")
         sh___(F"{docker} run --name={cname} --detach {imagesrepo}/{distro}-repo/{base}:{version} sleep 9999")
-        clean: Dict[str, str] = {}
         for subdir in dists[dist]:
             basedir = F"{repodir}/{distro}.{version}/."
             pooldir = F"{repodir}/{distro}.{version}/{subdir}"
@@ -446,12 +445,12 @@ def opensuse_commands() -> str:
     return "|".join(cmds)
 
 def opensuse_image(distro: str = NIX, leap: str = NIX) -> str:
-    # distro is ignored
+    distro = distro or DISTRO # distro is ignored
     leap = leap or LEAP
     image = OPENSUSE[leap]
     return F"{image}:{leap}"
 def opensuse_baseimage(distro: str = NIX, leap: str = NIX) -> str:
-    # distro is ignored
+    distro = distro or DISTRO # distro is ignored
     leap = leap or LEAP
     image = OPENSUSE[leap]
     if leap in BASEVERSION:
@@ -464,15 +463,18 @@ def opensuse_pull(distro: str = NIX, leap: str = NIX) -> str:
     return baseimage
 
 def opensuse_version(distro: str = NIX, leap: str = NIX) -> str:
-    return LEAP
-def LEAP_set(leap: str) -> str:
-    global LEAP # pylint: disable=global-statement
+    distro = distro or DISTRO  # distro is (almost) ignored
+    leap = leap or LEAP
+    if distro not in MIRRORS:
+        logg.warning("unknown distro '%s'", distro)
     if len(leap) <= 2:
-        LEAP = max([os for os in OPENSUSE if os.startswith(leap) and not os.startswith("42")])
-        return LEAP
+        return max([os for os in OPENSUSE if os.startswith(leap) and not os.startswith("42")])
     if leap not in OPENSUSE:
         logg.warning("%s is not a known os version", leap)
-    LEAP = leap
+    return leap
+def LEAP_set(leap: str) -> str:
+    global LEAP # pylint: disable=global-statement
+    LEAP = opensuse_version(leap)
     return LEAP
 
 def _main(args: List[str]) -> int:
