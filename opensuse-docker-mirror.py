@@ -474,7 +474,7 @@ def opensuse_version(distro: str = NIX, leap: str = NIX) -> str:
     return leap
 def LEAP_set(leap: str) -> str:
     global LEAP # pylint: disable=global-statement
-    LEAP = opensuse_version(leap)
+    LEAP = opensuse_version(leap=leap)
     return LEAP
 
 def _main(args: List[str]) -> int:
