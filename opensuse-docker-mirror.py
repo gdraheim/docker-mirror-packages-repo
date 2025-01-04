@@ -53,7 +53,7 @@ OPENSUSE["15.4"] = "opensuse/leap"
 OPENSUSE["15.5"] = "opensuse/leap"
 OPENSUSE["15.6"] = "opensuse/leap"
 OPENSUSE["16.0"] = "opensuse/leap"
-XXLEAP: List[str] = []  # ["15.2"] # obsolete, using repodata-fix.py now
+NEEDCREATEREPO: List[str] = []  # ["15.2"] # obsolete, using repodata-fix.py now
 LEAP: str = "15.5"
 VARIANT = ""
 
@@ -74,6 +74,7 @@ RSYNC = "rsync"
 DOCKER = "docker"
 BASELAYER = "base"
 MAKEMINI = False
+CREATEREPO = False
 DISKSUFFIX = "disk" # suffix
 RETRY = 3
 
@@ -237,7 +238,7 @@ def opensuse_repo(onlybase: bool = False) -> str:
     if TRUE:
         sh___(F"{docker} exec {cname} zypper install -y -r {oss} {python}")
         sh___(F"{docker} exec {cname} zypper install -y -r {oss} {python}-xml")
-    if leap in XXLEAP:
+    if CREATEREPO or leap in NEEDCREATEREPO:
         sh___(F"{docker} exec {cname} zypper install -y -r {oss} createrepo")
     if bind_repo:
         sh___(F"{docker} exec {cname} zypper rr {oss}")
@@ -264,7 +265,7 @@ def opensuse_repo(onlybase: bool = False) -> str:
         if dist in ["update"]:
             # sh___("{docker} exec {cname} rm -r /srv/repo/{dist}/{leap}".format(**locals()))
             sh___(F"{docker} exec {cname} ln -s /srv/repo/{dist}/leap/{leap}/oss /srv/repo/{dist}/{leap}")
-            if leap in XXLEAP:
+            if CREATEREPO or leap in NEEDCREATEREPO:
                 sh___(F""" {docker} exec {cname} bash -c "cd /srv/repo/{dist}/leap/{leap}/oss && createrepo ." """)
         if base == dist:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
@@ -337,8 +338,8 @@ def opensuse_disk(onlybase: bool = False) -> str:
         if dist in ["update"]:
             # sh___("{docker} exec {cname} rm -r /srv/repo/{dist}/{leap}".format(**locals()))
             sh___(F"ln -s {srv}/repo/{dist}/leap/{leap}/oss {srv}/repo/{dist}/{leap}")
-            logg.info("running createrepo is obsolete as repodata-fix.py can handle everything (except %s)", XXLEAP)
-            if leap in XXLEAP:
+            logg.info("running createrepo is obsolete as repodata-fix.py can handle everything (except %s)", NEEDCREATEREPO)
+            if CREATEREPO or leap in NEEDCREATEREPO:
                 if createrepo:
                     sh___(F" cd {srv}/repo/{dist}/leap/{leap}/oss && {createrepo} . ")
                 else:
@@ -519,10 +520,13 @@ if __name__ == "__main__":
                        help="use other opensuse/leap version [%default]")
     cmdline.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
                        help=F"use other arch list {ARCHS}")
+    cmdline.add_option("--createrepo", action="store_true", default=CREATEREPO,
+                       help="force createrepo on 'update' packages [%default]")
     cmdline.add_option("--mini", action="store_true", default=MAKEMINI,
                        help="make /mini repo layer [%default]")
     opt, cmdline_args = cmdline.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
+    CREATEREPO = opt.createrepo
     MAKEMINI = opt.mini
     if opt.arch:
         badarchs = [arch for arch in opt.arch if arch not in ARCHLIST]
