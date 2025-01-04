@@ -391,7 +391,6 @@ def repo_scripts() -> str:
 
 def decodes(text: Union[bytes, str]) -> str:
     """ no need to provide encoding for subprocess.run() or subprocess.call() """
-    if text is None: return None
     if isinstance(text, bytes):
         encoded = sys.getdefaultencoding()
         if encoded in ["ascii"]:
@@ -400,7 +399,7 @@ def decodes(text: Union[bytes, str]) -> str:
             return text.decode(encoded)
         except UnicodeDecodeError:
             return text.decode("latin-1")
-    return text
+    return text # works also for None
 
 def sh___(cmd: Union[str, List[str]], debugs: bool = True) -> int:
     """ shell=True if string (and raises signal on returncode) """
