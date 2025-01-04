@@ -489,7 +489,7 @@ def _main(args: List[str]) -> int:
                 if isinstance(funcresult, str):
                     print(funcresult)
                 elif isinstance(funcresult, int):
-                    print(" %i2", funcresult)
+                    print(" %i2" % funcresult)
                     if funcresult < 0:
                         return -funcresult
             else: # pragma: nocover
