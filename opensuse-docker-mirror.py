@@ -11,14 +11,12 @@ __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7005"
 
 # from __future__ import literal_string_interpolation # PEP498 Python3.6
-from typing import Optional, Dict, List, Union
+from typing import Optional, Dict, List, Union, Any, NamedTuple
 from collections import OrderedDict
 import os
 import os.path as path
 import sys
 import re
-import json
-import datetime
 import subprocess
 import shutil
 import logging
@@ -89,10 +87,6 @@ SUBDIRS15["update"] = ["oss", "non-oss", "backports", "sle"]
 FILTERS15: Dict[str, List[str]] = OrderedDict()
 FILTERS15["non-oss"] = ["strc", "nosrc"]
 FILTERS15["sle"] = ["kernel-*", "eclipse-*", "cross-*"]
-
-def opensuse_make() -> None:
-    opensuse_sync()
-    opensuse_repo()
 
 def opensuse_sync(*, variant:str = NIX) -> None:
     opensuse_dir(variant=variant)
@@ -282,13 +276,37 @@ def opensuse_repo(onlybase: bool = False) -> str:
         sh___(F"{docker} rmi {imagesrepo}/{distro}-repo/base:{version}")  # untag non-packages base
     return F"\n[{baseimage}]\nimage = {imagesrepo}/{distro}-repo/{base}:{version}\n"
 
-def opensuse_baserepo(distro: str = NIX, leap: str = NIX) -> str:
-    imagesrepo = IMAGESREPO
+def opensuse_baserepo(distro: str = NIX, leap: str = NIX, imagesrepo: str = NIX) -> str:
+    imagesrepo = imagesrepo or IMAGESREPO
     distro = distro or DISTRO
     leap = leap or LEAP
     version = F"{leap}.{VARIANT}" if VARIANT else leap
     base = BASELAYER
     return F"{imagesrepo}/{distro}-repo/{base}:{version}"
+def opensuse_mainrepo(distro: str = NIX, leap: str = NIX, imagesrepo: str = NIX) -> str:
+    imagesrepo = imagesrepo or IMAGESREPO
+    distro = distro or DISTRO
+    leap = leap or LEAP
+    version = F"{leap}.{VARIANT}" if VARIANT else leap
+    base = BASELAYER
+    return F"{imagesrepo}/{distro}-repo/{base}:{version}"
+
+def opensuse_list(distro: str = NIX, leap: str = NIX) -> None:
+    docker = DOCKER
+    print(F"REPOSITORY:TAG\tSIZE          # {docker} images {{baseimage}} {{baserepo}} {{mainrepo}}")
+    baseimage = opensuse_baseimage(distro, leap)
+    logg.debug("docker image list %s", baseimage)
+    cmd = F"{docker} image list {baseimage} -q --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
+    sx___(cmd)
+    baserepo = opensuse_baserepo(distro, leap)
+    logg.debug("docker image list %s", baserepo)
+    cmd = F"{docker} image list {baserepo} -q --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
+    sx___(cmd)
+    mainrepo = opensuse_mainrepo(distro, leap)
+    logg.debug("docker image list %s", mainrepo)
+    cmd = F"{docker} image list {mainrepo} -q --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
+    sx___(cmd)
+    return
 
 def opensuse_disk(onlybase: bool = False) -> str:
     createrepo = find_path("createrepo")
@@ -372,6 +390,7 @@ def repo_scripts() -> str:
 #############################################################################
 
 def decodes(text: Union[bytes, str]) -> str:
+    """ no need to provide encoding for subprocess.run() or subprocess.call() """
     if text is None: return None
     if isinstance(text, bytes):
         encoded = sys.getdefaultencoding()
@@ -523,4 +542,4 @@ if __name__ == "__main__":
     RSYNC = opt.rsync
     PYTHON = opt.python
     LEAP_set(opt.ver)
-    sys.exit(_main(cmdline_args or ["make"]))
+    sys.exit(_main(cmdline_args or ["list"]))

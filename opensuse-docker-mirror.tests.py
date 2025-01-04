@@ -14,7 +14,8 @@ import os
 import re
 import time
 from fnmatch import fnmatchcase as fnmatch
-from subprocess import getoutput, Popen, PIPE, call, CalledProcessError
+import subprocess
+#  getoutput, Popen, PIPE, call, CalledProcessError
 
 import logging
 logg = logging.getLogger("tests.opensuse")
@@ -22,6 +23,8 @@ DONE = (logging.ERROR + logging.WARNING)//2
 logging.addLevelName(DONE, "DONE")
 NIX = ""
 LIST: List[str] = []
+
+IMAGESTESTREPO = os.environ.get("IMAGESTESTREPO", "localhost:5000/mirror-test")
 
 PYTHON = "python3"
 SCRIPT = "opensuse-docker-mirror.py"
@@ -39,7 +42,17 @@ KEEPBASEIMAGE = False
 
 def sh(cmd: str, **args: Any) -> str:
     logg.debug("sh %s", cmd)
-    return getoutput(cmd, **args)
+    return subprocess.getoutput(cmd, **args)
+def calls(cmd: str, **args: Any) -> int:
+    """ subprocess.call() defaults to shell=False"""
+    logg.debug("run: %s", cmd)
+    return calls_(cmd, **args)
+def calls_(cmd: str, **args: Any) -> int:
+    if isinstance(cmd, str):
+        return subprocess.call(cmd, shell=True, **args)
+    else:
+        return subprocess.call(cmd, shell=False, **args)
+
 class CompletedProc(NamedTuple):
     """ aligned with subprocess.CompletedProcess (Python 3.5) """
     stdout: str
@@ -48,7 +61,7 @@ class CompletedProc(NamedTuple):
     def getvalue(self) -> str:
         return self.stdout.rstrip()
     @property
-    def val(self) -> str:
+    def out(self) -> str:
         return self.getvalue()
     @property
     def err(self) -> str:
@@ -58,27 +71,18 @@ class CompletedProc(NamedTuple):
         return self.returncode
     def check_returncode(self) -> None:
         if self.returncode != 0:
-            raise CalledProcessError(returncode=self.returncode, cmd = [], output=self.stdout, stderr=self.stderr)
+            raise subprocess.CalledProcessError(returncode=self.returncode, cmd = [], output=self.stdout, stderr=self.stderr)
 def runs(cmd: str, **args: Any) -> CompletedProc:
     """ subprocess.run() defaults to shell=False (Python 3.5) and capture_output=False (Python 3.7)"""
     logg.debug("run: %s", cmd)
     return runs_(cmd, **args)
 def runs_(cmd: str, **args: Any) -> CompletedProc:
     if isinstance(cmd, str):
-        proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE, **args)
+        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **args)
     else:
-        proc = Popen(cmd, shell=False, stdout=PIPE, stderr=PIPE, **args)
+        proc = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **args)
     out, err = proc.communicate()
     return CompletedProc(decodes(out), decodes(err), proc.returncode)
-def calls(cmd: str, **args: Any) -> int:
-    """ subprocess.call() defaults to shell=False"""
-    logg.debug("run: %s", cmd)
-    return calls_(cmd, **args)
-def calls_(cmd: str, **args: Any) -> int:
-    if isinstance(cmd, str):
-        return call(cmd, shell=True, **args)
-    else:
-        return call(cmd, shell=False, **args)
 def decodes(text: Union[str, bytes]) -> str:
     """ no need to provide encoding for subprocess.run() or subprocess.call() """
     if isinstance(text, bytes):
@@ -218,7 +222,7 @@ class OpensuseMirrorTest(unittest.TestCase):
     def repocontainer(self, testname: str = NIX) -> List[str]: # pylint: disable=unused-argument
         return self.containerlist("opensuse-repo")
     def testrepo(self, testname: str = NIX) -> str: # pylint: disable=unused-argument
-        return "localhost:5000/mirror-test"
+        return IMAGESTESTREPO
     def rm_images(self, testname: str = NIX) -> List[str]: # pylint: disable=unused-argument
         pat = self.testrepo()
         images = self.imageslist(pat) + self.imagesdangling()
@@ -275,7 +279,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} badcommand"
         run = runs(cmd)
-        logg.debug("out: %s", run.val)
+        logg.debug("out: %s", run.out)
         self.assertEqual(1, run.ret)
         self.coverage()
     def test_50110(self) -> None:
@@ -660,6 +664,9 @@ class OpensuseMirrorTest(unittest.TestCase):
             cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -vvv"
             ret = calls(cmd)
             self.assertEqual(0, ret)
+        cmd = F"{cover} {script} list --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        ret = calls(cmd)
+        self.assertEqual(0, ret)
         cmd = F"{cover} {mirror} start opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         ret = calls(cmd)
         self.assertEqual(0, ret)
@@ -728,7 +735,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         imagesrepo = self.testrepo(testname)
         cmd = F"{cover} {script} {ver} diskpath {VV} --disksuffix={testname}_disk"
         run = runs(cmd)
-        diskpath = run.val
+        diskpath = run.out
         logg.debug("diskpath = %s", diskpath)
         self.assertIn(testname, diskpath)
         if os.path.isdir(diskpath):
@@ -740,15 +747,15 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertTrue(os.path.isdir(diskpath))
         cmd = F"{cover} {script} {ver} base {VV} --imagesrepo={imagesrepo}"
         run = runs(cmd)
-        basemade = run.val
+        basemade = run.out
         logg.info("basemade = %s", basemade)
         cmd = F"{cover} {script} {ver} baserepo {VV} --imagesrepo={imagesrepo}"
         run = runs(cmd)
-        baserepo = run.val
+        baserepo = run.out
         logg.info("baserepo = %s", baserepo)
         cmd = F"{cover} {script} {ver} image {VV} --imagesrepo={imagesrepo}"
         run = runs(cmd)
-        image = run.val
+        image = run.out
         logg.info("image = %s", image)
         tmp = self.testdir(testname)
         configfile = os.path.join(tmp, "mirror.ini")
@@ -788,7 +795,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(0, ret)
         cmd = F"{docker} exec {testcontainer} rpm -q --info python3-lxml"
         run = runs(cmd)
-        val = run.val
+        val = run.out
         logg.info("install version: %s", val)
         self.assertIn("Pythonic XML", val)
         #
