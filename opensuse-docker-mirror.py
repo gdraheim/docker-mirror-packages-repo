@@ -11,7 +11,7 @@ __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7005"
 
 # from __future__ import literal_string_interpolation # PEP498 Python3.6
-from typing import Optional, Dict, List, Union, Any, NamedTuple
+from typing import Optional, Dict, List, Union
 from collections import OrderedDict
 import os
 import os.path as path
@@ -291,22 +291,22 @@ def opensuse_mainrepo(distro: str = NIX, leap: str = NIX, imagesrepo: str = NIX)
     base = BASELAYER
     return F"{imagesrepo}/{distro}-repo/{base}:{version}"
 
-def opensuse_list(distro: str = NIX, leap: str = NIX) -> None:
+def opensuse_list(distro: str = NIX, leap: str = NIX) -> int:
     docker = DOCKER
     print(F"REPOSITORY:TAG\tSIZE          # {docker} images {{baseimage}} {{baserepo}} {{mainrepo}}")
     baseimage = opensuse_baseimage(distro, leap)
     logg.debug("docker image list %s", baseimage)
     cmd = F"{docker} image list {baseimage} -q --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
-    sx___(cmd)
+    sx1 = sx___(cmd)
     baserepo = opensuse_baserepo(distro, leap)
     logg.debug("docker image list %s", baserepo)
     cmd = F"{docker} image list {baserepo} -q --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
-    sx___(cmd)
+    sx2 = sx___(cmd)
     mainrepo = opensuse_mainrepo(distro, leap)
     logg.debug("docker image list %s", mainrepo)
     cmd = F"{docker} image list {mainrepo} -q --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
-    sx___(cmd)
-    return
+    sx3 = sx___(cmd)
+    return min(sx1, sx2, sx3)
 
 def opensuse_disk(onlybase: bool = False) -> str:
     createrepo = find_path("createrepo")
@@ -402,23 +402,29 @@ def decodes(text: Union[bytes, str]) -> str:
             return text.decode("latin-1")
     return text
 
-def sh___(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -> int:
+def sh___(cmd: Union[str, List[str]], debugs: bool = True) -> int:
+    """ shell=True if string (and raises signal on returncode) """
+    shell = False
     if isinstance(cmd, stringtypes):
+        shell = True
         if debugs:
             logg.info(": %s", cmd)
     else:
         if debugs:
             logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
-    return subprocess.check_call(cmd, shell=shell)
+    return -(subprocess.check_call(cmd, shell=shell)) # does only return 0
 
-def sx___(cmd: Union[str, List[str]], shell: bool = True, debugs: bool = True) -> int:
+def sx___(cmd: Union[str, List[str]], debugs: bool = True) -> int:
+    """ shell=True if string and returns negative returncode """
+    shell = False
     if isinstance(cmd, stringtypes):
+        shell = True
         if debugs:
             logg.info(": %s", cmd)
     else:
         if debugs:
             logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
-    return subprocess.call(cmd, shell=shell)
+    return -(subprocess.call(cmd, shell=shell))
 
 #############################################################################
 
@@ -483,12 +489,17 @@ def _main(args: List[str]) -> int:
                 funcresult = funcdefinition()
                 if isinstance(funcresult, str):
                     print(funcresult)
+                elif isinstance(funcresult, int):
+                    print(" %i2", funcresult)
+                    if funcresult < 0:
+                        return -funcresult
             else: # pragma: nocover
                 logg.error("%s is not callable", funcname)
-                sys.exit(1)
+                return 1
         else:
             logg.error("%s does not exist", funcname)
-            sys.exit(1)
+            return 1
+    return 0
 
 if __name__ == "__main__":
     from optparse import OptionParser # allow_abbrev=False, pylint: disable=deprecated-module
