@@ -24,7 +24,7 @@ import shutil
 import logging
 logg = logging.getLogger("MIRROR")
 
-if sys.version[0] == '2':
+if sys.version[0] == '2': # pragma: nocover
     range = xrange # pylint: disable=redefined-builtin, used-before-assignment, undefined-variable
     stringtypes = basestring # pylint: disable=undefined-variable
 else:
