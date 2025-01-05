@@ -544,22 +544,22 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.coverage()
         self.rm_testdir()
     def test_51132(self) -> None:
-        self.check_51(self.testname())
+        self.check_dir(self.testname())
     def test_51142(self) -> None:
-        self.check_51(self.testname())
+        self.check_dir(self.testname())
     def test_51152(self) -> None:
-        self.check_51(self.testname())
+        self.check_dir(self.testname())
     def test_51153(self) -> None:
-        self.check_51(self.testname())
+        self.check_dir(self.testname())
     def test_51154(self) -> None:
-        self.check_51(self.testname())
+        self.check_dir(self.testname())
     def test_51155(self) -> None:
-        self.check_51(self.testname())
+        self.check_dir(self.testname())
     def test_51156(self) -> None:
-        self.check_51(self.testname())
+        self.check_dir(self.testname())
     def test_51160(self) -> None:
-        self.check_51(self.testname())
-    def check_51(self, testname: str) -> None:
+        self.check_dir(self.testname())
+    def check_dir(self, testname: str) -> None:
         ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
@@ -614,10 +614,10 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.coverage(testname)
         self.rm_testdir(testname)
     def test_53156(self) -> None:
-        self.check_53(self.testname())
+        self.check_sync(self.testname())
     def test_53160(self) -> None:
-        self.check_53(self.testname())
-    def check_53(self, testname: str) -> None:
+        self.check_sync(self.testname())
+    def check_sync(self, testname: str) -> None:
         ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
