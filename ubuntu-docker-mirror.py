@@ -22,11 +22,14 @@ from fnmatch import fnmatchcase as fnmatch
 import logging
 logg = logging.getLogger("MIRROR")
 
-if sys.version[0] == '3':
-    basestring = str
-    xrange = range
+if sys.version[0] == '2': # pragma: nocover
+    range = xrange # pylint: disable=redefined-builtin, used-before-assignment, undefined-variable
+    stringtypes = basestring # pylint: disable=undefined-variable
+else:
+    stringtypes = str
 
 NIX = ""
+TRUE = 1
 NOBASE = False
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
@@ -39,8 +42,12 @@ DATADIRS = [REPODATADIR,
             "/dock/docker-mirror-packages"]
 
 PYTHON = "python3"
+DOCKER = "docker"
+RSYNC = "rsync"
+BASELAYER = "base"
 DISTRO = "ubuntu"
 UBUNTU = "24.04"
+DISKSUFFIX = "disk" # suffix
 VARIANT = ""
 
 ARCHLIST = ["amd64", "i386"]
@@ -82,6 +89,8 @@ UNIVERSE_REPOS = ["main", "restricted", "universe"]
 MULTIVERSE_REPOS = ["main", "restricted", "universe", "multiverse"]
 AREAS = {"1": "", "2": "-updates", "3": "-backports", "4": "-security"}
 
+REPOS = UPDATES_REPOS
+
 nolinux = ["linux-image*.deb", "linux-module*.deb", "linux-objects*.deb", "linux-source*.deb"]
 nolinux += ["linux-restricted*.deb", "linux-signed*.deb", "linux-buildinfo*.deb", ]
 nolinux += ["linux-oracle*.deb", "linux-headers*.deb", "linux-virtual*.deb", "linux-cloud*.deb"]
@@ -90,10 +99,6 @@ nolinux += ["linux-risc*.deb", "linux-meta*.deb", "linux-doc*.deb", "linux-tools
 nolinux += ["linux-gcp*.deb", "linux-gke*.deb", "linux-azure*.deb", "linux-oem*.deb", ]
 nolinux += ["linux-hwe*.deb", "linux-aws*.deb", "linux-intel*.deb", "linux-ibm*.deb", ]
 nodrivers = ["nvidia-*.deb", "libnvidia*.deb"]
-
-REPOS = UPDATES_REPOS
-DOCKER = "docker"
-RSYNC = "rsync"
 
 BASEVERSION: Dict[str, str] = {}  # image:ubuntu/base
 BASEVERSION["23.04"] = "22.04"
@@ -158,12 +163,13 @@ def ubuntu_datadir() -> str:
             return data
     return REPODIR
 
-def ubuntu_dir(suffix: str = "") -> str:
+def ubuntu_dir(variant: str = "") -> str:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
-    dirname = F"{distro}.{version}{suffix}"
+    variant = variant or VARIANT
+    version = F"{ubuntu}.{variant}" if variant else ubuntu
+    dirname = F"{distro}.{version}"
     dirlink = path.join(repodir, dirname)
     if not path.isdir(repodir):
         os.mkdir(repodir)
@@ -189,23 +195,24 @@ def ubuntu_dir(suffix: str = "") -> str:
         logg.warning("%s/. local dir", dirlink)
     return dirlink
 
-def ubuntu_dirpath(suffix: str = "") -> str:
+def ubuntu_dirpath(variant: str = NIX) -> str:
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
-    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
-    return F"{repodir}/{distro}.{version}{suffix}/."
+    variant = variant or VARIANT
+    version = F"{ubuntu}.{variant}" if variant else ubuntu
+    return F"{repodir}/{distro}.{version}/."
 def ubuntu_du(suffix: str = "") -> str:
     dirpath = ubuntu_dirpath(suffix)
-    logg.info(F"dirpath {dirpath}")
+    logg.info("dirpath %s", dirpath)
     if os.path.isdir(dirpath):
         sh___(F"du -sh {dirpath}")
     return dirpath
 
-def ubuntu_nolinux(suffix: str = "") -> str:
-    dirpath = ubuntu_dirpath(suffix)
-    logg.info(F"dirpath {dirpath}")
-    for root, dirs, files in os.walk(dirpath):
+def ubuntu_nolinux(variant: str = "") -> str:
+    dirpath = ubuntu_dirpath(variant)
+    logg.info("dirpath %s", dirpath)
+    for root, _dirs, files in os.walk(dirpath):
         for name in files:
             if name.startswith("linux"):
                 filename = os.path.join(root, name)
@@ -360,7 +367,7 @@ def repo_image(repos: List[str]) -> str:
     sh___(F"{docker} exec {cname} apt-get update")
     sh___(F"{docker} exec {cname} apt-get install -y {python}")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu/pool")
-    base = "base"
+    base = BASELAYER
     PORT = ubuntu_http_port()
     CMD = str(ubuntu_http_cmd()).replace("'", '"')
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
@@ -374,7 +381,7 @@ def repo_image(repos: List[str]) -> str:
                 base = main
         if base == main:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
-    if base != "base":
+    if base != BASELAYER:
         sh___(F"{docker} tag {imagesrepo}/{distro}-repo/{base}:{version} {imagesrepo}/{distro}-repo:{version}")
     sh___(F"{docker} rm --force {cname}")
     if NOBASE:
@@ -386,7 +393,7 @@ def ubuntu_disk() -> str:
     ubuntu = UBUNTU
     repodir = REPODIR
     version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
-    rootdir = ubuntu_dir(suffix=F".disk")
+    rootdir = ubuntu_dir(variant=F"{VARIANT}{DISKSUFFIX}")
     srv = F"{rootdir}/srv"
     logg.info("srv = %s", srv)
     sh___(F"test ! -d {srv} || rm -rf {srv}")
@@ -400,18 +407,6 @@ def ubuntu_disk() -> str:
                 sh___(F"cp -r --link --no-clobber {pooldir}  {srv}/repo/ubuntu/")
     host_srv = os.path.realpath(srv)
     return F"\nmount = {host_srv}/repo\n"
-
-def ubuntu_test() -> None:
-    distro = DISTRO
-    ubuntu = UBUNTU
-    # cat ubuntu-compose.yml | sed \
-    #    -e 's|ubuntu-repo:.*"|ubuntu/repo:$(UBUNTU)"|' \
-    #    -e 's|ubuntu:.*"|$(DISTRO):$(UBUNTU)"|' \
-    #    > ubuntu-compose.yml.tmp
-    # - docker-compose -p $@ -f ubuntu-compose.yml.tmp down
-    # docker-compose -p $@ -f ubuntu-compose.yml.tmp up -d
-    # docker exec $@_host_1 apt-get install -y firefox
-    # docker-compose -p $@ -f ubuntu-compose.yml.tmp down
 
 def ubuntu_scripts() -> str:
     me = os.path.dirname(sys.argv[0]) or "."
@@ -441,20 +436,20 @@ def decodes(text: Union[bytes, str]) -> str:
     return text
 
 def sh___(cmd: Union[str, List[str]], shell: bool = True) -> int:
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, stringtypes):
         logg.info(": %s", cmd)
     else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.check_call(cmd, shell=shell)
 
 def sx___(cmd: Union[str, List[str]], shell: bool = True) -> int:
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, stringtypes):
         logg.info(": %s", cmd)
     else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.call(cmd, shell=shell)
 def output(cmd: Union[str, List[str]], shell: bool = True) -> str:
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, stringtypes):
         logg.info(": %s", cmd)
     else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
@@ -462,7 +457,7 @@ def output(cmd: Union[str, List[str]], shell: bool = True) -> str:
     out, err = run.communicate()
     return decodes(out)
 def output2(cmd: Union[str, List[str]], shell: bool = True) -> Tuple[str, int]:
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, stringtypes):
         logg.info(": %s", cmd)
     else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
@@ -470,7 +465,7 @@ def output2(cmd: Union[str, List[str]], shell: bool = True) -> Tuple[str, int]:
     out, err = run.communicate()
     return decodes(out), run.returncode
 def output3(cmd: Union[str, List[str]], shell: bool = True) -> Tuple[str, str, int]:
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, stringtypes):
         logg.info(": %s", cmd)
     else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
@@ -507,24 +502,10 @@ def ubuntu_cache() -> str:
     return maindir
 
 def path_find(base: str, name: str) -> Optional[str]:
-    for dirpath, dirnames, filenames in os.walk(base):
+    for dirpath, _dirnames, filenames in os.walk(base):
         if name in filenames:
             return path.join(dirpath, name)
     return None
-
-def ubuntu_commands_() -> None:
-    print(commands())
-def commands() -> str:
-    cmds: List[str] = []
-    for name in sorted(globals()):
-        if name.startswith("ubuntu_"):
-            if "_sync_" in name: continue
-            if name.endswith("_"): continue
-            func = globals()[name]
-            if callable(func):
-                cmd = name.replace("ubuntu_", "")
-                cmds += [cmd]
-    return "|".join(cmds)
 
 def ubuntu_image(distro: str = NIX, ubuntu: str = NIX) -> str:
     image = distro or DISTRO
@@ -539,33 +520,77 @@ def ubuntu_baseimage(distro: str = NIX, ubuntu: str = NIX) -> str:
     version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
     return F"{image}:{version}"
 
+def ubuntu_version(distro: str = NIX, ubuntu: str = NIX) -> str:
+    distro = distro or DISTRO
+    ubuntu = ubuntu or UBUNTU
+    if ":" in ubuntu:
+        distro, ubuntu = ubuntu.split(":", 1)
+    if len(ubuntu) <= 2:
+        found = max([os for os in DIST if os.startswith(ubuntu)])
+        logg.info("UBUNTU:=%s (max %s)", found, ubuntu)
+        return found
+    if ubuntu in DIST.values():
+        for version, dist in DIST.items():
+            if dist == ubuntu:
+                logg.info("UBUNTU %s -> %s", dist, version)
+                return version
+    elif ubuntu not in DIST:
+        logg.warning("UBUNTU=%s is not a known os version", ubuntu)
+        return ubuntu
+    else:
+        logg.debug("UBUNTU=%s override", ubuntu)
+        return ubuntu
+
 def UBUNTU_set(ubuntu: str) -> str:
-    global UBUNTU, DISTRO
+    global UBUNTU, DISTRO # pylint: disable=global-statement
     distro = ""
     if ":" in ubuntu:
         distro, ubuntu = ubuntu.split(":", 1)
         DISTRO = distro
-    if len(ubuntu) <= 2:
-        UBUNTU = max([os for os in DIST if os.startswith(ubuntu)])
-        logg.info(F"UBUNTU:={UBUNTU} (max {ubuntu})")
-        return UBUNTU
-    if ubuntu in DIST.values():
-        for version, dist in DIST.items():
-            if dist == ubuntu:
-                UBUNTU = version
-                logg.info("UBUNTU {dist} -> {version}", dist, version)
-                break
-    elif ubuntu not in DIST:
-        logg.warning("UBUNTU=%s is not a known os version", ubuntu)
-        UBUNTU = ubuntu
-    else:
-        logg.debug("UBUNTU=%s override", ubuntu)
-        UBUNTU = ubuntu
+    UBUNTU = ubuntu_version(ubuntu=ubuntu)
     return UBUNTU
 
+def ubuntu_commands() -> str:
+    cmds: List[str] = []
+    for name in sorted(globals()):
+        if name.startswith("ubuntu_"):
+            if "_sync_" in name: continue
+            if "_http_" in name: continue
+            if name.endswith("_"): continue
+            func = globals()[name]
+            if callable(func):
+                cmd = name.replace("ubuntu_", "")
+                cmds += [cmd]
+    return "|".join(cmds)
+
+def _main(args: List[str]) -> int:
+    for arg in args:
+        if arg[0] in "123456789":
+            UBUNTU_set(arg)
+            continue
+        funcname = "ubuntu_" + arg.replace("-", "_")
+        allnames = globals()
+        if funcname in allnames:
+            funcdefinition = globals()[funcname]
+            if callable(funcdefinition):
+                funcresult = funcdefinition()
+                if isinstance(funcresult, str):
+                    print(funcresult)
+                elif isinstance(funcresult, int):
+                    print(" %i2" % funcresult)
+                    if funcresult < 0:
+                        return -funcresult
+            else: # pragma: nocover
+                logg.error("%s is not callable", funcname)
+                return 1
+        else:
+            logg.error("%s does not exist", funcname)
+            return 1
+    return 0
+
 if __name__ == "__main__":
-    from optparse import OptionParser
-    cmdline = OptionParser("%%prog [-options] [%s]" % commands(),
+    from optparse import OptionParser # allow_abbrev=False, pylint: disable=deprecated-module
+    cmdline = OptionParser("%%prog [-options] [%s]" % ubuntu_commands(),
                       epilog=re.sub("\\s+", " ", __doc__).strip())
     cmdline.formatter.max_help_position = 30
     cmdline.add_option("-v", "--verbose", action="count", default=0,
@@ -584,6 +609,8 @@ if __name__ == "__main__":
                        help="set $REPODATADIR -> "+(REPODATADIR if REPODATADIR else ubuntu_datadir()))
     cmdline.add_option("--imagesrepo", metavar="PREFIX", default=IMAGESREPO,
                        help="set $IMAGESREPO [%default]")
+    cmdline.add_option("--disksuffix", metavar="NAME", default=DISKSUFFIX,
+                       help="use disk suffix for testing [%default]")
     cmdline.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
                        help="use variant suffix for testing [%default]")
     cmdline.add_option("-V", "--ver", metavar="NUM", default=UBUNTU,
@@ -598,7 +625,7 @@ if __name__ == "__main__":
                        help="include universe packages [%default]")
     cmdline.add_option("-M", "--multiverse", action="store_true", default=False,
                        help="include all packages [%default]")
-    opt, args = cmdline.parse_args()
+    opt, cmdline_args = cmdline.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
     if opt.archs:
         badarchs = [arch for arch in opt.archs if arch not in ARCHLIST]
@@ -611,6 +638,7 @@ if __name__ == "__main__":
         REPODATADIR = opt.datadir
         DATADIRS = [ REPODATADIR ]
     IMAGESREPO = opt.imagesrepo
+    DISKSUFFIX = opt.disksuffix
     VARIANT = opt.variant
     NOBASE = opt.nobase
     DOCKER = opt.docker
@@ -626,22 +654,4 @@ if __name__ == "__main__":
     if opt.multiverse:
         REPOS = MULTIVERSE_REPOS
     #
-    if not args: args = ["make"]
-    for arg in args:
-        if arg[0] in "123456789":
-            UBUNTU_set(arg)
-            continue
-        funcname = "ubuntu_" + arg.replace("-", "_")
-        allnames = globals()
-        if funcname in globals():
-            func = globals()[funcname]
-            if callable(func):
-                result = func()
-                if isinstance(result, str):
-                    print(result)
-            else:
-                logg.error("%s is not callable", funcname)
-                sys.exit(1)
-        else:
-            logg.error("%s does not exist", funcname)
-            sys.exit(1)
+    sys.exit(_main(cmdline_args or ["list"]))

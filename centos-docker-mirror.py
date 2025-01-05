@@ -84,6 +84,8 @@ ARCHLIST = ["x86_64", "ppc64le", "aarch64", "s390x"]
 
 CENTOS = "9.3-20240410"
 ARCHS = ["x86_64"]
+DISKSUFFIX = "disk" # suffix
+BASELAYER = "base"
 VARIANT = ""
 
 PYTHON = "" # default depends on centos version
@@ -224,26 +226,27 @@ def centos_datadir() -> str:
             return data
     return REPODIR
 
-def centos_dir(suffix: str = "") -> str:
+def centos_dir(variant: str = NIX) -> str:
     distro = DISTRO
     centos = CENTOS
-    return distro_dir(distro, centos, suffix)
-def centos_epeldir(suffix: str = "") -> str:
+    return distro_dir(distro, centos, variant)
+def centos_epeldir(variant: str = NIX) -> str:
     distro = EPEL
     centos = CENTOS
-    return distro_dir(distro, centos, suffix)
-def distro_dir(distro: str, release: str, suffix: str = "") -> str:
+    return distro_dir(distro, centos, variant)
+def distro_dir(distro: str, release: str, variant: str = NIX) -> str:
     # distro = DISTRO
     repodir = REPODIR
-    version = F"{release}.{VARIANT}" if VARIANT else release
-    dirname = F"{distro}.{version}{suffix}"
+    variant = variant or VARIANT
+    version = F"{release}.{variant}" if variant else release
+    dirname = F"{distro}.{version}"
     dirlink = path.join(repodir, dirname)
     if not path.isdir(repodir):
         os.mkdir(repodir)
     if "-" in release:
         mainrelease, _ = release.split("-", 1)
         version = F"{mainrelease}.{VARIANT}" if VARIANT else mainrelease
-        oldname = F"{distro}.{version}{suffix}"
+        oldname = F"{distro}.{version}"
         oldlink = path.join(repodir, oldname)
         if path.isdir(oldlink) and not path.exists(dirlink):
             logg.info("%s >> %s", oldlink, dirlink)
@@ -475,7 +478,7 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
         for script in os.listdir(F"{scripts}/."):
             sh___(F"{docker} exec {cname} sed -i s:/usr/bin/python3:/usr/libexec/platform-python: /srv/scripts/{script}")
             sh___(F"{docker} exec {cname} chmod +x /srv/scripts/{script}")
-    base = "base"
+    base = BASELAYER
     repo = IMAGESREPO
     latest = centos_epeldate(distro, centos, repodir) or datetime.date.today()
     yymm = latest.strftime("%y%m")
@@ -637,7 +640,7 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
     if R != centos and centos != rel:
         sh___(F"{docker} exec {cname} ln -sv {R} /srv/repo/{centos}")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
-    base = "base"
+    base = BASELAYER
     repo = IMAGESREPO
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{version}")
     for dist in dists:
@@ -651,7 +654,7 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
         if base == dist:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{version}")
     sh___(F"{docker} rm --force {cname}")
-    if base != "base":
+    if base != BASELAYER:
         sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{version} {repo}/{distro}-repo:{version}")
     if NOBASE:
         sh___(F"{docker} rmi {repo}/{distro}-repo/base:{version}")  # untag non-packages base
@@ -694,7 +697,7 @@ def distro_diskmake(distro: str, centos: str, dists: Dict[str, List[str]]) -> st
     rel = centos_release(distro, centos)
     scripts = centos_scripts()
     # version = F"{rel}.{VARIANT}" if VARIANT else rel
-    rootdir = distro_dir(distro, centos, suffix=F".disk")
+    rootdir = distro_dir(distro, centos, variant=F"{VARIANT}{DISKSUFFIX}")
     srv = F"{rootdir}/srv"
     logg.info("srv = %s", srv)
     sh___(F"mkdir -p {srv}/repo/{R}")
@@ -750,16 +753,6 @@ def centos_restore() -> None:
             if path.isdir(save):
                 shutil.move(save, orig)
 
-def centos_test() -> None:
-    distro = DISTRO
-    centos = CENTOS
-    logg.error("not implemented")
-    # sed -e "s|centos:centos7|centos:$(CENTOS)|" -e "s|centos-repo:7|centos-repo:$(CENTOS)|" \
-    #    centos-compose.yml > centos-compose.tmp
-    # - docker-compose -p $@ -f centos-compose.tmp down
-    # docker-compose -p $@ -f centos-compose.tmp up -d
-    # docker exec centosworks_host_1 yum install -y firefox
-    # docker-compose -p $@ -f centos-compose.tmp down
 
 def centos_check() -> None:
     docker = DOCKER
@@ -854,20 +847,6 @@ def path_find(base: str, name: str) -> Optional[str]:
             return path.join(dirpath, name)
     return None
 
-def centos_commands_() -> None:
-    print(commands())
-def commands() -> str:
-    cmds: List[str] = []
-    for name in sorted(globals()):
-        if name.startswith("centos_"):
-            if "_sync_" in name: continue
-            if name.endswith("_"): continue
-            func = globals()[name]
-            if callable(func):
-                cmd = name.replace("centos_", "")
-                cmds += [cmd]
-    return "|".join(cmds)
-
 def centos_image(distro: str = NIX, centos: str = NIX) -> str:
     distro = distro or DISTRO
     centos = centos or CENTOS
@@ -921,9 +900,46 @@ def CENTOS_set(centos: str) -> str:
     CENTOS = centos
     return CENTOS
 
+def centos_commands() -> str:
+    cmds: List[str] = []
+    for name in sorted(globals()):
+        if name.startswith("centos_"):
+            if "_sync_" in name: continue
+            if name.endswith("_"): continue
+            func = globals()[name]
+            if callable(func):
+                cmd = name.replace("centos_", "")
+                cmds += [cmd]
+    return "|".join(cmds)
+
+def _main(args: List[str]) -> int:
+    for arg in args:
+        if arg[0] in "123456789":
+            CENTOS_set(arg)
+            continue
+        funcname = "centos_" + arg.replace("-", "_")
+        allnames = globals()
+        if funcname in allnames:
+            funcdefinition = globals()[funcname]
+            if callable(funcdefinition):
+                funcresult = funcdefinition()
+                if isinstance(funcresult, str):
+                    print(funcresult)
+                elif isinstance(funcresult, int):
+                    print(" %i2" % funcresult)
+                    if funcresult < 0:
+                        return -funcresult
+            else: # pragma: nocover
+                logg.error("%s is not callable", funcname)
+                return 1
+        else:
+            logg.error("%s does not exist", funcname)
+            return 1
+    return 0
+
 if __name__ == "__main__":
     from optparse import OptionParser
-    cmdline = OptionParser("%%prog [-options] [%s]" % commands(),
+    cmdline = OptionParser("%%prog [-options] [%s]" % centos_commands(),
                       epilog=re.sub("\\s+", " ", __doc__).strip())
     cmdline.formatter.max_help_position = 30
     cmdline.add_option("-v", "--verbose", action="count", default=0,
@@ -942,13 +958,15 @@ if __name__ == "__main__":
                        help="set $REPODATADIR -> "+(REPODATADIR if REPODATADIR else centos_datadir()))
     cmdline.add_option("--imagesrepo", metavar="PREFIX", default=IMAGESREPO,
                        help="set $IMAGESREPO [%default]")
+    cmdline.add_option("--disksuffix", metavar="NAME", default=DISKSUFFIX,
+                       help="use disk suffix for testing [%default]")
     cmdline.add_option("-W", "--variant", metavar="NAME", default=VARIANT,
                        help="use variant suffix for testing [%default]")
     cmdline.add_option("-V", "--ver", metavar="NUM", default=CENTOS,
                        help="use other centos version [%default]")
     cmdline.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
                        help=F"use other arch list {ARCHS}")
-    opt, args = cmdline.parse_args()
+    opt, cmdline_args = cmdline.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
     if opt.archs:
         badarchs = [arch for arch in opt.archs if arch not in ARCHLIST]
@@ -961,6 +979,7 @@ if __name__ == "__main__":
         REPODATADIR = opt.datadir
         DATADIRS = [ REPODATADIR ]
     IMAGESREPO = opt.imagesrepo
+    DISKSUFFIX = opt.disksuffix
     VARIANT = opt.variant
     NOBASE = opt.nobase
     DOCKER = opt.docker
@@ -968,22 +987,4 @@ if __name__ == "__main__":
     PYTHON = opt.python
     CENTOS_set(opt.ver)
     #
-    if not args: args = ["make"]
-    for arg in args:
-        if arg[0] in "123456789":
-            CENTOS_set(arg)
-            continue
-        funcname = "centos_" + arg.replace("-", "_")
-        allnames = globals()
-        if funcname in globals():
-            func = globals()[funcname]
-            if callable(func):
-                result = func()
-                if isinstance(result, str):
-                    print(result)
-            else:
-                logg.error("%s is not callable", funcname)
-                sys.exit(1)
-        else:
-            logg.error("%s does not exist", funcname)
-            sys.exit(1)
+    sys.exit(_main(cmdline_args or ["list"]))

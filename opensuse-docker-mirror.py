@@ -422,18 +422,6 @@ def path_find(base: str, name: str) -> Optional[str]:
             return path.join(dirpath, name)
     return None
 
-def opensuse_commands() -> str:
-    cmds: List[str] = []
-    for name in sorted(globals()):
-        if name.startswith("opensuse_"):
-            if "_sync_" in name: continue
-            if name.endswith("_"): continue
-            func = globals()[name]
-            if callable(func):
-                cmd = name.replace("opensuse_", "")
-                cmds += [cmd]
-    return "|".join(cmds)
-
 def opensuse_image(distro: str = NIX, leap: str = NIX) -> str:
     distro = distro or DISTRO # distro is ignored
     leap = leap or LEAP
@@ -466,6 +454,18 @@ def LEAP_set(leap: str) -> str:
     global LEAP # pylint: disable=global-statement
     LEAP = opensuse_version(leap=leap)
     return LEAP
+
+def opensuse_commands() -> str:
+    cmds: List[str] = []
+    for name in sorted(globals()):
+        if name.startswith("opensuse_"):
+            if "_sync_" in name: continue
+            if name.endswith("_"): continue
+            func = globals()[name]
+            if callable(func):
+                cmd = name.replace("opensuse_", "")
+                cmds += [cmd]
+    return "|".join(cmds)
 
 def _main(args: List[str]) -> int:
     for arg in args:
