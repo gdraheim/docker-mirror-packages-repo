@@ -635,15 +635,23 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(0, ret)
         self.coverage(testname)
         self.rm_testdir(testname)
-    def test_54152(self) -> None:
-        self.check_54(self.testname())
-    def test_54154(self) -> None:
-        self.check_54(self.testname())
-    def test_54155(self) -> None:
-        self.check_54(self.testname())
-    def test_54156(self) -> None:
-        self.check_54(self.testname())
-    def check_54(self, testname: str) -> None:
+    def test_55152(self) -> None:
+        self.make_repo_test(self.testname(), "--createrepo")
+    def test_55154(self) -> None:
+        self.make_repo_test(self.testname(), "--createrepo")
+    def test_55155(self) -> None:
+        self.make_repo_test(self.testname(), "--createrepo")
+    def test_55156(self) -> None:
+        self.make_repo_test(self.testname(), "--createrepo")
+    def test_56152(self) -> None:
+        self.make_repo_test(self.testname())
+    def test_56154(self) -> None:
+        self.make_repo_test(self.testname())
+    def test_56155(self) -> None:
+        self.make_repo_test(self.testname())
+    def test_56156(self) -> None:
+        self.make_repo_test(self.testname())
+    def make_repo_test(self, testname: str, makeoptions: str = NIX) -> None:
         self.rm_container(testname)
         ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
@@ -661,7 +669,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
         if not SKIPFULLIMAGE:
-            cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -vvv"
+            cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' {makeoptions} -vvv"
             ret = calls(cmd)
             self.assertEqual(0, ret)
         cmd = F"{cover} {script} list --docker='{docker}' --imagesrepo='{imagesrepo}'"
@@ -714,15 +722,23 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.rm_container(testname)
         if not KEEPFULLIMAGE:
             self.rm_images(testname)
-    def test_55152(self) -> None:
-        self.check_55(self.testname())
-    def test_55154(self) -> None:
-        self.check_55(self.testname())
-    def test_55155(self) -> None:
-        self.check_55(self.testname())
-    def test_55156(self) -> None:
-        self.check_55(self.testname())
-    def check_55(self, testname: str) -> None:
+    def test_57152(self) -> None:
+        self.make_disk_test(self.testname(), "--createrepo")
+    def test_57154(self) -> None:
+        self.make_disk_test(self.testname(), "--createrepo")
+    def test_57155(self) -> None:
+        self.make_disk_test(self.testname(), "--createrepo")
+    def test_57156(self) -> None:
+        self.make_disk_test(self.testname(), "--createrepo")
+    def test_58152(self) -> None:
+        self.make_disk_test(self.testname())
+    def test_58154(self) -> None:
+        self.make_disk_test(self.testname())
+    def test_58155(self) -> None:
+        self.make_disk_test(self.testname())
+    def test_58156(self) -> None:
+        self.make_disk_test(self.testname())
+    def make_disk_test(self, testname: str, makeoptions: str = NIX) -> None:
         self.rm_container(testname)
         ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
@@ -733,6 +749,10 @@ class OpensuseMirrorTest(unittest.TestCase):
         mirror = MIRROR
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
+        cmd = F"{cover} {script} {ver} base {VV} --imagesrepo={imagesrepo} {makeoptions}"
+        run = runs(cmd)
+        basemade = run.out
+        logg.info("basemade = %s", basemade)
         cmd = F"{cover} {script} {ver} diskpath {VV} --disksuffix={testname}_disk"
         run = runs(cmd)
         diskpath = run.out
@@ -742,13 +762,9 @@ class OpensuseMirrorTest(unittest.TestCase):
             cmd = F"{cover} {script} {ver} dropdisk {VV} --disksuffix={testname}_disk"
             ret = calls(cmd)
         self.assertFalse(os.path.isdir(diskpath))
-        cmd = F"{cover} {script} {ver} disk {VV} --disksuffix={testname}_disk"
+        cmd = F"{cover} {script} {ver} disk {VV} --disksuffix={testname}_disk --imagesrepo={imagesrepo} {makeoptions}"
         ret = calls(cmd)
         self.assertTrue(os.path.isdir(diskpath))
-        cmd = F"{cover} {script} {ver} base {VV} --imagesrepo={imagesrepo}"
-        run = runs(cmd)
-        basemade = run.out
-        logg.info("basemade = %s", basemade)
         cmd = F"{cover} {script} {ver} baserepo {VV} --imagesrepo={imagesrepo}"
         run = runs(cmd)
         baserepo = run.out

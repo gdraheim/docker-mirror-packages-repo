@@ -239,7 +239,7 @@ def opensuse_repo(onlybase: bool = False) -> str:
         sh___(F"{docker} exec {cname} zypper install -y -r {oss} {python}")
         sh___(F"{docker} exec {cname} zypper install -y -r {oss} {python}-xml")
     if CREATEREPO or leap in NEEDCREATEREPO:
-        sh___(F"{docker} exec {cname} zypper install -y -r {oss} createrepo")
+        sh___(F"{docker} exec {cname} bash -c 'zypper install -y -r {oss} createrepo || zypper install -y -r {oss} createrepo_c'")
     if bind_repo:
         sh___(F"{docker} exec {cname} zypper rr {oss}")
     CMD = str(opensuserepo_CMD).replace("'", '"')
@@ -266,6 +266,7 @@ def opensuse_repo(onlybase: bool = False) -> str:
             # sh___("{docker} exec {cname} rm -r /srv/repo/{dist}/{leap}".format(**locals()))
             sh___(F"{docker} exec {cname} ln -s /srv/repo/{dist}/leap/{leap}/oss /srv/repo/{dist}/{leap}")
             if CREATEREPO or leap in NEEDCREATEREPO:
+                sh___(F""" {docker} exec {cname} bash -c "cd /srv/repo/{dist}/leap/{leap}/oss && rm -rv repodata" """)
                 sh___(F""" {docker} exec {cname} bash -c "cd /srv/repo/{dist}/leap/{leap}/oss && createrepo ." """)
         if base == dist:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
