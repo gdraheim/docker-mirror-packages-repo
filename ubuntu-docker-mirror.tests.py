@@ -29,6 +29,8 @@ IMAGESTESTREPO = os.environ.get("IMAGESTESTREPO", "localhost:5000/mirror-test")
 PYTHON = "python3"
 SCRIPT = "ubuntu-docker-mirror.py"
 MIRROR = "docker_mirror.py"
+PKGREPO = "apt-get"
+PKGLIST = "apt-cache"
 ONLYVERSION = ""
 COVERAGE = False
 KEEP = False
@@ -641,21 +643,21 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.coverage(testname)
         self.rm_testdir(testname)
     def test_65184(self) -> None:
-        self.make_repo_test(self.testname(), "--createrepo")
+        self.make_repo_test(self.testname())
     def test_65204(self) -> None:
-        self.make_repo_test(self.testname(), "--createrepo")
+        self.make_repo_test(self.testname())
     def test_65224(self) -> None:
-        self.make_repo_test(self.testname(), "--createrepo")
+        self.make_repo_test(self.testname())
     def test_65244(self) -> None:
-        self.make_repo_test(self.testname(), "--createrepo")
+        self.make_repo_test(self.testname())
     def test_66184(self) -> None:
-        self.make_repo_test(self.testname())
+        self.make_repo_test(self.testname(), "--universe")
     def test_66204(self) -> None:
-        self.make_repo_test(self.testname())
+        self.make_repo_test(self.testname(), "--universe")
     def test_66224(self) -> None:
-        self.make_repo_test(self.testname())
+        self.make_repo_test(self.testname(), "--universe")
     def test_66244(self) -> None:
-        self.make_repo_test(self.testname())
+        self.make_repo_test(self.testname(), "--universe")
     def make_repo_test(self, testname: str, makeoptions: str = NIX) -> None:
         self.rm_container(testname)
         ver = self.testver(testname)
@@ -665,6 +667,9 @@ class OpensuseMirrorTest(unittest.TestCase):
         cover = self.cover()
         script = SCRIPT
         mirror = MIRROR
+        pkgrepo = F"{PKGREPO} -o APT::Get::AllowUnauthenticated=true"
+        pkglist = PKGLIST
+        distro = DISTRO1
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
         cmd = F"{cover} {script} {ver} baseimage {VV}"
@@ -680,10 +685,10 @@ class OpensuseMirrorTest(unittest.TestCase):
         cmd = F"{cover} {script} list --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} start opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        cmd = F"{cover} {mirror} start {distro}:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} addhost opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        cmd = F"{cover} {mirror} addhost {distro}:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         run = runs(cmd)
         logg.info("show: %s", run.stdout)
         addhost = run.stdout.strip()
@@ -692,33 +697,33 @@ class OpensuseMirrorTest(unittest.TestCase):
         ret = calls(cmd)
         logg.info("consume: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} zypper mr --no-gpgcheck --all"
-        ret = calls(cmd)
-        logg.info("install nocheck: %s", ret)
-        cmd = F"{docker} exec {testcontainer} zypper clean --all"
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} clean all"
         ret = calls(cmd)
         logg.info("install clean: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} zypper install -y python3-lxml"
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} update"
+        ret = calls(cmd)
+        logg.info("install refresh: %s", ret)
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y python3-lxml"
         ret = calls(cmd)
         logg.info("install package: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} stop opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        cmd = F"{cover} {mirror} stop {distro}:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} rpm -q --info python3-lxml"
+        cmd = F"{docker} exec {testcontainer} {pkglist} show python3-lxml"
         run = runs(cmd)
         val = run.stdout
         logg.info("install version: %s", val)
-        self.assertIn("Pythonic XML", val)
+        self.assertIn("pythonic binding for the libxml", val)
         cmd = F"{docker} image list -q --no-trunc --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
         run = runs_(cmd)
         images = []
         for line in run.stdout.splitlines():
-            if line.startswith(imagesrepo) and "opensuse-repo" in line and F":{ver}" in line:
+            if line.startswith(imagesrepo) and F"{distro}-repo" in line and F":{ver}" in line:
                 images += [ "| " + line.rstrip().replace("\t", " | ").replace("mirror-test", "mirror-packages" )]
         logg.info("images:\n%s", "\n".join(images))
-        sizesfile = os.path.join(get_CACHE_HOME(), F"opensuse-repo-{ver}.sizes.txt")
+        sizesfile = os.path.join(get_CACHE_HOME(), F"{distro}-repo-{ver}.sizes.txt")
         with open(sizesfile, "w") as f:
             print("\n".join(images), file=f)
         logg.debug("written %s", sizesfile)
@@ -728,21 +733,21 @@ class OpensuseMirrorTest(unittest.TestCase):
         if not KEEPFULLIMAGE:
             self.rm_images(testname)
     def test_67184(self) -> None:
-        self.make_disk_test(self.testname(), "--createrepo")
+        self.make_disk_test(self.testname())
     def test_67204(self) -> None:
-        self.make_disk_test(self.testname(), "--createrepo")
+        self.make_disk_test(self.testname())
     def test_67224(self) -> None:
-        self.make_disk_test(self.testname(), "--createrepo")
+        self.make_disk_test(self.testname())
     def test_67244(self) -> None:
-        self.make_disk_test(self.testname(), "--createrepo")
+        self.make_disk_test(self.testname())
     def test_68184(self) -> None:
-        self.make_disk_test(self.testname())
+        self.make_disk_test(self.testname(), "--universe")
     def test_68204(self) -> None:
-        self.make_disk_test(self.testname())
+        self.make_disk_test(self.testname(), "--universe")
     def test_68224(self) -> None:
-        self.make_disk_test(self.testname())
+        self.make_disk_test(self.testname(), "--universe")
     def test_68244(self) -> None:
-        self.make_disk_test(self.testname())
+        self.make_disk_test(self.testname(), "--universe")
     def make_disk_test(self, testname: str, makeoptions: str = NIX) -> None:
         self.rm_container(testname)
         ver = self.testver(testname)
@@ -752,6 +757,9 @@ class OpensuseMirrorTest(unittest.TestCase):
         cover = self.cover()
         script = SCRIPT
         mirror = MIRROR
+        pkgrepo = F"{PKGREPO} -o APT::Get::AllowUnauthenticated=true"
+        pkglist = PKGLIST
+        distro = DISTRO1
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
         cmd = F"{cover} {script} {ver} base {VV} --imagesrepo={imagesrepo} {makeoptions}"
@@ -784,10 +792,10 @@ class OpensuseMirrorTest(unittest.TestCase):
             print(F"[{image}]", file=cfg)
             print(F"image = {baserepo}", file=cfg)
             print(F"mount = {diskpath}", file=cfg)
-        cmd = F"{cover} {mirror} start opensuse:{ver} {VV} --docker='{docker}' -C {configfile}"
+        cmd = F"{cover} {mirror} start {distro}:{ver} {VV} --docker='{docker}' -C {configfile}"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} addhost opensuse:{ver} {VV} --docker='{docker}' -C {configfile}"
+        cmd = F"{cover} {mirror} addhost {distro}:{ver} {VV} --docker='{docker}' -C {configfile}"
         run = runs(cmd)
         addhost = run.stdout.strip()
         logg.info("addhost = %s", addhost)
@@ -800,25 +808,26 @@ class OpensuseMirrorTest(unittest.TestCase):
         ret = calls(cmd)
         logg.info("consume: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} zypper mr --no-gpgcheck --all"
-        ret = calls(cmd)
-        logg.info("install nocheck: %s", ret)
-        cmd = F"{docker} exec {testcontainer} zypper clean --all"
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} clean all"
         ret = calls(cmd)
         logg.info("install clean: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} zypper install -y python3-lxml"
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} update"
+        ret = calls(cmd)
+        logg.info("install refresh: %s", ret)
+        self.assertEqual(0, ret)
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y python3-lxml"
         ret = calls(cmd)
         logg.info("install package: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} stop opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C {configfile}"
+        cmd = F"{cover} {mirror} stop {distro}:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C {configfile}"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} rpm -q --info python3-lxml"
+        cmd = F"{docker} exec {testcontainer} {pkglist} show python3-lxml"
         run = runs(cmd)
         val = run.out
         logg.info("install version: %s", val)
-        self.assertIn("Pythonic XML", val)
+        self.assertIn("pythonic binding for the libxml", val)
         #
         if os.path.isdir(diskpath) and not KEEPFULLIMAGE:
             cmd = F"{cover} {script} {ver} dropdisk {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' --disksuffix={testname}_"

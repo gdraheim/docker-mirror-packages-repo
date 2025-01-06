@@ -172,7 +172,6 @@ def centos_make() -> None:
     centos_sync()
     centos_pull()
     centos_repo()
-    centos_test()
     centos_check()
     centos_tags()
 
@@ -726,6 +725,39 @@ def centos_dropdisk() -> str:
     if os.path.isdir(path_srv):
         shutil.rmtree(path_srv)
     return path_srv
+
+def centos_baserepo(distro: str = NIX, centos: str = NIX, imagesrepo: str = NIX) -> str:
+    imagesrepo = imagesrepo or IMAGESREPO
+    distro = distro or DISTRO
+    leap = centos or CENTOS
+    version = F"{leap}.{VARIANT}" if VARIANT else leap
+    base = BASELAYER
+    return F"{imagesrepo}/{distro}-repo/{base}:{version}"
+def centos_mainrepo(distro: str = NIX, centos: str = NIX, imagesrepo: str = NIX) -> str:
+    imagesrepo = imagesrepo or IMAGESREPO
+    distro = distro or DISTRO
+    leap = centos or CENTOS
+    version = F"{leap}.{VARIANT}" if VARIANT else leap
+    base = BASELAYER
+    return F"{imagesrepo}/{distro}-repo/{base}:{version}"
+
+def centos_list(distro: str = NIX, centos: str = NIX) -> int:
+    docker = DOCKER
+    print(F"REPOSITORY:TAG\tSIZE          # {docker} images {{baseimage}} {{baserepo}} {{mainrepo}}")
+    baseimage = centos_baseimage(distro, centos)
+    logg.debug("docker image list %s", baseimage)
+    cmd = F"{docker} image list {baseimage} -q --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
+    sx1 = sx___(cmd)
+    baserepo = centos_baserepo(distro, centos)
+    logg.debug("docker image list %s", baserepo)
+    cmd = F"{docker} image list {baserepo} -q --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
+    sx2 = sx___(cmd)
+    mainrepo = centos_mainrepo(distro, centos)
+    logg.debug("docker image list %s", mainrepo)
+    cmd = F"{docker} image list {mainrepo} -q --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
+    sx3 = sx___(cmd)
+    return min(sx1, sx2, sx3)
+
 
 def centos_tags(distro: str = NIX, centos: str = NIX) -> None:
     distro = distro or DISTRO

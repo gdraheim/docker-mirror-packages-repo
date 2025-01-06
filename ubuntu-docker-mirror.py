@@ -126,7 +126,6 @@ BASEVERSION["16.10"] = "16.04"
 def ubuntu_make() -> None:
     ubuntu_sync()
     ubuntu_repo()
-    ubuntu_test()
 
 def ubuntu_sync() -> None:
     ubuntu_dir()
@@ -423,6 +422,38 @@ def ubuntu_dropdisk() -> str:
         shutil.rmtree(path_srv)
     return path_srv
 
+def ubuntu_baserepo(distro: str = NIX, ubuntu: str = NIX, imagesrepo: str = NIX) -> str:
+    imagesrepo = imagesrepo or IMAGESREPO
+    distro = distro or DISTRO
+    leap = ubuntu or UBUNTU
+    version = F"{leap}.{VARIANT}" if VARIANT else leap
+    base = BASELAYER
+    return F"{imagesrepo}/{distro}-repo/{base}:{version}"
+def ubuntu_mainrepo(distro: str = NIX, ubuntu: str = NIX, imagesrepo: str = NIX) -> str:
+    imagesrepo = imagesrepo or IMAGESREPO
+    distro = distro or DISTRO
+    leap = ubuntu or UBUNTU
+    version = F"{leap}.{VARIANT}" if VARIANT else leap
+    base = BASELAYER
+    return F"{imagesrepo}/{distro}-repo/{base}:{version}"
+
+def ubuntu_list(distro: str = NIX, ubuntu: str = NIX) -> int:
+    docker = DOCKER
+    print(F"REPOSITORY:TAG\tSIZE          # {docker} images {{baseimage}} {{baserepo}} {{mainrepo}}")
+    baseimage = ubuntu_baseimage(distro, ubuntu)
+    logg.debug("docker image list %s", baseimage)
+    cmd = F"{docker} image list {baseimage} -q --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
+    sx1 = sx___(cmd)
+    baserepo = ubuntu_baserepo(distro, ubuntu)
+    logg.debug("docker image list %s", baserepo)
+    cmd = F"{docker} image list {baserepo} -q --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
+    sx2 = sx___(cmd)
+    mainrepo = ubuntu_mainrepo(distro, ubuntu)
+    logg.debug("docker image list %s", mainrepo)
+    cmd = F"{docker} image list {mainrepo} -q --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
+    sx3 = sx___(cmd)
+    return min(sx1, sx2, sx3)
+
 def ubuntu_scripts() -> str:
     me = os.path.dirname(sys.argv[0]) or "."
     dn = os.path.join(me, "scripts")
@@ -446,7 +477,7 @@ def decodes(text: Union[bytes, str]) -> str:
             encoded = "utf-8"
         try:
             return text.decode(encoded)
-        except:
+        except UnicodeEncodeError:
             return text.decode("latin-1")
     return text
 

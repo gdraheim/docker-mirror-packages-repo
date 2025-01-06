@@ -29,6 +29,8 @@ IMAGESTESTREPO = os.environ.get("IMAGESTESTREPO", "localhost:5000/mirror-test")
 PYTHON = "python3"
 SCRIPT = "opensuse-docker-mirror.py"
 MIRROR = "docker_mirror.py"
+PKGREPO = "zypper"
+PKGLIST = "rpm"
 ONLYVERSION = ""
 COVERAGE = False
 KEEP = False
@@ -662,6 +664,9 @@ class OpensuseMirrorTest(unittest.TestCase):
         cover = self.cover()
         script = SCRIPT
         mirror = MIRROR
+        pkgrepo = PKGREPO
+        pkglist = PKGLIST
+        distro = DISTRO1
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
         cmd = F"{cover} {script} {ver} baseimage {VV}"
@@ -677,10 +682,10 @@ class OpensuseMirrorTest(unittest.TestCase):
         cmd = F"{cover} {script} list --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} start opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        cmd = F"{cover} {mirror} start {distro}:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} addhost opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        cmd = F"{cover} {mirror} addhost {distro}:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         run = runs(cmd)
         logg.info("show: %s", run.stdout)
         addhost = run.stdout.strip()
@@ -689,21 +694,21 @@ class OpensuseMirrorTest(unittest.TestCase):
         ret = calls(cmd)
         logg.info("consume: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} zypper mr --no-gpgcheck --all"
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} mr --no-gpgcheck --all"
         ret = calls(cmd)
         logg.info("install nocheck: %s", ret)
-        cmd = F"{docker} exec {testcontainer} zypper clean --all"
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} clean --all"
         ret = calls(cmd)
         logg.info("install clean: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} zypper install -y python3-lxml"
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y python3-lxml"
         ret = calls(cmd)
         logg.info("install package: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} stop opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        cmd = F"{cover} {mirror} stop {distro}:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} rpm -q --info python3-lxml"
+        cmd = F"{docker} exec {testcontainer} {pkglist} -q --info python3-lxml"
         run = runs(cmd)
         val = run.stdout
         logg.info("install version: %s", val)
@@ -712,10 +717,10 @@ class OpensuseMirrorTest(unittest.TestCase):
         run = runs_(cmd)
         images = []
         for line in run.stdout.splitlines():
-            if line.startswith(imagesrepo) and "opensuse-repo" in line and F":{ver}" in line:
+            if line.startswith(imagesrepo) and F"{distro}-repo" in line and F":{ver}" in line:
                 images += [ "| " + line.rstrip().replace("\t", " | ").replace("mirror-test", "mirror-packages" )]
         logg.info("images:\n%s", "\n".join(images))
-        sizesfile = os.path.join(get_CACHE_HOME(), F"opensuse-repo-{ver}.sizes.txt")
+        sizesfile = os.path.join(get_CACHE_HOME(), F"{distro}-repo-{ver}.sizes.txt")
         with open(sizesfile, "w") as f:
             print("\n".join(images), file=f)
         logg.debug("written %s", sizesfile)
@@ -749,6 +754,9 @@ class OpensuseMirrorTest(unittest.TestCase):
         cover = self.cover()
         script = SCRIPT
         mirror = MIRROR
+        pkgrepo = PKGREPO
+        pkglist = PKGLIST
+        distro = DISTRO1
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
         cmd = F"{cover} {script} {ver} base {VV} --imagesrepo={imagesrepo} {makeoptions}"
@@ -781,10 +789,10 @@ class OpensuseMirrorTest(unittest.TestCase):
             print(F"[{image}]", file=cfg)
             print(F"image = {baserepo}", file=cfg)
             print(F"mount = {diskpath}", file=cfg)
-        cmd = F"{cover} {mirror} start opensuse:{ver} {VV} --docker='{docker}' -C {configfile}"
+        cmd = F"{cover} {mirror} start {distro}:{ver} {VV} --docker='{docker}' -C {configfile}"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} addhost opensuse:{ver} {VV} --docker='{docker}' -C {configfile}"
+        cmd = F"{cover} {mirror} addhost {distro}:{ver} {VV} --docker='{docker}' -C {configfile}"
         run = runs(cmd)
         addhost = run.stdout.strip()
         logg.info("addhost = %s", addhost)
@@ -797,21 +805,21 @@ class OpensuseMirrorTest(unittest.TestCase):
         ret = calls(cmd)
         logg.info("consume: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} zypper mr --no-gpgcheck --all"
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} mr --no-gpgcheck --all"
         ret = calls(cmd)
         logg.info("install nocheck: %s", ret)
-        cmd = F"{docker} exec {testcontainer} zypper clean --all"
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} clean --all"
         ret = calls(cmd)
         logg.info("install clean: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} zypper install -y python3-lxml"
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y python3-lxml"
         ret = calls(cmd)
         logg.info("install package: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} stop opensuse:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C {configfile}"
+        cmd = F"{cover} {mirror} stop {distro}:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C {configfile}"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} rpm -q --info python3-lxml"
+        cmd = F"{docker} exec {testcontainer} {pkglist} -q --info python3-lxml"
         run = runs(cmd)
         val = run.out
         logg.info("install version: %s", val)
