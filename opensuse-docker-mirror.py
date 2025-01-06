@@ -505,7 +505,42 @@ if __name__ == "__main__":
                        help="use other docker exe or podman [%default]")
     cmdline.add_option("--rsync", metavar="EXE", default=RSYNC,
                        help="use other rsync exe [%default]")
-    cmdline.add_option("--python", metavar="EXE", default=PYTHON,
+    cmdline.add_option("--python", metavar="EXE", default=PYTHON,    if ":" in centos:
+        distro, centos = centos.split(":", 1)
+        DISTRO = distro
+    if centos in BASE:
+        DISTRO = distro or "centos"
+        CENTOS = centos
+        logg.debug("SET CENT1: %s %s [%s]", DISTRO, CENTOS, centos)
+        return CENTOS
+    if centos in BASE.values():
+        DISTRO = distro or "centos"
+        CENTOS = max([os for os in BASE if BASE[os] == centos])
+        logg.debug("SET CENT2: %s %s [%s]", DISTRO, CENTOS, centos)
+        return CENTOS
+    if centos in ALMA:
+        CENTOS = centos
+        DISTRO = distro or ALMALINUX
+        logg.debug("SET ALMA1: %s %s [%s]", DISTRO, CENTOS, centos)
+        return CENTOS
+    if centos in ALMA.values():
+        CENTOS = max([os for os in ALMA if ALMA[os] == centos])
+        DISTRO = distro or ALMALINUX
+        logg.debug("SET ALMA2: %s %s [%s]", DISTRO, CENTOS, centos)
+        return CENTOS
+    if len(centos) <= 2:
+        last = [os for os in BASE if os.startswith(centos)]
+        if last:
+            CENTOS = max(last)
+            # DISTRO = "centos"
+        last = [os for os in ALMA if os.startswith(centos)]
+        if last:
+            CENTOS = max(last)
+            DISTRO = distro or ALMALINUX
+        return CENTOS
+    if centos not in BASE.values():
+        logg.warning("SET: %s is not a known os version", centos)
+
                        help="use other python as script runner [%default]")
     cmdline.add_option("--repodir", metavar="DIR", default=REPODIR,
                        help="set $REPODIR [%default]")

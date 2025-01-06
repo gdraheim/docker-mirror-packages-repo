@@ -121,6 +121,7 @@ test_2%: ; ./docker_mirror.tests.py $@ -vv $V $K
 test_3%: ; ./docker_mirror.tests.py $@ -vv $V $K 
 test_5%: ; ./opensuse-docker-mirror.tests.py $@ -vv $V $K 
 test_6%: ; ./ubuntu-docker-mirror.tests.py $@ -vv $V $K 
+test_7%: ; ./centos-docker-mirror.tests.py $@ -vv $V $K 
 m_%: ; ./docker_mirror.tests.py $@ -vv $V $K 
 o_%: ; ./opensuse-docker-mirror.tests.py $@ -vv $V $K 
 
@@ -128,8 +129,12 @@ dry precheck: ; ./docker_mirror.tests.py -vv $V $K --dryrun
 check: mm oo cc uu
 mm: ; ./docker_mirror.tests.py -vv $V $K
 oo: ; ./opensuse-docker-mirror.tests.py -v $V $K
+uu: ; ./ubuntu-docker-mirror.tests.py -v $V $K
+rr: ; ./centos-docker-mirror.tests.py -v $V $K
 
 ooo: ; ./opensuse-docker-mirror.tests.py -v $V $K --coverage --only 15.6
+uuu: ; ./ubuntu-docker-mirror.tests.py -v $V $K --coverage --only 24.04
+rrr: ; ./centos-docker-mirror.tests.py -v $V $K --coverage --only 9.4
 
 tests: ; $(PYTHON3) dockerdir-tests.py $K
 
