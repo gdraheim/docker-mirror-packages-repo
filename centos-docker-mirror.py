@@ -968,12 +968,12 @@ if __name__ == "__main__":
                        help=F"use other arch list {ARCHS}")
     opt, cmdline_args = cmdline.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
-    if opt.archs:
-        badarchs = [arch for arch in opt.archs if arch not in ARCHLIST]
-        if badarchs:
-            logg.error("unknown arch %s (from known %s)", badarchs, ARCHLIST)
+    if opt.arch:
+        cmdline_badarchs = [arch for arch in opt.arch if arch not in ARCHLIST]
+        if cmdline_badarchs:
+            logg.error("unknown arch %s (from known %s)", cmdline_badarchs, ARCHLIST)
             sys.exit(1)
-        ARCHS = opt.archs
+        ARCHS = opt.arch
     REPODIR = opt.repodir
     if opt.datadir:
         REPODATADIR = opt.datadir

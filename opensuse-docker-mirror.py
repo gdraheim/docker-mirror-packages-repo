@@ -530,9 +530,9 @@ if __name__ == "__main__":
     CREATEREPO = opt.createrepo
     MAKEMINI = opt.mini
     if opt.arch:
-        badarchs = [arch for arch in opt.arch if arch not in ARCHLIST]
-        if badarchs:
-            logg.error("unknown arch %s (from known %s)", badarchs, ARCHLIST)
+        cmdline_badarchs = [arch for arch in opt.arch if arch not in ARCHLIST]
+        if cmdline_badarchs:
+            logg.error("unknown arch %s (from known %s)", cmdline_badarchs, ARCHLIST)
             sys.exit(1)
         ARCHS = opt.arch
     REPODIR = opt.repodir
