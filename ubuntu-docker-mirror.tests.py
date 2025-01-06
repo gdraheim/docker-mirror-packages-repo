@@ -40,6 +40,8 @@ SKIPFULLIMAGE = True
 KEEPFULLIMAGE = False
 KEEPBASEIMAGE = False
 
+DISTRO1= "ubuntu"
+
 def sh(cmd: str, **args: Any) -> str:
     logg.debug("sh %s", cmd)
     return subprocess.getoutput(cmd, **args)
@@ -300,9 +302,9 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.debug("out: %s", out)
         self.assertEqual("./scripts", out.strip())
         self.coverage()
-    def test_60144(self) -> None:
+    def test_60130(self) -> None:
         ver = self.testver()
-        self.assertEqual(ver, "14.04")
+        self.assertEqual(ver, "13.10")
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
@@ -313,9 +315,9 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, have)
         self.assertIn("is not a known os version", errs)
         self.coverage()
-    def test_60150(self) -> None:
+    def test_60144(self) -> None:
         ver = self.testver()
-        self.assertEqual(ver, "15.10")
+        self.assertEqual(ver, "14.04")
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
@@ -428,7 +430,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         errs = run.stderr.strip()
         logg.debug("out: %s", have)
         self.assertEqual(ver, have)
-        self.assertIn("is not a known os version", errs)
+        self.assertEqual("", errs)
         self.coverage()
     def test_60244(self) -> None:
         ver = self.testver()
@@ -443,9 +445,22 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(ver, have)
         self.assertEqual("", errs)
         self.coverage()
+    def test_60264(self) -> None:
+        ver = self.testver()
+        self.assertEqual(ver, "26.04")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertIn("is not a known os version", errs)
+        self.coverage()
     def test_60820(self) -> None:
         ver2 = "20"
-        ver = "20.04"
+        ver = "20.10"
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} {ver2} version"
@@ -458,7 +473,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.coverage()
     def test_60822(self) -> None:
         ver2 = "22"
-        ver = "22.04"
+        ver = "22.10"
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} {ver2} version"
@@ -558,7 +573,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         data = F"{tmp}/data"
         repo = F"{tmp}/repo"
-        want = F"{repo}/opensuse.{ver}"
+        want = F"{repo}/{DISTRO1}.{ver}"
         os.makedirs(data)
         #
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
@@ -570,7 +585,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
         #
-        want = F"{repo}/opensuse.{ver}.alt"
+        want = F"{repo}/{DISTRO1}.{ver}.alt"
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo} --variant=alt"
         run = runs(cmd)
         have = run.stdout.strip()
@@ -580,21 +595,21 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
         #
-        want = os.path.abspath(F"{data}/opensuse.{ver}.disk/srv/repo")
+        want = os.path.abspath(F"{data}/{DISTRO1}.{ver}.disk/srv/repo")
         cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo}"
         run = runs(cmd)
         have = run.stdout.strip()
         logg.debug("out: %s", have)
         self.assertEqual(want, have)
         #
-        want = os.path.abspath(F"{data}/opensuse.{ver}.altdisk/srv/repo")
+        want = os.path.abspath(F"{data}/{DISTRO1}.{ver}.altdisk/srv/repo")
         cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo} --variant=alt"
         run = runs(cmd)
         have = run.stdout.strip()
         logg.debug("out: %s", have)
         self.assertEqual(want, have)
         #
-        want = os.path.abspath(F"{data}/opensuse.{ver}.altdisktmp/srv/repo")
+        want = os.path.abspath(F"{data}/{DISTRO1}.{ver}.altdisktmp/srv/repo")
         cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo} --variant=alt --disksuffix=disktmp"
         run = runs(cmd)
         have = run.stdout.strip()

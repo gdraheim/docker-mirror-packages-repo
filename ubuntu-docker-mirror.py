@@ -408,6 +408,20 @@ def ubuntu_disk() -> str:
     host_srv = os.path.realpath(srv)
     return F"\nmount = {host_srv}/repo\n"
 
+def ubuntu_diskpath() -> str:
+    rootdir = ubuntu_dir(variant=F"{VARIANT}{DISKSUFFIX}")
+    srv = F"{rootdir}/srv"
+    path_srv = os.path.realpath(srv)
+    return F"{path_srv}/repo\n"
+
+def ubuntu_dropdisk() -> str:
+    rootdir = ubuntu_dir(variant=F"{VARIANT}{DISKSUFFIX}")
+    srv = F"{rootdir}/srv"
+    path_srv = os.path.realpath(srv)
+    if os.path.isdir(path_srv):
+        shutil.rmtree(path_srv)
+    return path_srv
+
 def ubuntu_scripts() -> str:
     me = os.path.dirname(sys.argv[0]) or "."
     dn = os.path.join(me, "scripts")

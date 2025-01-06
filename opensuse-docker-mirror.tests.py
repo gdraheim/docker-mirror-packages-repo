@@ -40,6 +40,8 @@ SKIPFULLIMAGE = True
 KEEPFULLIMAGE = False
 KEEPBASEIMAGE = False
 
+DISTRO1 = "opensuse"
+
 def sh(cmd: str, **args: Any) -> str:
     logg.debug("sh %s", cmd)
     return subprocess.getoutput(cmd, **args)
@@ -568,7 +570,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         data = F"{tmp}/data"
         repo = F"{tmp}/repo"
-        want = F"{repo}/opensuse.{ver}"
+        want = F"{repo}/{DISTRO1}.{ver}"
         os.makedirs(data)
         #
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
@@ -580,7 +582,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
         #
-        want = F"{repo}/opensuse.{ver}.alt"
+        want = F"{repo}/{DISTRO1}.{ver}.alt"
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo} --variant=alt"
         run = runs(cmd)
         have = run.stdout.strip()
@@ -590,21 +592,21 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
         #
-        want = os.path.abspath(F"{data}/opensuse.{ver}.disk/srv/repo")
+        want = os.path.abspath(F"{data}/{DISTRO1}.{ver}.disk/srv/repo")
         cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo}"
         run = runs(cmd)
         have = run.stdout.strip()
         logg.debug("out: %s", have)
         self.assertEqual(want, have)
         #
-        want = os.path.abspath(F"{data}/opensuse.{ver}.altdisk/srv/repo")
+        want = os.path.abspath(F"{data}/{DISTRO1}.{ver}.altdisk/srv/repo")
         cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo} --variant=alt"
         run = runs(cmd)
         have = run.stdout.strip()
         logg.debug("out: %s", have)
         self.assertEqual(want, have)
         #
-        want = os.path.abspath(F"{data}/opensuse.{ver}.altdisktmp/srv/repo")
+        want = os.path.abspath(F"{data}/{DISTRO1}.{ver}.altdisktmp/srv/repo")
         cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo} --variant=alt --disksuffix=disktmp"
         run = runs(cmd)
         have = run.stdout.strip()

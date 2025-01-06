@@ -713,6 +713,20 @@ def distro_diskmake(distro: str, centos: str, dists: Dict[str, List[str]]) -> st
     path_srv = os.path.realpath(srv)
     return F"\nmount = {path_srv}/repo\n"
 
+def centos_diskpath() -> str:
+    rootdir = centos_dir(variant=F"{VARIANT}{DISKSUFFIX}")
+    srv = F"{rootdir}/srv"
+    path_srv = os.path.realpath(srv)
+    return F"{path_srv}/repo\n"
+
+def centos_dropdisk() -> str:
+    rootdir = centos_dir(variant=F"{VARIANT}{DISKSUFFIX}")
+    srv = F"{rootdir}/srv"
+    path_srv = os.path.realpath(srv)
+    if os.path.isdir(path_srv):
+        shutil.rmtree(path_srv)
+    return path_srv
+
 def centos_tags(distro: str = NIX, centos: str = NIX) -> None:
     distro = distro or DISTRO
     centos = centos or CENTOS
