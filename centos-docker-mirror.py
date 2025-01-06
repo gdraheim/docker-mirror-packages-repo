@@ -957,6 +957,7 @@ def centos_commands() -> str:
     for name in sorted(globals()):
         if name.startswith("centos_"):
             if "_sync_" in name: continue
+            if "_http_" in name: continue
             if name and name[-1].isnumeric(): continue
             if name.endswith("_"): continue
             func = globals()[name]
