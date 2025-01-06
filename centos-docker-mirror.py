@@ -905,45 +905,45 @@ def centos_baseimage(distro: str = NIX, centos: str = NIX) -> str:
         baseversion = BASEVERSIONS[baseversion]
     return F"{distro}:{baseversion}"
 
-def CENTOS_set(centos: str) -> str:
-    global CENTOS, DISTRO
-    distro = ""
+def centos_version2(distro: str = NIX, centos: str = NIX) -> Tuple[str, str]:
     if ":" in centos:
         distro, centos = centos.split(":", 1)
-        DISTRO = distro
     if centos in BASE:
-        DISTRO = distro or "centos"
-        CENTOS = centos
-        logg.debug("SET CENT1: %s %s [%s]", DISTRO, CENTOS, centos)
-        return CENTOS
+        distro = distro or "centos"
+        return distro, centos
     if centos in BASE.values():
-        DISTRO = distro or "centos"
-        CENTOS = max([os for os in BASE if BASE[os] == centos])
-        logg.debug("SET CENT2: %s %s [%s]", DISTRO, CENTOS, centos)
-        return CENTOS
+        distro = distro or "centos"
+        release = max([os for os in BASE if BASE[os] == centos])
+        return release
     if centos in ALMA:
-        CENTOS = centos
-        DISTRO = distro or ALMALINUX
-        logg.debug("SET ALMA1: %s %s [%s]", DISTRO, CENTOS, centos)
-        return CENTOS
+        return distro, centos
     if centos in ALMA.values():
-        CENTOS = max([os for os in ALMA if ALMA[os] == centos])
-        DISTRO = distro or ALMALINUX
-        logg.debug("SET ALMA2: %s %s [%s]", DISTRO, CENTOS, centos)
-        return CENTOS
+        distro = distro or ALMALINUX
+        release = max([os for os in ALMA if ALMA[os] == centos])
+        return distro, release
     if len(centos) <= 2:
+        release = NIX
         last = [os for os in BASE if os.startswith(centos)]
         if last:
-            CENTOS = max(last)
-            # DISTRO = "centos"
+            release = max(last)
+            distro = "centos"
         last = [os for os in ALMA if os.startswith(centos)]
         if last:
-            CENTOS = max(last)
-            DISTRO = distro or ALMALINUX
-        return CENTOS
+            release = max(last)
+            distro = distro or ALMALINUX
+        return release or centos, distro
     if centos not in BASE.values():
-        logg.warning("SET: %s is not a known os version", centos)
-    CENTOS = centos
+        logg.warning("%s is not a known os version", centos)
+    return distro, centos
+
+def centos_version(distro: str = NIX, centos: str = NIX) -> str:
+    return centos_version2(distro, centos)[0]
+
+def CENTOS_set(centos: str) -> str:
+    global CENTOS, DISTRO  # pylint: disable=global-statement
+    distro, release = centos_version2(NIX, centos)
+    CENTOS = release or centos
+    DISTRO = distro or DISTRO
     return CENTOS
 
 def centos_commands() -> str:
