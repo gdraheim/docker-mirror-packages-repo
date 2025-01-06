@@ -283,15 +283,16 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
     mirror = MIRRORS[distro][0]
     # excludes = " ".join(["--exclude '%s'" % parts for parts in nolinux])
     options = "--ignore-times --exclude=.~tmp~"
-    sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-amd64 {maindir} {options}")
-    sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-i386  {maindir} {options}")
-    sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/source       {maindir} {options}")
-    gz1 = F"{maindir}/binary-amd64/Packages.gz"
-    gz2 = F"{maindir}/binary-i386/Packages.gz"
+    for arch in ARCHS:
+        sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-{arch} {maindir} {options}")
+        sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-{arch}  {maindir} {options}")
+    if TRUE:
+        sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/source       {maindir} {options}")
+    gzlist = [F"{maindir}/binary-{arch}/Packages.gz" for arch in ARCHS ]
     cache = ubuntu_cache()
     tmpfile = F"{cache}/Packages.{dist}.{main}.tmp"
-    if outdated(tmpfile, gz1, gz2):
-        packages = output(F"zcat {gz1} {gz2}")
+    if outdated(tmpfile, *gzlist):
+        packages = "".join([output(F"zcat {gz}") for gz in gzlist])
         filenames, syncing = 0, 0
         with open(tmpfile, "w") as f:
             for line in packages.split("\n"):
@@ -304,14 +305,14 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
                     for parts in nolinux:
                         if fnmatch(filename, parts): skip = True
                         if fnmatch(filename, "*/" + parts): skip = True
-                if True:
+                if TRUE:
                     for parts in nodrivers:
                         if fnmatch(filename, parts): skip = True
                         if fnmatch(filename, "*/" + parts): skip = True
                 if not skip:
                     print(filename, file=f)
                     syncing += 1
-        logg.info("syncing %s of %s filenames in %s", syncing, filenames, gz1)
+        logg.info("syncing %s of %s filenames in %s", syncing, filenames, "&".join(gzlist))
     pooldir = F"{repodir}/{distro}.{version}/pools/{dist}/{main}/pool"
     if not path.isdir(pooldir): os.makedirs(pooldir)
     if when:
