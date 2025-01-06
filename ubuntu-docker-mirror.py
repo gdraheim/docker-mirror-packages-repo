@@ -282,7 +282,7 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
     rsync = RSYNC
     mirror = MIRRORS[distro][0]
     # excludes = " ".join(["--exclude '%s'" % parts for parts in nolinux])
-    options = "--ignore-times"
+    options = "--ignore-times --exclude=.~tmp~"
     sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-amd64 {maindir} {options}")
     sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-i386  {maindir} {options}")
     sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/source       {maindir} {options}")
