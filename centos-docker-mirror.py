@@ -992,7 +992,7 @@ def _main(args: List[str]) -> int:
     return 0
 
 if __name__ == "__main__":
-    from optparse import OptionParser
+    from optparse import OptionParser # allow_abbrev=False, pylint: disable=deprecated-module
     cmdline = OptionParser("%%prog [-options] [%s]" % centos_commands(),
                       epilog=re.sub("\\s+", " ", __doc__).strip())
     cmdline.formatter.max_help_position = 30
