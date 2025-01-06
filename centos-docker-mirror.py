@@ -906,6 +906,8 @@ def centos_baseimage(distro: str = NIX, centos: str = NIX) -> str:
     return F"{distro}:{baseversion}"
 
 def centos_version2(distro: str = NIX, centos: str = NIX) -> Tuple[str, str]:
+    # distro = distro or DISTRO
+    centos = centos or CENTOS
     if ":" in centos:
         distro, centos = centos.split(":", 1)
     if centos in BASE:
@@ -914,11 +916,11 @@ def centos_version2(distro: str = NIX, centos: str = NIX) -> Tuple[str, str]:
     if centos in BASE.values():
         distro = distro or "centos"
         release = max([os for os in BASE if BASE[os] == centos])
-        return release
+        return distro, release
     if centos in ALMA:
-        return distro, centos
+        return ALMALINUX, centos
     if centos in ALMA.values():
-        distro = distro or ALMALINUX
+        distro = ALMALINUX
         release = max([os for os in ALMA if ALMA[os] == centos])
         return distro, release
     if len(centos) <= 2:
@@ -930,20 +932,24 @@ def centos_version2(distro: str = NIX, centos: str = NIX) -> Tuple[str, str]:
         last = [os for os in ALMA if os.startswith(centos)]
         if last:
             release = max(last)
-            distro = distro or ALMALINUX
-        return release or centos, distro
+            distro = ALMALINUX
+        return distro, (release or centos)
     if centos not in BASE.values():
         logg.warning("%s is not a known os version", centos)
     return distro, centos
 
 def centos_version(distro: str = NIX, centos: str = NIX) -> str:
-    return centos_version2(distro, centos)[0]
+    release = centos_version2(distro, centos)[1]
+    logg.debug("release version %s", release)
+    return release
 
 def CENTOS_set(centos: str) -> str:
     global CENTOS, DISTRO  # pylint: disable=global-statement
     distro, release = centos_version2(NIX, centos)
+    logg.debug("centos %s -> %s/%s", centos, distro, release)
     CENTOS = release or centos
     DISTRO = distro or DISTRO
+    logg.info(" centos %s -> %s/%s -> DISTRO=%s CENTOS=%s", centos, distro, release, DISTRO, CENTOS)
     return CENTOS
 
 def centos_commands() -> str:

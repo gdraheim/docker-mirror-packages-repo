@@ -45,6 +45,16 @@ KEEPBASEIMAGE = False
 DISTRO1 = "almalinux"
 DISTRO2 = "centos"
 
+VER3: Dict[str, str] = {}
+VER3["7.3"] = "7.3.1611"
+VER3["7.9"] = "7.9.2009"
+VER3["7.9"] = "7.9.2009"
+VER3["8.3"] = "8.3.2011"
+VER3["9.1"] = "9.1-20230407"
+VER3["9.2"] = "9.2-20230718"
+VER3["9.3"] = "9.3-20240410"
+VER3["9.4"] = "9.4-20240530"
+
 def sh(cmd: str, **args: Any) -> str:
     logg.debug("sh %s", cmd)
     return subprocess.getoutput(cmd, **args)
@@ -179,9 +189,11 @@ class OpensuseMirrorTest(unittest.TestCase):
     def testver(self, testname: str = NIX) -> None:
         testname = testname or self.caller_testname()
         ver3 = testname[-3:]
-        if ver3.startswith("14"):
-            return "42" + "." + ver3[2]
-        return ver3[0:2] + "." + ver3[2]
+        ver2 = ver3[0:2]
+        rel1 = ver3[2]
+        if ver2.startswith("0") or ver2.startswith("1"):
+            ver2 = ver2[1]
+        return ver2 + "." + rel1
     def imagesdangling(self) -> List[str]:
         images: List[str] = []
         docker = DOCKER
@@ -302,9 +314,24 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.debug("out: %s", out)
         self.assertEqual("./scripts", out.strip())
         self.coverage()
-    def test_70132(self) -> None:
+    def test_70168(self) -> None:
         ver = self.testver()
-        self.assertEqual(ver, "13.2")
+        version = "6.8"
+        self.assertEqual(ver, "6.8")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(version, have)
+        self.assertIn("is not a known os version", errs)
+        self.coverage()
+    def test_70173(self) -> None:
+        ver = self.testver()
+        self.assertEqual(ver, "7.3")
+        version = "7.3.1611"
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
@@ -312,12 +339,13 @@ class OpensuseMirrorTest(unittest.TestCase):
         have = run.stdout.strip()
         errs = run.stderr.strip()
         logg.debug("out: %s", run.stdout)
-        self.assertEqual(ver, have)
+        self.assertEqual(version, have)
         self.assertEqual("", errs)
         self.coverage()
-    def test_70140(self) -> None:
+    def test_70177(self) -> None:
         ver = self.testver()
-        self.assertEqual(ver, "42.0")
+        version = "7.7.1908"
+        self.assertEqual(ver, "7.7")
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
@@ -325,12 +353,13 @@ class OpensuseMirrorTest(unittest.TestCase):
         have = run.stdout.strip()
         errs = run.stderr.strip()
         logg.debug("out: %s", have)
-        self.assertEqual(ver, have)
-        self.assertIn("is not a known os version", errs)
+        self.assertEqual(version, have)
+        self.assertIn("", errs)
         self.coverage()
-    def test_70142(self) -> None:
+    def test_70183(self) -> None:
         ver = self.testver()
-        self.assertEqual(ver, "42.2")
+        self.assertEqual(ver, "8.3")
+        version = "8.3.2011"
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
@@ -338,12 +367,13 @@ class OpensuseMirrorTest(unittest.TestCase):
         have = run.stdout.strip()
         errs = run.stderr.strip()
         logg.debug("out: %s", have)
-        self.assertEqual(ver, have)
+        self.assertEqual(version, have)
         self.assertEqual("", errs)
         self.coverage()
-    def test_70143(self) -> None:
+    def test_70191(self) -> None:
         ver = self.testver()
-        self.assertEqual(ver, "42.3")
+        self.assertEqual(ver, "9.1")
+        version = "9.1-20230407"
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
@@ -351,142 +381,52 @@ class OpensuseMirrorTest(unittest.TestCase):
         have = run.stdout.strip()
         errs = run.stderr.strip()
         logg.debug("out: %s", have)
-        self.assertEqual(ver, have)
-        self.assertEqual("", errs)
-        self.coverage()
-    def test_70151(self) -> None:
-        ver = self.testver()
-        self.assertEqual(ver, "15.1")
-        cover = self.cover()
-        script = SCRIPT
-        cmd = F"{cover} {script} {ver} version"
-        run = runs(cmd)
-        have = run.stdout.strip()
-        errs = run.stderr.strip()
-        logg.debug("out: %s", have)
-        self.assertEqual(ver, have)
-        self.assertEqual("", errs)
-        self.coverage()
-    def test_70152(self) -> None:
-        ver = self.testver()
-        self.assertEqual(ver, "15.2")
-        cover = self.cover()
-        script = SCRIPT
-        cmd = F"{cover} {script} {ver} version"
-        run = runs(cmd)
-        have = run.stdout.strip()
-        errs = run.stderr.strip()
-        logg.debug("out: %s", have)
-        self.assertEqual(ver, have)
-        self.assertEqual("", errs)
-        self.coverage()
-    def test_70153(self) -> None:
-        ver = self.testver()
-        self.assertEqual(ver, "15.3")
-        cover = self.cover()
-        script = SCRIPT
-        cmd = F"{cover} {script} {ver} version"
-        run = runs(cmd)
-        have = run.stdout.strip()
-        errs = run.stderr.strip()
-        logg.debug("out: %s", have)
-        self.assertEqual(ver, have)
-        self.assertEqual("", errs)
-        self.coverage()
-    def test_70154(self) -> None:
-        ver = self.testver()
-        self.assertEqual(ver, "15.4")
-        cover = self.cover()
-        script = SCRIPT
-        cmd = F"{cover} {script} {ver} version"
-        run = runs(cmd)
-        have = run.stdout.strip()
-        errs = run.stderr.strip()
-        logg.debug("out: %s", have)
-        self.assertEqual(ver, have)
-        self.assertEqual("", errs)
-        self.coverage()
-    def test_70155(self) -> None:
-        ver = self.testver()
-        self.assertEqual(ver, "15.5")
-        cover = self.cover()
-        script = SCRIPT
-        cmd = F"{cover} {script} {ver} version"
-        run = runs(cmd)
-        have = run.stdout.strip()
-        errs = run.stderr.strip()
-        logg.debug("out: %s", have)
-        self.assertEqual(ver, have)
-        self.assertEqual("", errs)
-        self.coverage()
-    def test_70156(self) -> None:
-        ver = self.testver()
-        self.assertEqual(ver, "15.6")
-        cover = self.cover()
-        script = SCRIPT
-        cmd = F"{cover} {script} {ver} version"
-        run = runs(cmd)
-        have = run.stdout.strip()
-        errs = run.stderr.strip()
-        logg.debug("out: %s", have)
-        self.assertEqual(ver, have)
-        self.assertEqual("", errs)
-        self.coverage()
-    def test_70159(self) -> None:
-        ver = self.testver()
-        self.assertEqual(ver, "15.9")
-        cover = self.cover()
-        script = SCRIPT
-        cmd = F"{cover} {script} {ver} version"
-        run = runs(cmd)
-        have = run.stdout.strip()
-        errs = run.stderr.strip()
-        logg.debug("out: %s", have)
-        self.assertEqual(ver, have)
-        self.assertIn("is not a known os version", errs)
-        self.coverage()
-    def test_70160(self) -> None:
-        ver = self.testver()
-        self.assertEqual(ver, "16.0")
-        cover = self.cover()
-        script = SCRIPT
-        cmd = F"{cover} {script} {ver} version"
-        run = runs(cmd)
-        have = run.stdout.strip()
-        errs = run.stderr.strip()
-        logg.debug("out: %s", have)
-        self.assertEqual(ver, have)
-        self.assertEqual("", errs)
-        self.coverage()
-    def test_70193(self) -> None:
-        ver2 = "13"
-        ver = "13.2"
-        cover = self.cover()
-        script = SCRIPT
-        cmd = F"{cover} {script} {ver2} version"
-        run = runs(cmd)
-        have = run.stdout.strip()
-        errs = run.stderr.strip()
-        logg.debug("out: %s", have)
-        self.assertEqual(ver, have)
-        self.assertEqual("", errs)
-        self.coverage()
-    def test_70195(self) -> None:
-        ver2 = "15"
-        ver = "15.6"
-        cover = self.cover()
-        script = SCRIPT
-        cmd = F"{cover} {script} {ver2} version"
-        run = runs(cmd)
-        have = run.stdout.strip()
-        errs = run.stderr.strip()
-        logg.debug("out: %s", have)
-        self.assertEqual(ver, have)
+        self.assertEqual(version, have)
         self.assertEqual("", errs)
         self.coverage()
     def test_70196(self) -> None:
-        ver2 = "16"
-        ver = "16.0"
+        ver = self.testver()
+        version = "9.6"
+        self.assertEqual(ver, "9.6")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertIn("is not a known os version", errs)
+        self.coverage()
+    def test_70197(self) -> None:
+        ver2 = "7"
+        ver = "7.9.2009"
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver2} version"
+        run = runs(cmd)
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
+        self.coverage()
+    def test_70198(self) -> None:
+        ver2 = "8"
+        ver = "8.9-20240410"
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver2} version"
+        run = runs(cmd)
+        have = run.stdout.strip()
+        errs = run.stderr.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
+        self.coverage()
+    def test_70199(self) -> None:
+        ver2 = "9"
+        ver = "9.4-20240530"
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} {ver2} version"
@@ -548,32 +488,34 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertNotEqual(repo, have) # repodir not a fallback
         self.coverage()
         self.rm_testdir()
-    def test_71132(self) -> None:
+    def test_71173(self) -> None:
         self.check_dir(self.testname())
-    def test_71142(self) -> None:
+    def test_71179(self) -> None:
         self.check_dir(self.testname())
-    def test_71152(self) -> None:
+    def test_71183(self) -> None:
         self.check_dir(self.testname())
-    def test_71153(self) -> None:
+    def test_71191(self) -> None:
         self.check_dir(self.testname())
-    def test_71154(self) -> None:
+    def test_71192(self) -> None:
         self.check_dir(self.testname())
-    def test_71155(self) -> None:
+    def test_71193(self) -> None:
         self.check_dir(self.testname())
-    def test_71156(self) -> None:
-        self.check_dir(self.testname())
-    def test_71160(self) -> None:
+    def test_71194(self) -> None:
         self.check_dir(self.testname())
     def check_dir(self, testname: str) -> None:
         ver = self.testver(testname)
+        ver3 = VER3[ver]
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
+        distro = DISTRO1
+        if ver3.startswith("7") or ver3.startswith("8"):
+            distro = DISTRO2
         tmp = self.testdir(testname)
         cover = self.cover()
         script = SCRIPT
         data = F"{tmp}/data"
         repo = F"{tmp}/repo"
-        want = F"{repo}/{DISTRO1}.{ver}"
+        want = F"{repo}/{distro}.{ver3}"
         os.makedirs(data)
         #
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
@@ -585,7 +527,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
         #
-        want = F"{repo}/{DISTRO1}.{ver}.alt"
+        want = F"{repo}/{distro}.{ver3}.alt"
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo} --variant=alt"
         run = runs(cmd)
         have = run.stdout.strip()
@@ -595,21 +537,21 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
         #
-        want = os.path.abspath(F"{data}/{DISTRO1}.{ver}.disk/srv/repo")
+        want = os.path.abspath(F"{data}/{distro}.{ver3}.disk/srv/repo")
         cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo}"
         run = runs(cmd)
         have = run.stdout.strip()
         logg.debug("out: %s", have)
         self.assertEqual(want, have)
         #
-        want = os.path.abspath(F"{data}/{DISTRO1}.{ver}.altdisk/srv/repo")
+        want = os.path.abspath(F"{data}/{distro}.{ver3}.altdisk/srv/repo")
         cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo} --variant=alt"
         run = runs(cmd)
         have = run.stdout.strip()
         logg.debug("out: %s", have)
         self.assertEqual(want, have)
         #
-        want = os.path.abspath(F"{data}/{DISTRO1}.{ver}.altdisktmp/srv/repo")
+        want = os.path.abspath(F"{data}/{distro}.{ver3}.altdisktmp/srv/repo")
         cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo} --variant=alt --disksuffix=disktmp"
         run = runs(cmd)
         have = run.stdout.strip()
