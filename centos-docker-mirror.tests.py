@@ -754,6 +754,10 @@ class CentosMirrorTest(unittest.TestCase):
             logg.info("install version: %s", val)
             self.assertIn("lxml is a Pythonic", val)
         if addepel:
+            cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y epel-release"
+            ret = calls(cmd)
+            logg.info("install epel-release: %s", ret)
+            self.assertEqual(0, ret)
             cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y {python3}-parsedatetime"
             ret = calls(cmd)
             logg.info("install package: %s", ret)
@@ -808,14 +812,15 @@ class CentosMirrorTest(unittest.TestCase):
         cover = self.cover()
         script = SCRIPT
         mirror = MIRROR
-        pkgrepo = F"{PKGREPO} --nogpgcheck"
+        pkgrepo = F"{PKGREPO} --nogpgcheck --setopt sslverify=false"
         pkglist = PKGLIST
         distro = DISTRO1
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
-        cmd = F"{cover} {script} {ver} base {VV} --imagesrepo={imagesrepo} {addepel}"
+        cmd = F"{cover} {script} {ver} base {VV} --imagesrepo={imagesrepo} -vv"
         run = runs(cmd)
         basemade = run.out
+        logg.debug("basemade\\%s", run.err)
         logg.info("basemade = %s", basemade)
         if TRUE:
             cmd = F"{cover} {script} {ver} diskpath {VV} --disksuffix={testname}_disk"
@@ -868,10 +873,10 @@ class CentosMirrorTest(unittest.TestCase):
             print(F"[{epelimage}]", file=cfg)
             print(F"image = {epelbaserepo}", file=cfg)
             print(F"mount = {epeldiskpath}", file=cfg)
-        cmd = F"{cover} {mirror} start {distro}:{ver} {VV} {addepel} --docker='{docker}' -C {configfile}"
+        cmd = F"{cover} {mirror} start {distro}:{ver} {VV} -vv {addepel} --docker='{docker}' -C {configfile}"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} addhost {distro}:{ver} {VV} {addepel} --docker='{docker}' -C {configfile}"
+        cmd = F"{cover} {mirror} addhost {distro}:{ver} {VV} -vv {addepel} --docker='{docker}' -C {configfile}"
         run = runs(cmd)
         addhost = run.stdout.strip()
         logg.info("addhost = %s", addhost)
@@ -905,6 +910,10 @@ class CentosMirrorTest(unittest.TestCase):
             logg.info("install version: %s", val)
             self.assertIn("lxml is a Pythonic", val)
         if addepel:
+            cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y epel-release"
+            ret = calls(cmd)
+            logg.info("install epel-release: %s", ret)
+            self.assertEqual(0, ret)
             cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y {python3}-parsedatetime"
             ret = calls(cmd)
             logg.info("install package: %s", ret)

@@ -655,16 +655,16 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
     sh___(F"{docker} rm --force {cname}")
     if base != BASELAYER:
         sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{version} {repo}/{distro}-repo:{version}")
+        PORT2 = centos_http_port(distro, centos)
+        CMD2 = str(centos_http_cmd(distro, centos)).replace("'", '"')
+        if PORT != PORT2:
+            # the upstream almalinux repository runs on https by default but we don't have their certificate anyway
+            base2 = "http"  # !!
+            sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo:{version} sleep 9999")
+            sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/{distro}-repo/{base2}:{version}")
+            sx___(F"{docker} rm --force {cname}")
     if NOBASE:
-        sh___(F"{docker} rmi {repo}/{distro}-repo/base:{version}")  # untag non-packages base
-    PORT2 = centos_http_port(distro, centos)
-    CMD2 = str(centos_http_cmd(distro, centos)).replace("'", '"')
-    if PORT != PORT2:
-        # the upstream almalinux repository runs on https by default but we don't have their certificate anyway
-        base2 = "http"  # !!
-        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo:{version} sleep 9999")
-        sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/{distro}-repo/{base2}:{version}")
-        sx___(F"{docker} rm --force {cname}")
+        sh___(F"{docker} rmi {repo}/{distro}-repo/{BASELAYER}:{version}")  # untag non-packages base
     centos_restore()
     return F"\n[{baseimage}]\nimage = {repo}/{distro}-repo/{base}:{version}\n"
 
@@ -768,22 +768,22 @@ def centos_epeldropdisk() -> str:
 def centos_epelbaserepo(distro: str = NIX, centos: str = NIX, imagesrepo: str = NIX) -> str:
     imagesrepo = imagesrepo or IMAGESREPO
     distro = "epel"
-    leap = centos or CENTOS
-    version = F"{leap}.{VARIANT}" if VARIANT else leap
+    rel = centos_release(distro, centos or CENTOS)
+    version = F"{rel}.{VARIANT}" if VARIANT else rel
     base = BASELAYER
     return F"{imagesrepo}/{distro}-repo/{base}:{version}"
 def centos_baserepo(distro: str = NIX, centos: str = NIX, imagesrepo: str = NIX) -> str:
     imagesrepo = imagesrepo or IMAGESREPO
     distro = distro or DISTRO
-    leap = centos or CENTOS
-    version = F"{leap}.{VARIANT}" if VARIANT else leap
+    rel = centos_release(distro, centos or CENTOS)
+    version = F"{rel}.{VARIANT}" if VARIANT else rel
     base = BASELAYER
     return F"{imagesrepo}/{distro}-repo/{base}:{version}"
 def centos_mainrepo(distro: str = NIX, centos: str = NIX, imagesrepo: str = NIX) -> str:
     imagesrepo = imagesrepo or IMAGESREPO
     distro = distro or DISTRO
-    leap = centos or CENTOS
-    version = F"{leap}.{VARIANT}" if VARIANT else leap
+    rel = centos_release(distro, centos or CENTOS)
+    version = F"{rel}.{VARIANT}" if VARIANT else rel
     base = BASELAYER
     return F"{imagesrepo}/{distro}-repo/{base}:{version}"
 
