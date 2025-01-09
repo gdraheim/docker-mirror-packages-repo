@@ -131,7 +131,7 @@ def get_caller_caller_name() -> str:
     frame = inspect.currentframe().f_back.f_back.f_back  # type: ignore
     return frame.f_code.co_name  # type: ignore
 
-class OpensuseMirrorTest(unittest.TestCase):
+class UbuntuMirrorTest(unittest.TestCase):
     def caller_testname(self) -> str:
         name = get_caller_caller_name()
         x1 = name.find("_")
