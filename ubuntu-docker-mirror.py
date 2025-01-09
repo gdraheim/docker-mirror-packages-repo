@@ -100,6 +100,11 @@ nolinux += ["linux-gcp*.deb", "linux-gke*.deb", "linux-azure*.deb", "linux-oem*.
 nolinux += ["linux-hwe*.deb", "linux-aws*.deb", "linux-intel*.deb", "linux-ibm*.deb", ]
 nodrivers = ["nvidia-*.deb", "libnvidia*.deb"]
 
+DUMMYPACKAGES = """
+Filename: pool/dummy/linux-image.deb
+Filename: pool/dummy/nvidia-driver.deb
+"""
+
 BASEVERSION: Dict[str, str] = {}  # image:ubuntu/base
 BASEVERSION["23.04"] = "22.04"
 BASEVERSION["22.10"] = "22.04"  # previous LTS
@@ -122,10 +127,6 @@ BASEVERSION["16.10"] = "16.04"
 # .... since docker-py requires "universe" we better default to mirror the repos for
 # "main updates universe" which can be achived by running 'make xxx REPOS=universe'
 # but that changes making the docker repo image size from about 18Gi to 180Gi
-
-def ubuntu_make() -> None:
-    ubuntu_sync()
-    ubuntu_repo()
 
 def ubuntu_sync() -> None:
     ubuntu_dir()
@@ -193,36 +194,6 @@ def ubuntu_dir(variant: str = "") -> str:
         os.mkdir(dirlink)  # local dir
         logg.warning("%s/. local dir", dirlink)
     return dirlink
-
-def ubuntu_dirpath(variant: str = NIX) -> str:
-    distro = DISTRO
-    ubuntu = UBUNTU
-    repodir = REPODIR
-    variant = variant or VARIANT
-    version = F"{ubuntu}.{variant}" if variant else ubuntu
-    return F"{repodir}/{distro}.{version}/."
-def ubuntu_du(suffix: str = "") -> str:
-    dirpath = ubuntu_dirpath(suffix)
-    logg.info("dirpath %s", dirpath)
-    if os.path.isdir(dirpath):
-        sh___(F"du -sh {dirpath}")
-    return dirpath
-
-def ubuntu_nolinux(variant: str = "") -> str:
-    dirpath = ubuntu_dirpath(variant)
-    logg.info("dirpath %s", dirpath)
-    for root, _dirs, files in os.walk(dirpath):
-        for name in files:
-            if name.startswith("linux"):
-                filename = os.path.join(root, name)
-                skip = False
-                for parts in nolinux:
-                    if fnmatch(filename, parts): skip = True
-                    if fnmatch(filename, "*/" + parts): skip = True
-                if skip:
-                    logg.warning("remove %s", filename)
-                    os.unlink(filename)
-    return ""
 
 def ubuntu_sync_base_1() -> None: ubuntu_sync_base(dist=DIST[UBUNTU])
 def ubuntu_sync_base_2() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-updates")
@@ -292,6 +263,8 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
     tmpfile = F"{cache}/Packages.{dist}.{main}.tmp"
     if outdated(tmpfile, *gzlist):
         packages = "".join([output(F"zcat {gz}") for gz in gzlist])
+        if "--dry-run" in rsync:
+            packages = DUMMYPACKAGES # should be removed from sync list below
         filenames, syncing = 0, 0
         with open(tmpfile, "w") as f:
             for line in packages.split("\n"):
@@ -318,23 +291,6 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
         # instead of {exlude} we have nolinux filtered in the Packages above
         options = "--size-only --copy-links "
         sh___(F"{rsync} -rv {mirror}/pool {pooldir} {options} --files-from={tmpfile}")
-
-def ubuntu_pool() -> None:
-    distro = DISTRO
-    ubuntu = UBUNTU
-    repodir = REPODIR
-    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
-    pooldir = F"{repodir}/{distro}.{version}/pool"
-    if path.isdir(pooldir):
-        shutil.rmtree(pooldir)
-    os.makedirs(pooldir)
-
-def ubuntu_poolcount() -> None:
-    distro = DISTRO
-    ubuntu = UBUNTU
-    repodir = REPODIR
-    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
-    sh___(F"echo `find {repodir}/{distro}.{version}/pool -type f | wc -l` pool files")
 
 def ubuntu_http_port() -> str:
     return "80"
@@ -502,22 +458,6 @@ def output(cmd: Union[str, List[str]], shell: bool = True) -> str:
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
     return decodes(out)
-def output2(cmd: Union[str, List[str]], shell: bool = True) -> Tuple[str, int]:
-    if isinstance(cmd, stringtypes):
-        logg.info(": %s", cmd)
-    else:
-        logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
-    run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
-    out, err = run.communicate()
-    return decodes(out), run.returncode
-def output3(cmd: Union[str, List[str]], shell: bool = True) -> Tuple[str, str, int]:
-    if isinstance(cmd, stringtypes):
-        logg.info(": %s", cmd)
-    else:
-        logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
-    run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = run.communicate()
-    return decodes(out), decodes(err), run.returncode
 
 #############################################################################
 def outdated(cachefile: str, *files: str) -> bool:
@@ -546,12 +486,6 @@ def ubuntu_cache() -> str:
     if not os.path.isdir(maindir):
         os.makedirs(maindir)
     return maindir
-
-def path_find(base: str, name: str) -> Optional[str]:
-    for dirpath, _dirnames, filenames in os.walk(base):
-        if name in filenames:
-            return path.join(dirpath, name)
-    return None
 
 def ubuntu_image(distro: str = NIX, ubuntu: str = NIX) -> str:
     image = distro or DISTRO
