@@ -765,6 +765,13 @@ def centos_epeldropdisk() -> str:
         shutil.rmtree(path_srv)
     return path_srv
 
+def centos_epelbaserepo(distro: str = NIX, centos: str = NIX, imagesrepo: str = NIX) -> str:
+    imagesrepo = imagesrepo or IMAGESREPO
+    distro = "epel"
+    leap = centos or CENTOS
+    version = F"{leap}.{VARIANT}" if VARIANT else leap
+    base = BASELAYER
+    return F"{imagesrepo}/{distro}-repo/{base}:{version}"
 def centos_baserepo(distro: str = NIX, centos: str = NIX, imagesrepo: str = NIX) -> str:
     imagesrepo = imagesrepo or IMAGESREPO
     distro = distro or DISTRO
@@ -932,6 +939,10 @@ def path_find(base: str, name: str) -> Optional[str]:
             return path.join(dirpath, name)
     return None
 
+def centos_epelimage(distro: str = NIX, centos: str = NIX) -> str:
+    distro = "epel"
+    centos = centos or CENTOS
+    return F"{distro}:{centos}"
 def centos_image(distro: str = NIX, centos: str = NIX) -> str:
     distro = distro or DISTRO
     centos = centos or CENTOS

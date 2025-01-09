@@ -582,8 +582,6 @@ class CentosMirrorTest(unittest.TestCase):
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         distro = "epel"
-        if ver3.startswith("7") or ver3.startswith("8"):
-            distro = DISTRO2
         tmp = self.testdir(testname)
         cover = self.cover()
         script = SCRIPT
@@ -656,6 +654,26 @@ class CentosMirrorTest(unittest.TestCase):
         self.assertEqual(0, ret)
         self.coverage(testname)
         self.rm_testdir(testname)
+    def test_74194(self) -> None:
+        self.check_epelsync(self.testname())
+    def check_epelsync(self, testname: str) -> None:
+        ver = self.testver(testname)
+        if ONLYVERSION and ver != ONLYVERSION:
+            self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
+        tmp = self.testdir(testname)
+        war = "tmp"
+        cover = self.cover()
+        script = SCRIPT
+        data = F"{tmp}/data"
+        repo = F"{tmp}/repo"
+        os.makedirs(data)
+        cmd = F"{cover} {script} {ver} epelsync {VV} --datadir={data} --repodir={repo} -W {war}"
+        if DRY_RSYNC or COVERAGE:
+            cmd += " --rsync='rsync --dry-run'"
+        ret = calls(cmd)
+        self.assertEqual(0, ret)
+        self.coverage(testname)
+        self.rm_testdir(testname)
     def test_75179(self) -> None:
         self.make_repo_test(self.testname())
     def test_75183(self) -> None:
@@ -722,26 +740,29 @@ class CentosMirrorTest(unittest.TestCase):
         cmd = F"{docker} exec {testcontainer} {pkgrepo} update"
         ret = calls(cmd)
         logg.info("install refresh: %s", ret)
+        python3="python3"
+        if ver.startswith("7"):
+            python3="python36"
         if TRUE:
-            cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y python3-lxml"
+            cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y {python3}-lxml"
             ret = calls(cmd)
             logg.info("install package: %s", ret)
             self.assertEqual(0, ret)
-            cmd = F"{docker} exec {testcontainer} {pkglist} info python3-lxml"
+            cmd = F"{docker} exec {testcontainer} {pkglist} info {python3}-lxml"
             run = runs(cmd)
             val = run.stdout
             logg.info("install version: %s", val)
             self.assertIn("lxml is a Pythonic", val)
         if addepel:
-            cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y python3-dateutils"
+            cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y {python3}-parsedatetime"
             ret = calls(cmd)
             logg.info("install package: %s", ret)
             self.assertEqual(0, ret)
-            cmd = F"{docker} exec {testcontainer} {pkglist} info python3-dateutils"
+            cmd = F"{docker} exec {testcontainer} {pkglist} info {python3}-parsedatetime"
             run = runs(cmd)
             val = run.stdout
             logg.info("install version: %s", val)
-            self.assertIn("lxml is a Pythonic", val)
+            self.assertIn("parse human-readable date", val)
         #
         cmd = F"{cover} {mirror} stop {distro}:{ver} {VV} {addepel} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         ret = calls(cmd)
@@ -762,15 +783,23 @@ class CentosMirrorTest(unittest.TestCase):
         self.rm_container(testname)
         if not KEEPFULLIMAGE:
             self.rm_images(testname)
+    def test_77179(self) -> None:
+        self.make_disk_test(self.testname())
+    def test_77183(self) -> None:
+        self.make_disk_test(self.testname())
+    def test_77191(self) -> None:
+        self.make_disk_test(self.testname())
+    def test_77194(self) -> None:
+        self.make_disk_test(self.testname())
     def test_78179(self) -> None:
-        self.make_disk_test(self.testname())
+        self.make_disk_test(self.testname(), "--epel")
     def test_78183(self) -> None:
-        self.make_disk_test(self.testname())
+        self.make_disk_test(self.testname(), "--epel")
     def test_78191(self) -> None:
-        self.make_disk_test(self.testname())
+        self.make_disk_test(self.testname(), "--epel")
     def test_78194(self) -> None:
-        self.make_disk_test(self.testname())
-    def make_disk_test(self, testname: str, makeoptions: str = NIX) -> None:
+        self.make_disk_test(self.testname(), "--epel")
+    def make_disk_test(self, testname: str, addepel: str = NIX) -> None:
         self.rm_container(testname)
         ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
@@ -784,40 +813,65 @@ class CentosMirrorTest(unittest.TestCase):
         distro = DISTRO1
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
-        cmd = F"{cover} {script} {ver} base {VV} --imagesrepo={imagesrepo} {makeoptions}"
+        cmd = F"{cover} {script} {ver} base {VV} --imagesrepo={imagesrepo} {addepel}"
         run = runs(cmd)
         basemade = run.out
         logg.info("basemade = %s", basemade)
-        cmd = F"{cover} {script} {ver} diskpath {VV} --disksuffix={testname}_disk"
-        run = runs(cmd)
-        diskpath = run.out
-        logg.debug("diskpath = %s", diskpath)
-        self.assertIn(testname, diskpath)
-        if os.path.isdir(diskpath):
-            cmd = F"{cover} {script} {ver} dropdisk {VV} --disksuffix={testname}_disk"
+        if TRUE:
+            cmd = F"{cover} {script} {ver} diskpath {VV} --disksuffix={testname}_disk"
+            run = runs(cmd)
+            diskpath = run.out
+            logg.debug("diskpath = %s", diskpath)
+            self.assertIn(testname, diskpath)
+            if os.path.isdir(diskpath):
+                cmd = F"{cover} {script} {ver} dropdisk {VV} --disksuffix={testname}_disk"
+                ret = calls(cmd)
+            self.assertFalse(os.path.isdir(diskpath))
+            cmd = F"{cover} {script} {ver} disk {VV} --disksuffix={testname}_disk --imagesrepo={imagesrepo}"
             ret = calls(cmd)
-        self.assertFalse(os.path.isdir(diskpath))
-        cmd = F"{cover} {script} {ver} disk {VV} --disksuffix={testname}_disk --imagesrepo={imagesrepo} {makeoptions}"
-        ret = calls(cmd)
-        self.assertTrue(os.path.isdir(diskpath))
+            self.assertTrue(os.path.isdir(diskpath))
+        if addepel:
+            cmd = F"{cover} {script} {ver} epeldiskpath {VV} --disksuffix={testname}_disk"
+            run = runs(cmd)
+            epeldiskpath = run.out
+            logg.debug("epeldiskpath = %s", epeldiskpath)
+            self.assertIn(testname, epeldiskpath)
+            if os.path.isdir(epeldiskpath):
+                cmd = F"{cover} {script} {ver} epeldropdisk {VV} --disksuffix={testname}_disk"
+                ret = calls(cmd)
+            self.assertFalse(os.path.isdir(epeldiskpath))
+            cmd = F"{cover} {script} {ver} epeldisk {VV} --disksuffix={testname}_disk --imagesrepo={imagesrepo}"
+            ret = calls(cmd)
+            self.assertTrue(os.path.isdir(epeldiskpath))
         cmd = F"{cover} {script} {ver} baserepo {VV} --imagesrepo={imagesrepo}"
         run = runs(cmd)
         baserepo = run.out
         logg.info("baserepo = %s", baserepo)
+        cmd = F"{cover} {script} {ver} epelbaserepo {VV} --imagesrepo={imagesrepo}"
+        run = runs(cmd)
+        epelbaserepo = run.out
+        logg.info("epelbaserepo = %s", epelbaserepo)
         cmd = F"{cover} {script} {ver} image {VV} --imagesrepo={imagesrepo}"
         run = runs(cmd)
         image = run.out
         logg.info("image = %s", image)
+        cmd = F"{cover} {script} {ver} epelimage {VV} --imagesrepo={imagesrepo}"
+        run = runs(cmd)
+        epelimage = run.out
+        logg.info("epelimage = %s", epelimage)
         tmp = self.testdir(testname)
         configfile = os.path.join(tmp, "mirror.ini")
         with open(configfile, "w") as cfg:
             print(F"[{image}]", file=cfg)
             print(F"image = {baserepo}", file=cfg)
             print(F"mount = {diskpath}", file=cfg)
-        cmd = F"{cover} {mirror} start {distro}:{ver} {VV} --docker='{docker}' -C {configfile}"
+            print(F"[{epelimage}]", file=cfg)
+            print(F"image = {epelbaserepo}", file=cfg)
+            print(F"mount = {epeldiskpath}", file=cfg)
+        cmd = F"{cover} {mirror} start {distro}:{ver} {VV} {addepel} --docker='{docker}' -C {configfile}"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} addhost {distro}:{ver} {VV} --docker='{docker}' -C {configfile}"
+        cmd = F"{cover} {mirror} addhost {distro}:{ver} {VV} {addepel} --docker='{docker}' -C {configfile}"
         run = runs(cmd)
         addhost = run.stdout.strip()
         logg.info("addhost = %s", addhost)
@@ -837,18 +891,32 @@ class CentosMirrorTest(unittest.TestCase):
         cmd = F"{docker} exec {testcontainer} {pkgrepo} update"
         ret = calls(cmd)
         logg.info("install refresh: %s", ret)
-        cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y python3-lxml"
+        python3="python3"
+        if ver.startswith("7"):
+            python3="python36"
+        if TRUE:
+            cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y {python3}-lxml"
+            ret = calls(cmd)
+            logg.info("install package: %s", ret)
+            self.assertEqual(0, ret)
+            cmd = F"{docker} exec {testcontainer} {pkglist} info {python3}-lxml"
+            run = runs(cmd)
+            val = run.out
+            logg.info("install version: %s", val)
+            self.assertIn("lxml is a Pythonic", val)
+        if addepel:
+            cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y {python3}-parsedatetime"
+            ret = calls(cmd)
+            logg.info("install package: %s", ret)
+            self.assertEqual(0, ret)
+            cmd = F"{docker} exec {testcontainer} {pkglist} info {python3}-parsedatetime"
+            run = runs(cmd)
+            val = run.stdout
+            logg.info("install version: %s", val)
+            self.assertIn("parse human-readable date", val)
+        cmd = F"{cover} {mirror} stop {distro}:{ver} {VV} {addepel} --docker='{docker}' --imagesrepo='{imagesrepo}' -C {configfile}"
         ret = calls(cmd)
-        logg.info("install package: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} stop {distro}:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C {configfile}"
-        ret = calls(cmd)
-        self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} {pkglist} info python3-lxml"
-        run = runs(cmd)
-        val = run.out
-        logg.info("install version: %s", val)
-        self.assertIn("lxml is a Pythonic", val)
         #
         if os.path.isdir(diskpath) and not KEEPFULLIMAGE:
             cmd = F"{cover} {script} {ver} dropdisk {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' --disksuffix={testname}_"
