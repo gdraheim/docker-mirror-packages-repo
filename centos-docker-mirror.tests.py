@@ -38,6 +38,7 @@ DRY_RSYNC = 1
 DOCKER = "docker"
 SLEEP = 66
 VV="-v"
+TRUE = 1
 SKIPFULLIMAGE = True
 KEEPFULLIMAGE = False
 KEEPBASEIMAGE = False
@@ -388,7 +389,6 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.coverage()
     def test_70196(self) -> None:
         ver = self.testver()
-        version = "9.6"
         self.assertEqual(ver, "9.6")
         cover = self.cover()
         script = SCRIPT
