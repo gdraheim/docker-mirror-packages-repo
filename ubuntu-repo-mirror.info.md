@@ -12,8 +12,7 @@ I did have bad experiences with a direct download to package container, so now t
 
     make ubuntusync
     make ubunturepo
-    make ubuntutest
-
+    
 ### different versions for the ubuntu-repo
 
 The makefiles were later replaced by a python script which does run the "rsync" and "docker" commands as 
@@ -22,8 +21,19 @@ the opensuse-repo need. Simply provide the intended version as the first argumen
 
     ./ubuntu-docker-mirror.py 15.2 sync
     ./ubuntu-docker-mirror.py 15.2 repo
-    ./ubuntu-docker-mirror.py 15.2 test
 
 The original makefiles targets have been switched to do that with a default version. The old makefiles
 implementation may be checked on the github 'makefiles' branch.
+
+### testsuite and results
+
+ubuntu-docker-mirror.py  97% coverage
+
+| mirror-packages image | size
+| --------------------- | -----------------------------------------
+| localhost:5000/mirror-packages/ubuntu-repo/universe:24.04 | 194GB
+| localhost:5000/mirror-packages/ubuntu-repo:24.04 | 194GB
+| localhost:5000/mirror-packages/ubuntu-repo/restricted:24.04 | 18.3GB
+| localhost:5000/mirror-packages/ubuntu-repo/main:24.04 | 18.3GB
+| localhost:5000/mirror-packages/ubuntu-repo/base:24.04 | 4.03GB
 
