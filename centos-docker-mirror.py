@@ -712,6 +712,31 @@ def distro_diskmake(distro: str, centos: str, dists: Dict[str, List[str]]) -> st
     path_srv = os.path.realpath(srv)
     return F"\nmount = {path_srv}/repo\n"
 
+def centos_epeldisk(distro: str = NIX, centos: str = NIX) -> str:
+    dists: Dict[str, List[str]] = OrderedDict()
+    dists["main"] = ["Everything"]
+    ver = centos or CENTOS
+    if ver.startswith("8"):
+        dists["plus"] = ["Modular"]
+    return distro_epeldisk(distro, centos, dists)
+def distro_epeldisk(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
+    distro = "epel"
+    centos = centos or CENTOS
+    epel = major(centos)
+    repodir = REPODIR
+    centos_restore()
+    centos_cleaner()
+    rootdir = centos_epeldir(variant=F"{VARIANT}{DISKSUFFIX}")
+    srv = F"{rootdir}/srv"
+    logg.info("srv = %s", srv)
+    sh___(F"mkdir -p {srv}/repo/epel/{epel}")
+    for dist in dists:
+        for subdir in dists[dist]:
+            sh___(F"cp -r --link --no-clobber {repodir}/{distro}.{epel}/{epel}/{subdir} {srv}/repo/epel/{epel}/")
+    path_srv = os.path.realpath(srv)
+    return F"\nmount = {path_srv}/repo\n"
+
+
 def centos_diskpath() -> str:
     rootdir = centos_dir(variant=F"{VARIANT}{DISKSUFFIX}")
     srv = F"{rootdir}/srv"
@@ -720,6 +745,20 @@ def centos_diskpath() -> str:
 
 def centos_dropdisk() -> str:
     rootdir = centos_dir(variant=F"{VARIANT}{DISKSUFFIX}")
+    srv = F"{rootdir}/srv"
+    path_srv = os.path.realpath(srv)
+    if os.path.isdir(path_srv):
+        shutil.rmtree(path_srv)
+    return path_srv
+
+def centos_epeldiskpath() -> str:
+    rootdir = centos_epeldir(variant=F"{VARIANT}{DISKSUFFIX}")
+    srv = F"{rootdir}/srv"
+    path_srv = os.path.realpath(srv)
+    return F"{path_srv}/repo\n"
+
+def centos_epeldropdisk() -> str:
+    rootdir = centos_epeldir(variant=F"{VARIANT}{DISKSUFFIX}")
     srv = F"{rootdir}/srv"
     path_srv = os.path.realpath(srv)
     if os.path.isdir(path_srv):

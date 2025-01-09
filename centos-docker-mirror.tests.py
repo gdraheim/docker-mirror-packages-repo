@@ -173,15 +173,17 @@ class OpensuseMirrorTest(unittest.TestCase):
     def coverage(self, testname: str = NIX) -> None:
         testname = testname or self.caller_testname()
         newcoverage = ".coverage."+testname
-        if os.path.isfile(".coverage"):
-            # shutil.copy(".coverage", newcoverage)
-            f = open(".coverage", "rb")
+        oldcoverage = ".coverage"
+        if os.path.isfile(oldcoverage):
+            # shutil.copy(oldcoverage, newcoverage)
+            f = open(oldcoverage, "rb")
             text = f.read()
             f.close()
             text2 = re.sub(rb"(\]\}\})[^{}]*(\]\}\})$", rb"\1", text)
             f = open(newcoverage, "wb")
             f.write(text2)
             f.close()
+            os.unlink(oldcoverage)
     def cover(self) -> str:
         python = PYTHON
         cover = F"{python} -m coverage run -a" if COVERAGE else python
@@ -560,9 +562,81 @@ class OpensuseMirrorTest(unittest.TestCase):
         #
         self.coverage(testname)
         self.rm_testdir(testname)
-    def test_73156(self) -> None:
+    def test_72173(self) -> None:
+        self.check_epeldir(self.testname())
+    def test_72179(self) -> None:
+        self.check_epeldir(self.testname())
+    def test_72183(self) -> None:
+        self.check_epeldir(self.testname())
+    def test_72191(self) -> None:
+        self.check_epeldir(self.testname())
+    def test_72192(self) -> None:
+        self.check_epeldir(self.testname())
+    def test_72193(self) -> None:
+        self.check_epeldir(self.testname())
+    def test_72194(self) -> None:
+        self.check_epeldir(self.testname())
+    def check_epeldir(self, testname: str) -> None:
+        ver = self.testver(testname)
+        ver3 = VER3[ver]
+        if ONLYVERSION and ver != ONLYVERSION:
+            self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
+        distro = "epel"
+        if ver3.startswith("7") or ver3.startswith("8"):
+            distro = DISTRO2
+        tmp = self.testdir(testname)
+        cover = self.cover()
+        script = SCRIPT
+        data = F"{tmp}/data"
+        repo = F"{tmp}/repo"
+        want = F"{repo}/{distro}.{ver3}"
+        os.makedirs(data)
+        #
+        cmd = F"{cover} {script} {ver} epeldir --datadir={data} --repodir={repo}"
+        run = runs(cmd)
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertTrue(os.path.isdir(os.path.join(want, ".")))
+        self.assertTrue(os.path.islink(want))
+        self.assertIn(data, os.readlink(want))
+        #
+        want = F"{repo}/{distro}.{ver3}.alt"
+        cmd = F"{cover} {script} {ver} epeldir --datadir={data} --repodir={repo} --variant=alt"
+        run = runs(cmd)
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertTrue(os.path.isdir(os.path.join(want, ".")))
+        self.assertTrue(os.path.islink(want))
+        self.assertIn(data, os.readlink(want))
+        #
+        want = os.path.abspath(F"{data}/{distro}.{ver3}.disk/srv/repo")
+        cmd = F"{cover} {script} {ver} epeldiskpath --datadir={data} --repodir={repo}"
+        run = runs(cmd)
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        #
+        want = os.path.abspath(F"{data}/{distro}.{ver3}.altdisk/srv/repo")
+        cmd = F"{cover} {script} {ver} epeldiskpath --datadir={data} --repodir={repo} --variant=alt"
+        run = runs(cmd)
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        #
+        want = os.path.abspath(F"{data}/{distro}.{ver3}.altdisktmp/srv/repo")
+        cmd = F"{cover} {script} {ver} epeldiskpath --datadir={data} --repodir={repo} --variant=alt --disksuffix=disktmp"
+        run = runs(cmd)
+        have = run.stdout.strip()
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        #
+        self.coverage(testname)
+        self.rm_testdir(testname)
+    def test_73191(self) -> None:
         self.check_sync(self.testname())
-    def test_73160(self) -> None:
+    def test_73194(self) -> None:
         self.check_sync(self.testname())
     def check_sync(self, testname: str) -> None:
         ver = self.testver(testname)
@@ -582,23 +656,23 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual(0, ret)
         self.coverage(testname)
         self.rm_testdir(testname)
-    def test_75152(self) -> None:
-        self.make_repo_test(self.testname(), "--createrepo")
-    def test_75154(self) -> None:
-        self.make_repo_test(self.testname(), "--createrepo")
-    def test_75155(self) -> None:
-        self.make_repo_test(self.testname(), "--createrepo")
-    def test_75156(self) -> None:
-        self.make_repo_test(self.testname(), "--createrepo")
-    def test_76152(self) -> None:
+    def test_75179(self) -> None:
         self.make_repo_test(self.testname())
-    def test_76154(self) -> None:
+    def test_75183(self) -> None:
         self.make_repo_test(self.testname())
-    def test_76155(self) -> None:
+    def test_75191(self) -> None:
         self.make_repo_test(self.testname())
-    def test_76156(self) -> None:
+    def test_75194(self) -> None:
         self.make_repo_test(self.testname())
-    def make_repo_test(self, testname: str, makeoptions: str = NIX) -> None:
+    def test_76179(self) -> None:
+        self.make_repo_test(self.testname(), "--epel")
+    def test_76183(self) -> None:
+        self.make_repo_test(self.testname(), "--epel")
+    def test_76191(self) -> None:
+        self.make_repo_test(self.testname(), "--epel")
+    def test_76194(self) -> None:
+        self.make_repo_test(self.testname(), "--epel")
+    def make_repo_test(self, testname: str, addepel: str = NIX) -> None:
         self.rm_container(testname)
         ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
@@ -607,7 +681,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         cover = self.cover()
         script = SCRIPT
         mirror = MIRROR
-        pkgrepo = PKGREPO
+        pkgrepo = F"{PKGREPO} --nogpgcheck --setopt sslverify=false"
         pkglist = PKGLIST
         distro = DISTRO1
         testcontainer = self.testcontainer(testname)
@@ -619,16 +693,20 @@ class OpensuseMirrorTest(unittest.TestCase):
         cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
         if not SKIPFULLIMAGE:
-            cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' {makeoptions} -vvv"
+            cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -vvv"
+            ret = calls(cmd)
+            self.assertEqual(0, ret)
+        if not SKIPFULLIMAGE and addepel:
+            cmd = F"{cover} {script} {ver} epelrepo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -vvv"
             ret = calls(cmd)
             self.assertEqual(0, ret)
         cmd = F"{cover} {script} list --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} start {distro}:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        cmd = F"{cover} {mirror} start {distro}:{ver} {VV} {addepel} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} addhost {distro}:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        cmd = F"{cover} {mirror} addhost {distro}:{ver} {VV} {addepel} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         run = runs(cmd)
         logg.info("show: %s", run.stdout)
         addhost = run.stdout.strip()
@@ -637,25 +715,37 @@ class OpensuseMirrorTest(unittest.TestCase):
         ret = calls(cmd)
         logg.info("consume: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} {pkgrepo} mr --no-gpgcheck --all"
-        ret = calls(cmd)
-        logg.info("install nocheck: %s", ret)
-        cmd = F"{docker} exec {testcontainer} {pkgrepo} clean --all"
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} clean all"
         ret = calls(cmd)
         logg.info("install clean: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y python3-lxml"
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} update"
         ret = calls(cmd)
-        logg.info("install package: %s", ret)
-        self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} stop {distro}:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        logg.info("install refresh: %s", ret)
+        if TRUE:
+            cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y python3-lxml"
+            ret = calls(cmd)
+            logg.info("install package: %s", ret)
+            self.assertEqual(0, ret)
+            cmd = F"{docker} exec {testcontainer} {pkglist} info python3-lxml"
+            run = runs(cmd)
+            val = run.stdout
+            logg.info("install version: %s", val)
+            self.assertIn("lxml is a Pythonic", val)
+        if addepel:
+            cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y python3-dateutils"
+            ret = calls(cmd)
+            logg.info("install package: %s", ret)
+            self.assertEqual(0, ret)
+            cmd = F"{docker} exec {testcontainer} {pkglist} info python3-dateutils"
+            run = runs(cmd)
+            val = run.stdout
+            logg.info("install version: %s", val)
+            self.assertIn("lxml is a Pythonic", val)
+        #
+        cmd = F"{cover} {mirror} stop {distro}:{ver} {VV} {addepel} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} {pkglist} -q --info python3-lxml"
-        run = runs(cmd)
-        val = run.stdout
-        logg.info("install version: %s", val)
-        self.assertIn("Pythonic XML", val)
         cmd = F"{docker} image list -q --no-trunc --format '{{{{.Repository}}}}:{{{{.Tag}}}}\t{{{{.Size}}}}'"
         run = runs_(cmd)
         images = []
@@ -672,21 +762,13 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.rm_container(testname)
         if not KEEPFULLIMAGE:
             self.rm_images(testname)
-    def test_77152(self) -> None:
-        self.make_disk_test(self.testname(), "--createrepo")
-    def test_77154(self) -> None:
-        self.make_disk_test(self.testname(), "--createrepo")
-    def test_77155(self) -> None:
-        self.make_disk_test(self.testname(), "--createrepo")
-    def test_77156(self) -> None:
-        self.make_disk_test(self.testname(), "--createrepo")
-    def test_78152(self) -> None:
+    def test_78179(self) -> None:
         self.make_disk_test(self.testname())
-    def test_78154(self) -> None:
+    def test_78183(self) -> None:
         self.make_disk_test(self.testname())
-    def test_78155(self) -> None:
+    def test_78191(self) -> None:
         self.make_disk_test(self.testname())
-    def test_78156(self) -> None:
+    def test_78194(self) -> None:
         self.make_disk_test(self.testname())
     def make_disk_test(self, testname: str, makeoptions: str = NIX) -> None:
         self.rm_container(testname)
@@ -697,7 +779,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         cover = self.cover()
         script = SCRIPT
         mirror = MIRROR
-        pkgrepo = PKGREPO
+        pkgrepo = F"{PKGREPO} --nogpgcheck"
         pkglist = PKGLIST
         distro = DISTRO1
         testcontainer = self.testcontainer(testname)
@@ -748,13 +830,13 @@ class OpensuseMirrorTest(unittest.TestCase):
         ret = calls(cmd)
         logg.info("consume: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} {pkgrepo} mr --no-gpgcheck --all"
-        ret = calls(cmd)
-        logg.info("install nocheck: %s", ret)
-        cmd = F"{docker} exec {testcontainer} {pkgrepo} clean --all"
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} clean all"
         ret = calls(cmd)
         logg.info("install clean: %s", ret)
         self.assertEqual(0, ret)
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} update"
+        ret = calls(cmd)
+        logg.info("install refresh: %s", ret)
         cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y python3-lxml"
         ret = calls(cmd)
         logg.info("install package: %s", ret)
@@ -762,11 +844,11 @@ class OpensuseMirrorTest(unittest.TestCase):
         cmd = F"{cover} {mirror} stop {distro}:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C {configfile}"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} {pkglist} -q --info python3-lxml"
+        cmd = F"{docker} exec {testcontainer} {pkglist} info python3-lxml"
         run = runs(cmd)
         val = run.out
         logg.info("install version: %s", val)
-        self.assertIn("Pythonic XML", val)
+        self.assertIn("lxml is a Pythonic", val)
         #
         if os.path.isdir(diskpath) and not KEEPFULLIMAGE:
             cmd = F"{cover} {script} {ver} dropdisk {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' --disksuffix={testname}_"

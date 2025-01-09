@@ -162,15 +162,17 @@ class OpensuseMirrorTest(unittest.TestCase):
     def coverage(self, testname: str = NIX) -> None:
         testname = testname or self.caller_testname()
         newcoverage = ".coverage."+testname
-        if os.path.isfile(".coverage"):
-            # shutil.copy(".coverage", newcoverage)
-            f = open(".coverage", "rb")
+        oldcoverage = ".coverage"
+        if os.path.isfile(oldcoverage):
+            # shutil.copy(oldcoverage, newcoverage)
+            f = open(oldcoverage, "rb")
             text = f.read()
             f.close()
             text2 = re.sub(rb"(\]\}\})[^{}]*(\]\}\})$", rb"\1", text)
             f = open(newcoverage, "wb")
             f.write(text2)
             f.close()
+            os.unlink(oldcoverage)
     def cover(self) -> str:
         python = PYTHON
         cover = F"{python} -m coverage run -a" if COVERAGE else python
