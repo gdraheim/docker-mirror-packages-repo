@@ -22,6 +22,7 @@ import re
 import subprocess
 import shutil
 import datetime
+import configparser
 import logging
 logg = logging.getLogger("MIRROR")
 
@@ -232,12 +233,14 @@ def centos_dir(variant: str = NIX) -> str:
 def centos_epeldir(variant: str = NIX) -> str:
     distro = EPEL
     centos = CENTOS
-    return distro_dir(distro, centos, variant)
-def distro_dir(distro: str, release: str, variant: str = NIX) -> str:
+    rel = major(CENTOS)
+    return distro_dir(distro, centos, variant, rel)
+def distro_dir(distro: str, release: str, variant: str = NIX, rel: str = NIX) -> str:
     # distro = DISTRO
     repodir = REPODIR
     variant = variant or VARIANT
-    version = F"{release}.{variant}" if variant else release
+    rel = rel if rel else release
+    version = F"{rel}.{variant}" if variant else rel
     dirname = F"{distro}.{version}"
     dirlink = path.join(repodir, dirname)
     if not path.isdir(repodir):
@@ -372,7 +375,75 @@ def distro_epelsyncs(distro: str, centos: str, subdirs: List[str] = []) -> str:
         basedir = F"{repo}/{epel}"
         for arch in archs:
             sh___(F"{rsync} -rv {mirror}/{epel}/{arch} {basedir}/ {excludes}")
+    centos_epeltimestamp(distro, centos)
     return F"epel.{epel}/{epel}"
+
+def centos_epeltimestamp(distro: str = NIX, centos: str = NIX) -> Optional[str]:
+    distro = distro or EPEL
+    centos = centos or CENTOS
+    epel = major(centos)
+    repo = distro_dir(distro, epel)
+    timestamp = centos_epeltime(distro, centos)
+    if timestamp:
+        timestampfile = F"{repo}/timestamp.ini"
+        ini = configparser.ConfigParser()
+        if os.path.isfile(timestampfile):
+            ini.read(timestampfile)
+        if epel not in ini:
+            ini[epel] = {}
+        ini[epel]["distro"] = distro
+        ini[epel]["centos"] = centos
+        ini[epel]["updated"] = timestamp.isoformat()
+        with open(timestampfile, "w") as fp:
+            ini.write(fp)
+        logg.info("updated %s", timestampfile)
+        yyyymmdd = timestamp.strftime("%y%m%d")
+        return F"|{yyyymmdd}|{timestampfile}"
+    return None
+
+def centos_epelupdated(distro: str = NIX, centos: str = NIX) -> Optional[datetime.datetime]:
+    distro = distro or EPEL
+    centos = centos or CENTOS
+    epel = major(centos)
+    repo = distro_dir(distro, epel)
+    if not os.path.isdir(repo):
+        return None
+    timestampfile = F"{repo}/timestamp.ini"
+    if not os.path.isfile(timestampfile):
+        centos_epeltimestamp(distro, centos)
+    if not os.path.isfile(timestampfile):
+        return None
+    ini = configparser.ConfigParser()
+    ini.read(timestampfile)
+    if epel in ini:
+        updated = _fromisoformat(ini[epel].get("updated", ""))
+        logg.info("  epel %s updated = %s", epel, updated)
+        return updated
+    return None
+
+def centos_epeltime(distro: str = NIX, centos: str = NIX) -> Optional[datetime.datetime]:
+    distro = distro or EPEL
+    centos = centos or CENTOS
+    epel = major(centos)
+    repo = distro_dir(distro, epel)
+    epeldir = F"{repo}/{epel}"
+    logg.debug(" epeltime - walk %s", epeldir)
+    latest = None
+    for root, _, files in os.walk(epeldir):
+        for name in files:
+            filename = os.path.join(root, name)
+            changed = os.path.getmtime(filename)
+            if not latest:
+                latest = changed
+            elif latest < changed:
+                latest = changed
+    if not latest:
+        logg.warning("epeltime - no files found")
+        return None
+    else:
+        epeltimestamp = datetime.datetime.fromtimestamp(latest)
+        logg.info("  epeltime = %s", epeltimestamp)
+        return epeltimestamp
 
 def centos_unpack() -> None:
     """ used while testing if centos had all packages """
@@ -427,29 +498,10 @@ def centos_epelrepo8(distro: str = NIX, centos: str = NIX) -> None:
     dists["main"] = ["Everything"]
     dists["plus"] = ["Modular"]
     distro_epelrepos(distro, centos, dists)
+def centos_epelbase(distro: str = NIX, centos: str = NIX) -> None:
+    dists: Dict[str, List[str]] = OrderedDict()
+    distro_epelrepos(distro, centos, dists)
 
-def centos_epeldate(distro: str = "", centos: str = "", repodir: str = "") -> Optional[datetime.datetime]:
-    distro = distro or EPEL
-    centos = centos or CENTOS
-    epel = major(centos)
-    repodir = repodir or REPODIR
-    version = "F{epel}.{VARIANT}" if VARIANT else epel
-    epeldir = F"{repodir}/{distro}.{version}/{epel}"
-    latest = None
-    for root, _, files in os.walk(epeldir):
-        for name in files:
-            filename = os.path.join(root, name)
-            changed = os.path.getmtime(filename)
-            if not latest:
-                latest = changed
-            elif latest < changed:
-                latest = changed
-    if not latest:
-        return None
-    else:
-        epeldate = datetime.datetime.fromtimestamp(latest)
-        logg.info("epeldate = %s", epeldate)
-        return epeldate
 
 def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> None:
     distro = distro or EPEL
@@ -479,7 +531,7 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
             sh___(F"{docker} exec {cname} chmod +x /srv/scripts/{script}")
     base = BASELAYER
     repo = IMAGESREPO
-    latest = centos_epeldate(distro, centos, repodir) or datetime.date.today()
+    latest = centos_epelupdated(distro, centos) or datetime.date.today()
     yymm = latest.strftime("%y%m")
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{version}.x.{yymm}")
     for dist in dists:
@@ -490,17 +542,19 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
             base = dist  # !!
         if base == dist:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {repo}/{distro}-repo/{base}:{version}.x.{yymm}")
-    sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{version}.x.{yymm} {repo}/{distro}-repo:{version}.x.{yymm}")
     sx___(F"{docker} rm --force {cname}")
-    sh___(F"{docker} rmi {repo}/{distro}-repo/base:{version}.x.{yymm}")
-    PORT2 = centos_epel_http_port(distro, centos)
-    CMD2 = str(centos_epel_http_cmd(distro, centos)).replace("'", '"')
-    if PORT != PORT2:
-        # the upstream epel repository runs on https by default but we don't have their certificate anyway
-        base2 = "http"  # !!
-        sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo:{version}.x.{yymm} sleep 9999")
-        sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/{distro}-repo/{base2}:{version}.x.{yymm}")
-        sx___(F"{docker} rm --force {cname}")
+    if base != BASELAYER:
+        sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{version}.x.{yymm} {repo}/{distro}-repo:{version}.x.{yymm}")
+        if NOBASE:
+            sh___(F"{docker} rmi {repo}/{distro}-repo/{BASELAYER}:{version}.x.{yymm}")
+        PORT2 = centos_epel_http_port(distro, centos)
+        CMD2 = str(centos_epel_http_cmd(distro, centos)).replace("'", '"')
+        if PORT != PORT2:
+            # the upstream epel repository runs on https by default but we don't have their certificate anyway
+            base2 = "http"  # !!
+            sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo:{version}.x.{yymm} sleep 9999")
+            sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/{distro}-repo/{base2}:{version}.x.{yymm}")
+            sx___(F"{docker} rm --force {cname}")
 
 def centos_epelrepo7(distro: str = NIX, centos: str = NIX) -> None:
     distro = distro or EPEL
@@ -523,7 +577,7 @@ def centos_epelrepo7(distro: str = NIX, centos: str = NIX) -> None:
         sh___(F"{docker} exec {cname} chmod +x /srv/scripts/{script}")
     #
     repo = IMAGESREPO
-    latest = centos_epeldate(distro, centos, repodir) or datetime.date.today()
+    latest = centos_epelupdated(distro, centos) or datetime.date.today()
     yymm = latest.strftime("%y%m")
     sh___(F"{docker} cp {repodir}/{distro}.{epel}/{epel} {cname}:/srv/repo/epel/")
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' {cname} {repo}/{distro}-repo:{version}.x.{yymm}")
@@ -655,6 +709,8 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
     sh___(F"{docker} rm --force {cname}")
     if base != BASELAYER:
         sh___(F"{docker} tag {repo}/{distro}-repo/{base}:{version} {repo}/{distro}-repo:{version}")
+        if NOBASE:
+            sh___(F"{docker} rmi {repo}/{distro}-repo/{BASELAYER}:{version}")  # untag non-packages base
         PORT2 = centos_http_port(distro, centos)
         CMD2 = str(centos_http_cmd(distro, centos)).replace("'", '"')
         if PORT != PORT2:
@@ -663,8 +719,6 @@ def distro_repos(distro: str, centos: str, dists: Dict[str, List[str]]) -> str:
             sh___(F"{docker} run --name={cname} --detach {repo}/{distro}-repo:{version} sleep 9999")
             sh___(F"{docker} commit -c 'CMD {CMD2}' -c 'EXPOSE {PORT2}' -m {base2} {cname} {repo}/{distro}-repo/{base2}:{version}")
             sx___(F"{docker} rm --force {cname}")
-    if NOBASE:
-        sh___(F"{docker} rmi {repo}/{distro}-repo/{BASELAYER}:{version}")  # untag non-packages base
     centos_restore()
     return F"\n[{baseimage}]\nimage = {repo}/{distro}-repo/{base}:{version}\n"
 
@@ -737,13 +791,13 @@ def distro_epeldisk(distro: str, centos: str, dists: Dict[str, List[str]]) -> st
     return F"\nmount = {path_srv}/repo\n"
 
 
-def centos_diskpath() -> str:
+def centos_diskpath(distro: str = NIX, centos: str = NIX) -> str:
     rootdir = centos_dir(variant=F"{VARIANT}{DISKSUFFIX}")
     srv = F"{rootdir}/srv"
     path_srv = os.path.realpath(srv)
     return F"{path_srv}/repo\n"
 
-def centos_dropdisk() -> str:
+def centos_dropdisk(distro: str = NIX, centos: str = NIX) -> str:
     rootdir = centos_dir(variant=F"{VARIANT}{DISKSUFFIX}")
     srv = F"{rootdir}/srv"
     path_srv = os.path.realpath(srv)
@@ -751,8 +805,12 @@ def centos_dropdisk() -> str:
         shutil.rmtree(path_srv)
     return path_srv
 
-def centos_epeldiskpath() -> str:
+def centos_epeldiskpath(distro: str = NIX, centos: str = NIX) -> str:
     rootdir = centos_epeldir(variant=F"{VARIANT}{DISKSUFFIX}")
+    logg.info("epel rootdir %s", rootdir)
+    # latest = centos_epelupdated(distro, centos) or datetime.date.today()
+    # yymm = latest.strftime("%y%m")
+    # logg.info(" yymm %s", yymm)
     srv = F"{rootdir}/srv"
     path_srv = os.path.realpath(srv)
     return F"{path_srv}/repo\n"
@@ -881,6 +939,26 @@ def centos_scripts() -> str:
 
 #############################################################################
 
+def _fromisoformat(time: str) -> Optional[datetime.datetime]:
+    try:
+        if hasattr(datetime.datetime, "fromisoformat"):
+            return datetime.datetime.fromisoformat(time)
+        elif "T" in time:
+            return datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S.%f")
+        elif "." in time:
+            return datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S.%f")
+        elif time.count(":") == 2:
+            return datetime.datetime.strptime(time, "%Y-%m-%d %H:%M:%S")
+        elif time.count(":") == 1:
+            return datetime.datetime.strptime(time, "%Y-%m-%d %H:%M")
+        elif "-" in time:
+            return datetime.datetime.strptime(time, "%Y-%m-%d")
+        else:
+            return datetime.datetime.strptime(time, "%Y%m%d")
+    except ValueError:
+        logg.info("not a iso datetime: %s", time)
+        return None
+
 def decodes(text: Union[bytes, str]) -> str:
     if text is None: return None
     if isinstance(text, bytes):
@@ -942,7 +1020,11 @@ def path_find(base: str, name: str) -> Optional[str]:
 def centos_epelimage(distro: str = NIX, centos: str = NIX) -> str:
     distro = "epel"
     centos = centos or CENTOS
-    return F"{distro}:{centos}"
+    rel = major(centos)
+    updated = centos_epelupdated(distro, centos)
+    yymm = updated.strftime("%y%m") if updated else ""
+    xx = F"x.{yymm}" if yymm else "x"
+    return F"{distro}:{rel}.{xx}"
 def centos_image(distro: str = NIX, centos: str = NIX) -> str:
     distro = distro or DISTRO
     centos = centos or CENTOS

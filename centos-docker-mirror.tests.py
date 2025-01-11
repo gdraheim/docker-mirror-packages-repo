@@ -4,7 +4,7 @@ __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7007"
 
-# pylint: disable=unused-import,line-too-long
+# pylint: disable=unused-import,line-too-long,too-many-lines
 from typing import Optional, Union, Dict, List, Any, Sequence, Callable, Iterable, cast, NamedTuple
 import shutil
 import inspect
@@ -817,11 +817,18 @@ class CentosMirrorTest(unittest.TestCase):
         distro = DISTRO1
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
-        cmd = F"{cover} {script} {ver} base {VV} --imagesrepo={imagesrepo} -vv"
-        run = runs(cmd)
-        basemade = run.out
-        logg.debug("basemade\\%s", run.err)
-        logg.info("basemade = %s", basemade)
+        if TRUE:
+            cmd = F"{cover} {script} {ver} base {VV} --imagesrepo={imagesrepo} -vv"
+            run = runs(cmd)
+            basemade = run.out
+            logg.debug("basemade\\%s", run.err)
+            logg.info("basemade = %s", basemade)
+        if addepel:
+            cmd = F"{cover} {script} {ver} epelbase {VV} --imagesrepo={imagesrepo} -vv"
+            run = runs(cmd)
+            epelbase = run.out
+            logg.debug("epelbase\\%s", run.err)
+            logg.info("epelbase = %s", epelbase)
         if TRUE:
             cmd = F"{cover} {script} {ver} diskpath {VV} --disksuffix={testname}_disk"
             run = runs(cmd)
@@ -873,6 +880,7 @@ class CentosMirrorTest(unittest.TestCase):
             print(F"[{epelimage}]", file=cfg)
             print(F"image = {epelbaserepo}", file=cfg)
             print(F"mount = {epeldiskpath}", file=cfg)
+        calls(F"cat {configfile}")
         cmd = F"{cover} {mirror} start {distro}:{ver} {VV} -vv {addepel} --docker='{docker}' -C {configfile}"
         ret = calls(cmd)
         self.assertEqual(0, ret)
