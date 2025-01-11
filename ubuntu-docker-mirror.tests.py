@@ -687,10 +687,10 @@ class UbuntuMirrorTest(unittest.TestCase):
         cmd = F"{cover} {script} list --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} start {distro}:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        cmd = F"{cover} {mirror} start {distro}:{ver} --local {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} addhost {distro}:{ver} {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        cmd = F"{cover} {mirror} addhost {distro}:{ver} --local {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         run = runs(cmd)
         logg.info("show: %s", run.stdout)
         addhost = run.stdout.strip()
@@ -794,10 +794,10 @@ class UbuntuMirrorTest(unittest.TestCase):
             print(F"[{image}]", file=cfg)
             print(F"image = {baserepo}", file=cfg)
             print(F"mount = {diskpath}", file=cfg)
-        cmd = F"{cover} {mirror} start {distro}:{ver} {VV} --docker='{docker}' -C {configfile}"
+        cmd = F"{cover} {mirror} start {distro}:{ver} --local {VV} --docker='{docker}' -C {configfile}"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} addhost {distro}:{ver} {VV} --docker='{docker}' -C {configfile}"
+        cmd = F"{cover} {mirror} addhost {distro}:{ver} --local {VV} --docker='{docker}' -C {configfile}"
         run = runs(cmd)
         addhost = run.stdout.strip()
         logg.info("addhost = %s", addhost)

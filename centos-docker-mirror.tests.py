@@ -721,10 +721,10 @@ class CentosMirrorTest(unittest.TestCase):
         cmd = F"{cover} {script} list --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} start {distro}:{ver} {VV} {addepel} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        cmd = F"{cover} {mirror} start {distro}:{ver} --local {VV} {addepel} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} addhost {distro}:{ver} {VV} {addepel} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
+        cmd = F"{cover} {mirror} addhost {distro}:{ver} --local {VV} {addepel} --docker='{docker}' --imagesrepo='{imagesrepo}' -C /dev/null"
         run = runs(cmd)
         logg.info("show: %s", run.stdout)
         addhost = run.stdout.strip()
@@ -881,10 +881,10 @@ class CentosMirrorTest(unittest.TestCase):
             print(F"image = {epelbaserepo}", file=cfg)
             print(F"mount = {epeldiskpath}", file=cfg)
         calls(F"cat {configfile}")
-        cmd = F"{cover} {mirror} start {distro}:{ver} {VV} -vv {addepel} --docker='{docker}' -C {configfile}"
+        cmd = F"{cover} {mirror} start {distro}:{ver} --local {VV} -vv {addepel} --docker='{docker}' -C {configfile}"
         ret = calls(cmd)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {mirror} addhost {distro}:{ver} {VV} -vv {addepel} --docker='{docker}' -C {configfile}"
+        cmd = F"{cover} {mirror} addhost {distro}:{ver} --local {VV} -vv {addepel} --docker='{docker}' -C {configfile}"
         run = runs(cmd)
         addhost = run.stdout.strip()
         logg.info("addhost = %s", addhost)
