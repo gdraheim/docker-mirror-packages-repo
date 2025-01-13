@@ -19,9 +19,11 @@ import socket
 import time
 import configparser
 
-if sys.version[0] != '2':
-    xrange = range
-    basestring = str
+if sys.version[0] == '2': # pragma: nocover
+    range = xrange # pylint: disable=redefined-builtin, used-before-assignment, undefined-variable
+    stringtypes = basestring # pylint: disable=undefined-variable
+else:
+    stringtypes = str
 
 logg = logging.getLogger("mirror")
 IMAGESREPO = "localhost:5000/mirror-packages"
@@ -30,6 +32,7 @@ ADDHOSTS = False
 ADDEPEL = False
 UPDATES = False
 UNIVERSE = False
+LOCAL = False
 
 MAXWAIT = 6
 WAXWAIT = ""
@@ -125,7 +128,7 @@ def decodes_(text):
             return text.decode("latin-1")
     return text
 def output3(cmd, shell=True, debug=True):
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, stringtypes):
         if debug: logg.debug("run: %s", cmd)
     else:
         if debug: logg.debug("run: %s", " ".join(["'%s'" % item for item in cmd]))
@@ -134,8 +137,19 @@ def output3(cmd, shell=True, debug=True):
     return decodes_(out), decodes_(err), run.returncode
 
 def major(version):
-    if version:
-        return version[0]
+    if len(version) > 2:
+        if version[1] == ".":
+            return version[0]
+        else:
+            return version[:2]
+    return version
+def majorminor(version):
+    if version.count(".") > 2:
+        ver = version.split(".")
+        return ver[0] + "." + ver[1]
+    if version.count("-") > 0:
+        ver = version.split("-")
+        return ver[0]
     return version
 def onlyversion(image):
     if ":" in image:
@@ -317,13 +331,11 @@ class DockerMirrorPackagesRepo:
         if image.startswith("centos:"):
             mirrors = self.get_centos_docker_mirrors(image)
             if ADDEPEL:
-                if "centos" in image:
-                    mirrors += self.get_epel_docker_mirrors(image)
+                mirrors += self.get_epel_docker_mirrors(image)
         if image.startswith("almalinux:"):
             mirrors = self.get_centos_docker_mirrors(image)
             if ADDEPEL:
-                if "alma" in image:
-                    mirrors += self.get_epel_docker_mirrors(image)
+                mirrors += self.get_epel_docker_mirrors(image)
         if image.startswith("opensuse/leap:"):
             mirrors = self.get_opensuse_docker_mirrors(image)
         if image.startswith("opensuse:"):
@@ -438,7 +450,7 @@ class DockerMirrorPackagesRepo:
         if ver in BASE:
             ver = BASE[ver]
         if version in ALMA:
-            ver = ALMA[version]
+            ver = version # ALMA.keys() are long version
         elif version in ALMA.values():
             ver = max([os for os in ALMA if ALMA[os] == version])
         logg.debug("latest version %s for %s", ver, version)
@@ -453,7 +465,8 @@ class DockerMirrorPackagesRepo:
             distro, ver = "centos", image
         rmi = IMAGESREPO
         rep = F"{distro}-repo"
-        ver = self.get_centos_latest_version(onlyversion(image))
+        version = self.get_centos_latest_version(onlyversion(image))
+        ver = majorminor(version)
         logg.debug("    mirror for %s (%s)", ver, image)
         if "alma" in distro:
             return self.docker_mirror(rmi, rep, ver, "mirrors.almalinux.org")
@@ -541,28 +554,30 @@ class DockerMirrorPackagesRepo:
         rep = "epel-repo"
         ver = onlyversion(image)
         version = self.get_centos_latest_version(ver)
-        # cut the yymm date part from the centos release
-        released = version.split(".")[-1]
+        logg.debug("detect epel refdate from '%s'", version)
         # cut the yymm date part from the almalinux release
-        yymm = re.match("\\d+[.]\\d+-22(\\d\\d\\d\\d)\\d*", version)
+        yymm = re.match("\\d+[.]\\d+-\\d\\d(\\d\\d\\d\\d)\\d*", version)
         if yymm:
             released = yymm.group(1)
-        logg.debug("      detected %s -> epel %s", version, released)
+        # cut the yymm date part from the centos release
+        elif version.count(".") == 2:
+            released = version.split(".")[-1]
+        else:
+            logg.error("can not get epel refdate from %s", version)
+            raise ValueError("can not get epel refdate")
+        logg.debug("      detected %s -> epel refdate %s", version, released)
         later = ""
         before = ""
-        # and then check for actual images around
-        cmd = docker + " images --format '{{.Repository}}:{{.Tag}}'"
-        out, err, end = output3(cmd)
-        if end:
-            logg.error("docker images [%s]\n\t", end, cmd)
-        for line in out.split("\n"):
-            if "/epel-repo:" not in line:
-                continue
-            tagline = re.sub(".*/epel-repo:", "", line)
+        epelimages = self.get_epel_docker_mirror_images(rep)
+        diskrepos = self.get_epel_docker_mirror_disks(rep, "mirrors.fedoraproject.org")
+        epelrepos = epelimages + list(diskrepos.keys())
+        logg.debug("select %s from images %s", released, epelrepos)
+        for image in epelrepos:
+            tagline = re.sub(".*:", "", image)
             tagname = re.sub(" .*", "", tagline)
             created = tagname.split(".")[-1]
             accepts = tagname.startswith(major(version))
-            logg.debug(": %s (%s) (%s) %s:%s", line.strip(), created, released, major(version), accepts and "x" or "ignore")
+            logg.debug(": %s (%s) (%s) %s:%s", image, created, released, major(version), accepts and "x" or "ignore")
             if created >= released and accepts:
                 if not later or later > tagname:
                     later = tagname
@@ -573,7 +588,43 @@ class DockerMirrorPackagesRepo:
             ver = later
         elif before:
             ver = before
-        return self.docker_mirror(rmi, rep, ver, "mirrors.fedoraproject.org")
+        logg.debug("image ver %s <- epel refdate %s", ver, released)
+        mirror = self.docker_mirror(rmi, rep, ver, "mirrors.fedoraproject.org")
+        if F"{rep}:{ver}" in diskrepos:
+            mirror = diskrepos[ F"{rep}:{ver}"]
+            logg.info("replace %s:%s by disk %s", rep, ver, mirror.mount)
+        return mirror
+    def get_epel_docker_mirror_images(self, rep):
+        docker = DOCKER
+        rmi = IMAGESREPO
+        cmd = docker + " images --format '{{.Repository}}:{{.Tag}}'"
+        out, err, end = output3(cmd)
+        if end:
+            logg.error("docker images [%s]\n\t%s", end, cmd)
+            return []
+        found = []
+        for line in out.split("\n"):
+            if not line.startswith(rmi):
+                continue
+            if F"/{rep}:" not in line:
+                continue
+            found.append(line.rstrip())
+        return found
+    def get_epel_docker_mirror_disks(self, rep, *hosts):
+        rep = rep or "epel-repo"
+        found = {}
+        config = configparser.ConfigParser()
+        configfile = os.path.expanduser(DOCKER_MIRROR_CONFIG)
+        if os.path.exists(configfile):
+            config.read(configfile)
+        for sec in config.sections():
+            if sec.startswith(rep+":"):
+                cname = sec.replace(":","-")
+                mirror = DockerMirror(cname, config[sec]["image"], hosts, config[sec]["mount"])
+                logg.info("found epel disk %s", mirror)
+                found[sec] = mirror
+        return found
+
     #
     def ip_container(self, name):
         docker = DOCKER
@@ -587,13 +638,14 @@ class DockerMirrorPackagesRepo:
         if not values or "NetworkSettings" not in values[0]:
             logg.critical(" docker inspect %s => %s ", name, values)
         addr = values[0]["NetworkSettings"]["IPAddress"]
-        assert isinstance(addr, basestring)
+        assert isinstance(addr, stringtypes)
         logg.debug("::::                %s -> %s", name, addr)
         return addr
     def start_containers(self, image):
         mirrors = self.get_docker_mirrors(image)
         done = {}
         for mirror in mirrors:
+            logg.debug(" START --name %s %s [%s]", mirror.cname, mirror.image, mirror.mount)
             addr = self.start_container(mirror.image, mirror.cname, mirror.mount)
             done[mirror.cname] = addr
         return done
@@ -653,7 +705,7 @@ class DockerMirrorPackagesRepo:
             out, err, ok = output3(cmd.format(**locals()))
             status = container_found[0].get("State", {})
             started = status.get("StartedAt", "(was not started)")
-            assert isinstance(started, basestring)
+            assert isinstance(started, stringtypes)
             return started
         return "(did not exist)"
     def info_containers(self, image):
@@ -782,7 +834,7 @@ class DockerMirrorPackagesRepo:
             results[url] = 0
             if "alma" in url or "epel" in url:
                 logg.debug("wait %s:443 (%ss)", url, MAXWAIT)
-                for attempt in xrange(max(1, MAXWAIT)):
+                for attempt in range(max(1, MAXWAIT)):
                     try:
                         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         sock.settimeout(2)
@@ -795,7 +847,7 @@ class DockerMirrorPackagesRepo:
                         time.sleep(1)
             else:
                 logg.debug("wait %s:80 (%ss)", url, MAXWAIT)
-                for attempt in xrange(max(1, MAXWAIT - 2)):
+                for attempt in range(max(1, MAXWAIT - 2)):
                     try:
                         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         sock.settimeout(2)

@@ -26,9 +26,11 @@ import configparser
 import logging
 logg = logging.getLogger("MIRROR")
 
-if sys.version[0] == '3':
-    basestring = str
-    xrange = range
+if sys.version[0] == '2': # pragma: nocover
+    range = xrange # pylint: disable=redefined-builtin, used-before-assignment, undefined-variable
+    stringtypes = basestring # pylint: disable=undefined-variable
+else:
+    stringtypes = str
 
 NIX = ""
 NOBASE = False
@@ -163,18 +165,6 @@ def majorminor(version: str) -> str:
     if len(version) == 4 or version[4] in ".-":
         return version[:4]
     return version[:3]
-
-def centos_epel() -> None:
-    centos_epeldir()
-    centos_epelsync()
-    centos_epelrepo()
-
-def centos_make() -> None:
-    centos_sync()
-    centos_pull()
-    centos_repo()
-    centos_check()
-    centos_tags()
 
 def centos_release(distro: str = NIX, centos: str = NIX) -> str:
     """ this is a short version for the repo image"""
@@ -513,7 +503,7 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
     version = F"{epel}.{VARIANT}" if VARIANT else epel
     cname = F"{distro}-repo-{epel}"
     baseimage = centos_baseimage(DISTRO, centos)
-    out, end = output2(F"./docker_mirror.py start {baseimage} -a")
+    out =  output(F"./docker_mirror.py start {baseimage} -a")
     addhosts = out.strip()
     PORT = centos_epel_port(distro, centos)
     CMD = str(centos_epel_cmd(distro, centos)).replace("'", '"')
@@ -826,10 +816,12 @@ def centos_epeldropdisk() -> str:
 def centos_epelbaserepo(distro: str = NIX, centos: str = NIX, imagesrepo: str = NIX) -> str:
     imagesrepo = imagesrepo or IMAGESREPO
     distro = "epel"
-    rel = centos_release(distro, centos or CENTOS)
-    version = F"{rel}.{VARIANT}" if VARIANT else rel
+    rel = major(centos_release(distro, centos or CENTOS))
+    ver = F"{rel}.{VARIANT}" if VARIANT else rel
     base = BASELAYER
-    return F"{imagesrepo}/{distro}-repo/{base}:{version}"
+    latest = centos_epelupdated(distro, centos) or datetime.date.today()
+    yymm = latest.strftime("%y%m")
+    return F"{imagesrepo}/{distro}-repo/{base}:{ver}.x.{yymm}"
 def centos_baserepo(distro: str = NIX, centos: str = NIX, imagesrepo: str = NIX) -> str:
     imagesrepo = imagesrepo or IMAGESREPO
     distro = distro or DISTRO
@@ -903,27 +895,6 @@ def centos_restore() -> None:
             if path.isdir(save):
                 shutil.move(save, orig)
 
-
-def centos_check() -> None:
-    docker = DOCKER
-    distro = DISTRO
-    centos = CENTOS
-    repodir = REPODIR
-    cname = "centos-check-" + centos  # container name
-    sx___(F"{docker} rm --force {cname}")
-    sh___(F"{docker} run --name={cname} --detach centos:{centos} sleep 9999")
-    centosdir = F"{repodir}/{distro}.{centos}"
-    out, end = output2(F"{docker} exec {cname} rpm -qa")
-    for f in out.split("\n"):
-        found = path_find(centosdir, f + ".rpm")
-        if found:
-            print(F"OK {f}.rpm        {found}")
-    for f in out.split("\n"):
-        found = path_find(centosdir, f + ".rpm")
-        if not found:
-            print(F"?? {f}.rpm")
-    sh___(F"{docker} rm --force {cname}")
-
 def centos_scripts() -> str:
     me = os.path.dirname(sys.argv[0]) or "."
     dn = os.path.join(me, "scripts")
@@ -972,42 +943,26 @@ def decodes(text: Union[bytes, str]) -> str:
     return text
 
 def sh___(cmd: Union[str, List[str]], shell: bool = True) -> int:
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, stringtypes):
         logg.info(": %s", cmd)
     else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.check_call(cmd, shell=shell)
 
 def sx___(cmd: Union[str, List[str]], shell: bool = True) -> int:
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, stringtypes):
         logg.info(": %s", cmd)
     else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.call(cmd, shell=shell)
 def output(cmd: Union[str, List[str]], shell: bool = True) -> str:
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, stringtypes):
         logg.info(": %s", cmd)
     else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
     out, err = run.communicate()
     return decodes(out)
-def output2(cmd: Union[str, List[str]], shell: bool = True) -> Tuple[str, int]:
-    if isinstance(cmd, basestring):
-        logg.info(": %s", cmd)
-    else:
-        logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
-    run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE)
-    out, err = run.communicate()
-    return decodes(out), run.returncode
-def output3(cmd: Union[str, List[str]], shell: bool = True) -> Tuple[str, str, int]:
-    if isinstance(cmd, basestring):
-        logg.info(": %s", cmd)
-    else:
-        logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
-    run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = run.communicate()
-    return decodes(out), decodes(err), run.returncode
 
 #############################################################################
 
@@ -1024,7 +979,7 @@ def centos_epelimage(distro: str = NIX, centos: str = NIX) -> str:
     updated = centos_epelupdated(distro, centos)
     yymm = updated.strftime("%y%m") if updated else ""
     xx = F"x.{yymm}" if yymm else "x"
-    return F"{distro}:{rel}.{xx}"
+    return F"{distro}-repo:{rel}.{xx}"
 def centos_image(distro: str = NIX, centos: str = NIX) -> str:
     distro = distro or DISTRO
     centos = centos or CENTOS

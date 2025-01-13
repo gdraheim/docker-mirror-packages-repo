@@ -56,6 +56,14 @@ VER3["9.2"] = "9.2-20230718"
 VER3["9.3"] = "9.3-20240410"
 VER3["9.4"] = "9.4-20240530"
 
+def major(version):
+    if len(version) > 2:
+        if version[1] == ".":
+            return version[0]
+        else:
+            return version[:2]
+    return version
+
 def sh(cmd: str, **args: Any) -> str:
     logg.debug("sh %s", cmd)
     return subprocess.getoutput(cmd, **args)
@@ -579,6 +587,7 @@ class CentosMirrorTest(unittest.TestCase):
     def check_epeldir(self, testname: str) -> None:
         ver = self.testver(testname)
         ver3 = VER3[ver]
+        epel = major(ver)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         distro = "epel"
@@ -587,7 +596,8 @@ class CentosMirrorTest(unittest.TestCase):
         script = SCRIPT
         data = F"{tmp}/data"
         repo = F"{tmp}/repo"
-        want = F"{repo}/{distro}.{ver3}"
+        # want = F"{repo}/{distro}.{ver3}"
+        want = F"{repo}/{distro}.{epel}"
         os.makedirs(data)
         #
         cmd = F"{cover} {script} {ver} epeldir --datadir={data} --repodir={repo}"
@@ -599,7 +609,8 @@ class CentosMirrorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
         #
-        want = F"{repo}/{distro}.{ver3}.alt"
+        # want = F"{repo}/{distro}.{ver3}.alt"
+        want = F"{repo}/{distro}.{epel}.alt"
         cmd = F"{cover} {script} {ver} epeldir --datadir={data} --repodir={repo} --variant=alt"
         run = runs(cmd)
         have = run.stdout.strip()
@@ -609,21 +620,24 @@ class CentosMirrorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
         #
-        want = os.path.abspath(F"{data}/{distro}.{ver3}.disk/srv/repo")
+        # want = os.path.abspath(F"{data}/{distro}.{ver3}.disk/srv/repo")
+        want = os.path.abspath(F"{data}/{distro}.{epel}.disk/srv/repo")
         cmd = F"{cover} {script} {ver} epeldiskpath --datadir={data} --repodir={repo}"
         run = runs(cmd)
         have = run.stdout.strip()
         logg.debug("out: %s", have)
         self.assertEqual(want, have)
         #
-        want = os.path.abspath(F"{data}/{distro}.{ver3}.altdisk/srv/repo")
+        # want = os.path.abspath(F"{data}/{distro}.{ver3}.altdisk/srv/repo")
+        want = os.path.abspath(F"{data}/{distro}.{epel}.altdisk/srv/repo")
         cmd = F"{cover} {script} {ver} epeldiskpath --datadir={data} --repodir={repo} --variant=alt"
         run = runs(cmd)
         have = run.stdout.strip()
         logg.debug("out: %s", have)
         self.assertEqual(want, have)
         #
-        want = os.path.abspath(F"{data}/{distro}.{ver3}.altdisktmp/srv/repo")
+        # want = os.path.abspath(F"{data}/{distro}.{ver3}.altdisktmp/srv/repo")
+        want = os.path.abspath(F"{data}/{distro}.{epel}.altdisktmp/srv/repo")
         cmd = F"{cover} {script} {ver} epeldiskpath --datadir={data} --repodir={repo} --variant=alt --disksuffix=disktmp"
         run = runs(cmd)
         have = run.stdout.strip()
@@ -859,28 +873,30 @@ class CentosMirrorTest(unittest.TestCase):
         run = runs(cmd)
         baserepo = run.out
         logg.info("baserepo = %s", baserepo)
-        cmd = F"{cover} {script} {ver} epelbaserepo {VV} --imagesrepo={imagesrepo}"
-        run = runs(cmd)
-        epelbaserepo = run.out
-        logg.info("epelbaserepo = %s", epelbaserepo)
         cmd = F"{cover} {script} {ver} image {VV} --imagesrepo={imagesrepo}"
         run = runs(cmd)
         image = run.out
         logg.info("image = %s", image)
-        cmd = F"{cover} {script} {ver} epelimage {VV} --imagesrepo={imagesrepo}"
-        run = runs(cmd)
-        epelimage = run.out
-        logg.info("epelimage = %s", epelimage)
+        if addepel:
+            cmd = F"{cover} {script} {ver} epelbaserepo {VV} --imagesrepo={imagesrepo}"
+            run = runs(cmd)
+            epelbaserepo = run.out
+            logg.info("epelbaserepo = %s", epelbaserepo)
+            cmd = F"{cover} {script} {ver} epelimage {VV} --imagesrepo={imagesrepo}"
+            run = runs(cmd)
+            epelimage = run.out
+            logg.info("epelimage = %s", epelimage)
         tmp = self.testdir(testname)
         configfile = os.path.join(tmp, "mirror.ini")
         with open(configfile, "w") as cfg:
             print(F"[{image}]", file=cfg)
             print(F"image = {baserepo}", file=cfg)
             print(F"mount = {diskpath}", file=cfg)
-            print(F"[{epelimage}]", file=cfg)
-            print(F"image = {epelbaserepo}", file=cfg)
-            print(F"mount = {epeldiskpath}", file=cfg)
-        calls(F"cat {configfile}")
+            if addepel:
+                print(F"[{epelimage}]", file=cfg)
+                print(F"image = {epelbaserepo}", file=cfg)
+                print(F"mount = {epeldiskpath}", file=cfg)
+        calls(F"cat {configfile} | sed -e 's:^:| :'")
         cmd = F"{cover} {mirror} start {distro}:{ver} --local {VV} -vv {addepel} --docker='{docker}' -C {configfile}"
         ret = calls(cmd)
         self.assertEqual(0, ret)
