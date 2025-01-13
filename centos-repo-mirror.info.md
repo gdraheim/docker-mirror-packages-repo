@@ -32,3 +32,15 @@ the opensuse-repo need. Simply provide the intended version as the first argumen
 The original makefiles targets have been switched to do that with a default version. The old makefiles
 implementation may be checked on the github 'makefiles' branch.
 
+### testsuite and results
+
+centos-docker-mirror.py  89%
+
+
+| mirror-packages image | size
+| --------------------- | -----------------------------------------
+| localhost:5000/mirror-packages/ubuntu-repo/universe:24.04 | 194GB
+| localhost:5000/mirror-packages/ubuntu-repo:24.04 | 194GB
+| localhost:5000/mirror-packages/ubuntu-repo/restricted:24.04 | 18.3GB
+| localhost:5000/mirror-packages/ubuntu-repo/main:24.04 | 18.3GB
+| localhost:5000/mirror-packages/ubuntu-repo/base:24.04 | 4.03GB
