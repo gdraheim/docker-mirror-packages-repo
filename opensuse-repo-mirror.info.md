@@ -27,3 +27,27 @@ the opensuse-repo need. Simply provide the intended version as the first argumen
 The original makefiles targets have been switched to do that with a default version. The old makefiles
 implementation may be checked on the github 'makefiles' branch.
 
+### testsuite and results
+
+opensuse-docker-mirror.py     450     42    91%
+
+| mirror-packages image | size
+| --------------------- | -----------------------------------------
+| localhost:5000/mirror-packages/opensuse-repo/update:15.2 | 118GB
+| localhost:5000/mirror-packages/opensuse-repo:15.2 | 118GB
+| localhost:5000/mirror-packages/opensuse-repo/main:15.2 | 93.2GB
+| localhost:5000/mirror-packages/opensuse-repo/base:15.2 | 153MB
+| localhost:5000/mirror-packages/opensuse-repo/update:15.4 | 143GB
+| localhost:5000/mirror-packages/opensuse-repo:15.4 | 143GB
+| localhost:5000/mirror-packages/opensuse-repo/main:15.4 | 59.8GB
+| localhost:5000/mirror-packages/opensuse-repo/base:15.4 | 160MB
+| localhost:5000/mirror-packages/opensuse-repo/update:15.5 | 112GB
+| localhost:5000/mirror-packages/opensuse-repo:15.5 | 112GB
+| localhost:5000/mirror-packages/opensuse-repo/main:15.5 | 70.7GB
+| localhost:5000/mirror-packages/opensuse-repo/base:15.5 | 158MB
+| localhost:5000/mirror-packages/opensuse-repo/update:15.6 | 211GB
+| localhost:5000/mirror-packages/opensuse-repo:15.6 | 211GB
+| localhost:5000/mirror-packages/opensuse-repo/main:15.6 | 205GB
+| localhost:5000/mirror-packages/opensuse-repo/base:15.6 | 162MB
+
+
