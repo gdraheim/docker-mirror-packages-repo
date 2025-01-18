@@ -24,6 +24,7 @@ logging.addLevelName(DONE, "DONE")
 NIX = ""
 LIST: List[str] = []
 
+IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 IMAGESTESTREPO = os.environ.get("IMAGESTESTREPO", "localhost:5000/mirror-test")
 
 PYTHON = "python3"
@@ -42,6 +43,7 @@ TRUE = 1
 SKIPFULLIMAGE = True
 KEEPFULLIMAGE = False
 KEEPBASEIMAGE = False
+SAVEBASEDISK = False
 
 DISTRO1 = "almalinux"
 DISTRO2 = "centos"
@@ -950,6 +952,56 @@ class CentosMirrorTest(unittest.TestCase):
         cmd = F"{cover} {mirror} stop {distro}:{ver} {VV} {addepel} --docker='{docker}' --imagesrepo='{imagesrepo}' -C {configfile}"
         ret = calls(cmd)
         self.assertEqual(0, ret)
+        if SAVEBASEDISK:
+            cmd = F"{cover} {script} {ver} diskpath {VV}"
+            run = runs(cmd)
+            savediskpath = run.out
+            logg.debug("savediskpath = %s", savediskpath)
+            cmd = F"{cover} {script} {ver} baserepo {VV}"
+            run = runs(cmd)
+            savebaserepo = run.out
+            logg.debug("savebaserepo = %s", savebaserepo)
+            cmd = F"{docker} rmi -f {savebaserepo}"
+            logg.warning("## %s", cmd)
+            calls(cmd)
+            cmd = F"{docker} tag {baserepo} {savebaserepo}"
+            logg.warning("## %s", cmd)
+            calls(cmd)
+            if os.path.isdir(savediskpath):
+                logg.info("rm --tree %s", savediskpath)
+                shutil.rmtree(savediskpath)
+            parentpath = os.path.dirname(savediskpath) 
+            if not os.path.isdir(parentpath):
+                logg.info("mkdir -p %s", parentpath)
+                os.makedirs(parentpath)
+            cmd = F"mv '{diskpath}' '{savediskpath}'"
+            logg.warning("## %s", cmd)
+            calls(cmd)
+            if addepel:
+                cmd = F"{cover} {script} {ver} epeldiskpath {VV}"
+                run = runs(cmd)
+                saveepeldiskpath = run.out
+                logg.debug("saveepeldiskpath = %s", saveepeldiskpath)
+                cmd = F"{cover} {script} {ver} epelbaserepo {VV}"
+                run = runs(cmd)
+                saveepelbaserepo = run.out
+                logg.debug("saveepelbaserepo = %s", saveepelbaserepo)
+                cmd = F"{docker} rmi -f {saveepelbaserepo}"
+                logg.warning("## %s", cmd)
+                calls(cmd)
+                cmd = F"{docker} tag {epelbaserepo} {saveepelbaserepo}"
+                logg.warning("## %s", cmd)
+                calls(cmd)
+                if os.path.isdir(saveepeldiskpath):
+                    logg.info("rm --tree %s", saveepeldiskpath)
+                    shutil.rmtree(saveepeldiskpath)
+                parentpath = os.path.dirname(saveepeldiskpath) 
+                if not os.path.isdir(parentpath):
+                    logg.info("mkdir -p %s", parentpath)
+                    os.makedirs(parentpath)
+                cmd = F"mv '{epeldiskpath}' '{saveepeldiskpath}'"
+                logg.warning("## %s", cmd)
+                calls(cmd)
         #
         if os.path.isdir(diskpath) and not KEEPFULLIMAGE:
             cmd = F"{cover} {script} {ver} dropdisk {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' --disksuffix={testname}_"
@@ -977,6 +1029,7 @@ if __name__ == "__main__":
     cmdline.add_option("--dry-rsync", action="count", default=DRY_RSYNC, help="upstream rsync --dry-run [%default]")
     cmdline.add_option("--real-rsync", action="count", default=0, help="upstream rsync for real [%default]")
     cmdline.add_option("--sleep", metavar="SEC", default=SLEEP)
+    cmdline.add_option("-B", "--savebasedisk", action="count", default=0, help="rename */base image and test *.disk repo")
     cmdline.add_option("-S", "--skipfullimage", action="count", default=0, help="upstream rsync for real [%default]")
     cmdline.add_option("-K", "--keepfullimage", action="count", default=0, help="upstream rsync for real [%default]")
     cmdline.add_option("--keepbaseimage", action="count", default=0, help="upstream rsync for real [%default]")
@@ -995,6 +1048,7 @@ if __name__ == "__main__":
     COVERAGE = opt.coverage
     DRY_RSYNC = opt.dry_rsync - opt.real_rsync
     DOCKER = opt.docker
+    SAVEBASEDISK = opt.savebasedisk
     SKIPFULLIMAGE = opt.skipfullimage
     KEEPFULLIMAGE = opt.keepfullimage
     KEEPBASEIMAGE = opt.keepbaseimage
