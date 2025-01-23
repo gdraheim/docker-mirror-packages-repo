@@ -66,6 +66,13 @@ removes4 removes-epel:
 	$(DOCKER) images --format "{{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" \
 	| grep /mirror-packages/epel-repo | cut -f 2 | xargs -r docker rmi
 
+# new style to make /base image and .disk repo - after being tested.
+base diskbase basedisk savebasedisk:
+	$(PYTHON3) opensuse-docker-mirror.tests.py test_58 --savebasedisk -vv $V $K
+	$(PYTHON3) ubuntu-docker-mirror.tests.py test_68 --savebasedisk -vv $V $K
+	$(PYTHON3) centos-docker-mirror.tests.py test_78 --savebasedisk -vv $V $K
+
+
 rebuild: rebuild1 rebuild2 rebuild3 rebuild4
 rebuild1 opensuse-rebuild:
 	$(MAKE) removes-opensuse

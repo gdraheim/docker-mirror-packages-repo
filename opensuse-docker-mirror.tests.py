@@ -41,6 +41,7 @@ VV="-v"
 SKIPFULLIMAGE = True
 KEEPFULLIMAGE = False
 KEEPBASEIMAGE = False
+SAVEBASEDISK = False
 
 DISTRO1 = "opensuse"
 
@@ -826,6 +827,31 @@ class OpensuseMirrorTest(unittest.TestCase):
         val = run.out
         logg.info("install version: %s", val)
         self.assertIn("Pythonic XML", val)
+        if SAVEBASEDISK:
+            cmd = F"{cover} {script} {ver} diskpath {VV}"
+            run = runs(cmd)
+            savediskpath = run.out
+            logg.debug("savediskpath = %s", savediskpath)
+            cmd = F"{cover} {script} {ver} baserepo {VV}"
+            run = runs(cmd)
+            savebaserepo = run.out
+            logg.debug("savebaserepo = %s", savebaserepo)
+            cmd = F"{docker} rmi -f {savebaserepo}"
+            logg.warning("## %s", cmd)
+            calls(cmd)
+            cmd = F"{docker} tag {baserepo} {savebaserepo}"
+            logg.warning("## %s", cmd)
+            calls(cmd)
+            if os.path.isdir(savediskpath):
+                logg.info("rm --tree %s", savediskpath)
+                shutil.rmtree(savediskpath)
+            parentpath = os.path.dirname(savediskpath)
+            if not os.path.isdir(parentpath):
+                logg.info("mkdir -p %s", parentpath)
+                os.makedirs(parentpath)
+            cmd = F"mv '{diskpath}' '{savediskpath}'"
+            logg.warning("## %s", cmd)
+            calls(cmd)
         #
         if os.path.isdir(diskpath) and not KEEPFULLIMAGE:
             cmd = F"{cover} {script} {ver} dropdisk {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' --disksuffix={testname}_"
@@ -853,6 +879,7 @@ if __name__ == "__main__":
     cmdline.add_option("--dry-rsync", action="count", default=DRY_RSYNC, help="upstream rsync --dry-run [%default]")
     cmdline.add_option("--real-rsync", action="count", default=0, help="upstream rsync for real [%default]")
     cmdline.add_option("--sleep", metavar="SEC", default=SLEEP)
+    cmdline.add_option("-B", "--savebasedisk", action="count", default=0, help="rename */base image and test *.disk repo")
     cmdline.add_option("-S", "--skipfullimage", action="count", default=0, help="upstream rsync for real [%default]")
     cmdline.add_option("-K", "--keepfullimage", action="count", default=0, help="upstream rsync for real [%default]")
     cmdline.add_option("--keepbaseimage", action="count", default=0, help="upstream rsync for real [%default]")
@@ -871,6 +898,7 @@ if __name__ == "__main__":
     COVERAGE = opt.coverage
     DRY_RSYNC = opt.dry_rsync - opt.real_rsync
     DOCKER = opt.docker
+    SAVEBASEDISK = opt.savebasedisk
     SKIPFULLIMAGE = opt.skipfullimage
     KEEPFULLIMAGE = opt.keepfullimage
     KEEPBASEIMAGE = opt.keepbaseimage

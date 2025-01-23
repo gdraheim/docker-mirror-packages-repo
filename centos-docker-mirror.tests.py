@@ -588,7 +588,7 @@ class CentosMirrorTest(unittest.TestCase):
         self.check_epeldir(self.testname())
     def check_epeldir(self, testname: str) -> None:
         ver = self.testver(testname)
-        ver3 = VER3[ver]
+        # ver3 = VER3[ver]
         epel = major(ver)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
@@ -970,7 +970,7 @@ class CentosMirrorTest(unittest.TestCase):
             if os.path.isdir(savediskpath):
                 logg.info("rm --tree %s", savediskpath)
                 shutil.rmtree(savediskpath)
-            parentpath = os.path.dirname(savediskpath) 
+            parentpath = os.path.dirname(savediskpath)
             if not os.path.isdir(parentpath):
                 logg.info("mkdir -p %s", parentpath)
                 os.makedirs(parentpath)
@@ -995,7 +995,7 @@ class CentosMirrorTest(unittest.TestCase):
                 if os.path.isdir(saveepeldiskpath):
                     logg.info("rm --tree %s", saveepeldiskpath)
                     shutil.rmtree(saveepeldiskpath)
-                parentpath = os.path.dirname(saveepeldiskpath) 
+                parentpath = os.path.dirname(saveepeldiskpath)
                 if not os.path.isdir(parentpath):
                     logg.info("mkdir -p %s", parentpath)
                     os.makedirs(parentpath)
