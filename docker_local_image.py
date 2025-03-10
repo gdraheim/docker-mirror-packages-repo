@@ -91,7 +91,7 @@ def package_search(distro: str = NIX):
 
 def docker_local_build(cmd2: List[str] = []) -> int:
     """" cmd2 should be given as pairs (cmd,arg) but some items are recognized by their format directly"""
-    prefixes = ["FROM","from", "INTO", "into", "TAG", "tag", "COPY", "copy", "SAVE", "save", "INSTALL", "install","USER", "user"]
+    prefixes = ["FROM","from", "INTO", "into", "TAG", "tag", "COPY", "copy", "SAVE", "save", "INSTALL", "install","USER", "user","TEST", "test"]
     mirror = _mirror
     docker = DOCKER
     tagging: str = INTO
@@ -210,12 +210,21 @@ def docker_local_build(cmd2: List[str] = []) -> int:
                 sx____(F"{docker} copy {src} {into}:{dst}")
                 cmd = NIX
                 continue
-            if cmd in  ["SAVE", "SAVE"]:
+            if cmd in  ["SAVE", "save"]:
                 if ":" in arg:
                     src, dst = arg.split(":", 1)
                 else:
                     src, dst = arg, "./"
                 sx____(F"{docker} copy {into}:{src} {dst}")
+                cmd = NIX
+                continue
+            if cmd in  ["TEST", "test"]:
+                if arg.startswith(":"):
+                    dst = arg[1:]
+                    sh____(F"{docker} exec {into} wc -l {dst}")
+                else:
+                    dst = arg
+                    sh____(F"{docker} exec {into} {dst}")
                 cmd = NIX
                 continue
             if cmd in ["COMMIT", "commit"]:
