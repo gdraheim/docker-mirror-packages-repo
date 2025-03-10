@@ -91,7 +91,7 @@ def package_search(distro: str = NIX):
 
 def docker_local_build(cmd2: List[str] = []) -> int:
     """" cmd2 should be given as pairs (cmd,arg) but some items are recognized by their format directly"""
-    prefixes = ["FROM","from", "INTO", "into", "TAG", "tag", "COPY", "copy", "SAVE", "save", "INSTALL", "install","USER", "user","TEST", "test"]
+    prefixes = ["FROM","from", "INTO", "into", "TAG", "tag", "COPY", "copy", "SAVE", "save", "INSTALL", "install","USER", "user","TEST", "test", "SYMLINK", "symlink"]
     mirror = _mirror
     docker = DOCKER
     tagging: str = INTO
@@ -105,7 +105,7 @@ def docker_local_build(cmd2: List[str] = []) -> int:
     search = NIX
     refresh = NIX
     distro = NIX
-    package = package_tool(distro)
+    package = NIX
     for ncmd in cmd2:
         arg = NIX
         if not cmd:
@@ -175,12 +175,14 @@ def docker_local_build(cmd2: List[str] = []) -> int:
                 logg.debug("install %s", arg)
                 if not refresh:
                     refresh = package_refresh(distro)
+                    logg.debug("install %s", refresh)
                     if refresh:
                         sx____(F"{docker} exec {into} {refresh}")
                 if "@" in arg:
                     test, pack = arg.split("@", 1)
                 else:
                     test, pack = NIX, arg
+                package = package_tool(distro)
                 logg.debug("TEST %s PACK %s FROM %s", test, pack, arg)
                 if test:
                     sx____(F"{docker} exec {into} bash -c 'test -f {test} || {package} install -y {pack}'")
@@ -216,6 +218,19 @@ def docker_local_build(cmd2: List[str] = []) -> int:
                 else:
                     src, dst = arg, "./"
                 sx____(F"{docker} copy {into}:{src} {dst}")
+                cmd = NIX
+                continue
+            if cmd in  ["SYMLINK", "symlink"]:
+                if ":" in arg:
+                    src, dst = arg.split(":", 1)
+                else:
+                    src, dst = arg, "/tmp"
+                if "/" not in dst and "/" in src:
+                    srcdir=os.path.dirname(src)
+                    srcname=os.path.basename(src)
+                    sx____(F"{docker} exec {into} ln -s {srcname} {srcdir}/{dst}")
+                else:
+                    sx____(F"{docker} exec {into} ln -s {src} {dst}")
                 cmd = NIX
                 continue
             if cmd in  ["TEST", "test"]:
