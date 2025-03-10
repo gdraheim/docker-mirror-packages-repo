@@ -9,6 +9,11 @@ import subprocess
 import logging
 logg = logging.getLogger("local" if __name__ == "___main__" else __name__)
 
+__copyright__ = "(C) 2025 Guido Draheim"
+__contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
+__license__ = "CC0 Creative Commons Zero (Public Domain)"
+__version__ = "1.7.7101"
+
 # generalized from the testsuite.py in the docker-systemctl-replacement project
 
 _maindir = os.path.dirname(sys.argv[0])

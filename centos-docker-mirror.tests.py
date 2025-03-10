@@ -2,7 +2,7 @@
 __copyright__ = "(C) 2025 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.7.7034"
+__version__ = "1.7.7101"
 
 # pylint: disable=unused-import,line-too-long,too-many-lines
 from typing import Optional, Union, Dict, List, Any, Sequence, Callable, Iterable, cast, NamedTuple
@@ -13,7 +13,9 @@ import sys
 import os
 import re
 import time
+from datetime import datetime as Time
 from fnmatch import fnmatchcase as fnmatch
+from glob import glob
 import subprocess
 #  getoutput, Popen, PIPE, call, CalledProcessError
 
@@ -977,6 +979,16 @@ class CentosMirrorTest(unittest.TestCase):
             cmd = F"mv '{diskpath}' '{savediskpath}'"
             logg.warning("## %s", cmd)
             calls(cmd)
+            cache = get_CACHE_HOME()
+            cachefile = os.path.join(cache, F"docker_mirror.{distro}.{ver}.ini")
+            with open(cachefile, "w") as cfg:
+                today = Time.now().isoformat('.')
+                print("", file=cfg)
+                print(F"# {testname} {today}")
+                print(F"[{image}]", file=cfg)
+                print(F"image = {savebaserepo}", file=cfg)
+                print(F"mount = {savediskpath}", file=cfg)
+            logg.warning("written %s", cachefile)
             if addepel:
                 cmd = F"{cover} {script} {ver} epeldiskpath {VV}"
                 run = runs(cmd)
@@ -1002,6 +1014,14 @@ class CentosMirrorTest(unittest.TestCase):
                 cmd = F"mv '{epeldiskpath}' '{saveepeldiskpath}'"
                 logg.warning("## %s", cmd)
                 calls(cmd)
+                cachefile = os.path.join(cache, F"docker_mirror.epel.{ver}.ini")
+                with open(cachefile, "w") as cfg:
+                    print("", file=cfg)
+                    print(F"# {testname} {today}")
+                    print(F"[{epelimage}]", file=cfg)
+                    print(F"image = {saveepelbaserepo}", file=cfg)
+                    print(F"mount = {saveepeldiskpath}", file=cfg)
+                logg.warning("written %s", cachefile)
         #
         if os.path.isdir(diskpath) and not KEEPFULLIMAGE:
             cmd = F"{cover} {script} {ver} dropdisk {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' --disksuffix={testname}_"
@@ -1011,6 +1031,14 @@ class CentosMirrorTest(unittest.TestCase):
         self.rm_container(testname)
         if not KEEPFULLIMAGE:
             self.rm_images(testname)
+    def make_disk_cleanup(self) -> None:
+        cache = get_CACHE_HOME()
+        if SAVEBASEDISK:
+            for distro in [DISTRO1, DISTRO2, "epel"]:
+                cachefiles = glob(os.path.join(cache, F"docker_mirror.{distro}.*.ini"))
+                for cachefile in cachefiles:
+                    logg.info(" rm %s", cachefile)
+                    os.unlink(cachefile)
     def test_79999(self) -> None:
         if COVERAGE:
             o1 = sh(F" {PYTHON} -m coverage combine")

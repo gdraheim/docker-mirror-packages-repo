@@ -67,10 +67,10 @@ removes4 removes-epel:
 	| grep /mirror-packages/epel-repo | cut -f 2 | xargs -r docker rmi
 
 # new style to make /base image and .disk repo - after being tested.
-base diskbase basedisk savebasedisk:
-	$(PYTHON3) opensuse-docker-mirror.tests.py test_58 --savebasedisk -vv $V $K
-	$(PYTHON3) ubuntu-docker-mirror.tests.py test_68 --savebasedisk -vv $V $K
-	$(PYTHON3) centos-docker-mirror.tests.py test_78 --savebasedisk -vv $V $K
+base diskbase basedisk savebasedisk: obase ubase rbase
+obase: ; $(PYTHON3) opensuse-docker-mirror.tests.py test_58 --savebasedisk -vv $V $K
+ubase: ; $(PYTHON3) ubuntu-docker-mirror.tests.py test_68 --savebasedisk -vv $V $K
+rbase: ; $(PYTHON3) centos-docker-mirror.tests.py test_78 --savebasedisk -vv $V $K
 
 
 rebuild: rebuild1 rebuild2 rebuild3 rebuild4
