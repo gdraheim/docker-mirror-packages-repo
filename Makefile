@@ -129,6 +129,7 @@ test_3%: ; ./docker_mirror.tests.py $@ -vv $V $K
 test_5%: ; ./opensuse-docker-mirror.tests.py $@ -vv $V $K 
 test_6%: ; ./ubuntu-docker-mirror.tests.py $@ -vv $V $K 
 test_7%: ; ./centos-docker-mirror.tests.py $@ -vv $V $K 
+test_9%: ; ./docker_local_image.tests.py $@ -vv $V $K 
 m_%: ; ./docker_mirror.tests.py $@ -vv $V $K 
 o_%: ; ./opensuse-docker-mirror.tests.py $@ -vv $V $K 
 
