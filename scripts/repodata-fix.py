@@ -53,12 +53,14 @@ def fix(datafile: str) -> None:
                 a[0].setAttribute("href", newhref)
                 b = data.getElementsByTagName("checksum")
                 b[0].firstChild.replaceWholeText(checksum_gz)  # type: ignore[union-attr]
+                if b[0].hasAttribute("type"): b[0].setAttribute("type", "sha256") # type="sha512"
                 c = data.getElementsByTagName("size")
                 c[0].firstChild.replaceWholeText(str(len(xmlgz)))  # type: ignore[union-attr]
                 d = data.getElementsByTagName("open-size")
                 d[0].firstChild.replaceWholeText(str(len(xml)))  # type: ignore[union-attr]
                 e = data.getElementsByTagName("open-checksum")
                 e[0].firstChild.replaceWholeText(checksum_xml)  # type: ignore[union-attr]
+                if e[0].hasAttribute("type"): e[0].setAttribute("type", "sha256") # type="sha512"
                 fixes += 1
     if fixes:
         logg.debug("done %i fixes -> overwrite repomd.xml", fixes)
