@@ -65,16 +65,16 @@ DISTRO = "opensuse"
 MIRRORS: Dict[str, List[str]] = {}
 MIRRORS["opensuse"] = [RSYNC_SUSE2, RSYNC_SUSE3]
 
+# excludes [arch for arch in ARCHLIST if arch not in ARCHS]
 ARCHLIST = [ "x86_64", "aarch64", "s390x", "ppc", "ppc64le" ]
 ARCHS = ["x86_64"]
-
 
 PYTHON = "python3"
 RSYNC = "rsync"
 DOCKER = "docker"
 BASELAYER = "base"
 MAKEMINI = False
-CREATEREPO = False
+CREATEREPO = 0
 DISKSUFFIX = "disk" # suffix
 RETRY = 3
 
@@ -86,8 +86,16 @@ SUBDIRS15["distribution"] = ["oss", "non-oss"]
 SUBDIRS15["update"] = ["oss", "non-oss", "backports", "sle"]
 
 FILTERS15: Dict[str, List[str]] = OrderedDict()
+FILTERS15["oss"] = ["tftpboot-installation-*"]
 FILTERS15["non-oss"] = ["strc", "nosrc"]
 FILTERS15["sle"] = ["kernel-*", "eclipse-*", "cross-*"]
+
+skipdirs = [
+    "boot", "EFI", "*-boot"]
+
+skipfiles = [
+    "*.src.rpm", "*.29041k"
+]
 
 def opensuse_sync(*, variant:str = NIX) -> None:
     opensuse_dir(variant=variant)
@@ -141,14 +149,6 @@ def opensuse_dir(variant: str = "") -> str:
         logg.warning("%s/. local dir", dirlink)
     return dirlink
 
-skipdirs = [
-    "boot", "EFI", "160.3-boot", "20.8-boot", "24.5-boot",
-    "aarch64", "s390x", "ppc", "ppc64le", ]
-
-skipfiles = [
-    "*.src.rpm", "*.29041k"
-]
-
 def opensuse_sync_repo_(dist: str, repo: str, filters: Optional[List[str]] = None) -> None:
     filters = [] if filters is None else filters
     distro = DISTRO
@@ -160,7 +160,9 @@ def opensuse_sync_repo_(dist: str, repo: str, filters: Optional[List[str]] = Non
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in skipfiles])
+    excludes += "".join(["""--filter="exclude %s" """ % arch for arch in ARCHLIST if arch not in ARCHS])
     excludes += """ --size-only --copy-links """
+    excludes += """ --delete"""
     leaprepo = F"{repodir}/{distro}.{version}/{dist}/leap/{leap}/repo"
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     # retry:
@@ -184,7 +186,9 @@ def opensuse_sync_pack_(dist: str, repo: str, filters: Optional[List[str]] = Non
     excludes = "".join(["""--filter="exclude %s" """ % name for name in skipdirs])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in filters])
     excludes += "".join(["""--filter="exclude %s" """ % name for name in skipfiles])
+    excludes += "".join(["""--filter="exclude %s" """ % arch for arch in ARCHLIST if arch not in ARCHS])
     excludes += """ --size-only --copy-links """
+    # excludes += """ --delete"""
     leaprepo = F"{repodir}/{distro}.{version}/{dist}/leap/{leap}"
     if not path.isdir(leaprepo): os.makedirs(leaprepo)
     # retry:
@@ -336,6 +340,10 @@ def opensuse_disk(onlybase: bool = False) -> str:
                 sh___(F"find {srv}/repo/{subdir} -name repomd.xml -exec {scripts}/repodata-fix.py {{}} -v ';' ")
             else:
                 logg.warning("no such pooldir: %s", pooldir)
+            if CREATEREPO > 1:
+                logg.info("running createrepo for main parts is about fixing upstream bugs")
+                if createrepo:
+                    sh___(F" cd {srv}/repo/{subdir}/leap/{leap}/oss && {createrepo} . -v ")
         if dist in ["update"]:
             # sh___("{docker} exec {cname} rm -r /srv/repo/{dist}/{leap}".format(**locals()))
             sh___(F"ln -s {srv}/repo/{dist}/leap/{leap}/oss {srv}/repo/{dist}/{leap}")
@@ -521,7 +529,7 @@ if __name__ == "__main__":
                        help="use other opensuse/leap version [%default]")
     cmdline.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
                        help=F"use other arch list {ARCHS}")
-    cmdline.add_option("--createrepo", action="store_true", default=CREATEREPO,
+    cmdline.add_option("--createrepo", action="count", default=CREATEREPO,
                        help="force createrepo on 'update' packages [%default]")
     cmdline.add_option("--mini", action="store_true", default=MAKEMINI,
                        help="make /mini repo layer [%default]")
