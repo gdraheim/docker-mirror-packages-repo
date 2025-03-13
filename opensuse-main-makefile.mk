@@ -7,11 +7,11 @@ opensuse:
 	$(MAKE) opensuserepo
 	$(MAKE) opensusetest
 
-opensusesync: ; ./opensuse-docker-mirror.py $(LEAP) sync -v
-opensusebase: ; ./opensuse-docker-mirror.py $(LEAP) base -v
-opensusedisk: ; ./opensuse-docker-mirror.py $(LEAP) disk -v
-opensuserepo: ; ./opensuse-docker-mirror.py $(LEAP) repo -v
-opensusetest: ; ./opensuse-docker-mirror.py $(LEAP) test -v
+opensusesync: ; ./opensuse-docker-mirror.py $(LEAP) sync -v $(OPTIONS)
+opensusebase: ; ./opensuse-docker-mirror.py $(LEAP) base -v $(OPTIONS)
+opensusedisk: ; ./opensuse-docker-mirror.py $(LEAP) disk -v $(OPTIONS)
+opensuserepo: ; ./opensuse-docker-mirror.py $(LEAP) repo -v $(OPTIONS)
+opensusetest: ; ./opensuse-docker-mirror.py $(LEAP) test -v $(OPTIONS)
 
 opensusebash:
 	- docker rm -f opensuse-bash-$(LEAP)
@@ -64,7 +64,7 @@ opensuse-42.2: ; $(MAKE) opensuse LEAP=42.2 OPENSUSE=opensuse
 
 # docker_mirror.ini shallow starts
 opensusebase.16.0: ; $(MAKE) opensusebase LEAP=16.0 OPENSUSE=opensuse/leap
-opensusebase.15.6: ; $(MAKE) opensusebase LEAP=15.6 OPENSUSE=opensuse/leap
+opensusebase.15.6: ; $(MAKE) opensusebase LEAP=15.6 OPENSUSE=opensuse/leap OPTIONS=--createrepo
 opensusebase.15.5: ; $(MAKE) opensusebase LEAP=15.5 OPENSUSE=opensuse/leap
 opensusebase.15.4: ; $(MAKE) opensusebase LEAP=15.4 OPENSUSE=opensuse/leap
 opensusebase.15.3: ; $(MAKE) opensusebase LEAP=15.3 OPENSUSE=opensuse/leap
@@ -73,6 +73,7 @@ opensusebase.15.1: ; $(MAKE) opensusebase LEAP=15.1 OPENSUSE=opensuse/leap
 opensusebase.15.0: ; $(MAKE) opensusebase LEAP=15.0 OPENSUSE=opensuse/leap
 opensusebase.42.3: ; $(MAKE) opensusebase LEAP=42.3 OPENSUSE=opensuse
 opensusedisk.16.0: ; $(MAKE) opensusedisk LEAP=16.0 OPENSUSE=opensuse/leap
+opensusedisk.15.6.c: ; $(MAKE) opensusedisk LEAP=15.6 OPENSUSE=opensuse/leap "OPTIONS=--createrepo --createrepo"
 opensusedisk.15.6: ; $(MAKE) opensusedisk LEAP=15.6 OPENSUSE=opensuse/leap
 opensusedisk.15.5: ; $(MAKE) opensusedisk LEAP=15.5 OPENSUSE=opensuse/leap
 opensusedisk.15.4: ; $(MAKE) opensusedisk LEAP=15.4 OPENSUSE=opensuse/leap
