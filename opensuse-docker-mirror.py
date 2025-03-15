@@ -23,12 +23,6 @@ import shutil
 import logging
 logg = logging.getLogger("MIRROR")
 
-if sys.version[0] == '2': # pragma: nocover
-    range = xrange # pylint: disable=redefined-builtin, used-before-assignment, undefined-variable
-    stringtypes = basestring # pylint: disable=undefined-variable
-else:
-    stringtypes = str
-
 NIX = ""
 TRUE = 1
 NOBASE = False
@@ -410,7 +404,7 @@ def repo_scripts() -> str:
 def sh___(cmd: Union[str, List[str]], debugs: bool = True) -> int:
     """ shell=True if string (and raises signal on returncode) """
     shell = False
-    if isinstance(cmd, stringtypes):
+    if isinstance(cmd, str):
         shell = True
         if debugs:
             logg.info(": %s", cmd)
@@ -422,7 +416,7 @@ def sh___(cmd: Union[str, List[str]], debugs: bool = True) -> int:
 def sx___(cmd: Union[str, List[str]], debugs: bool = True) -> int:
     """ shell=True if string and returns negative returncode """
     shell = False
-    if isinstance(cmd, stringtypes):
+    if isinstance(cmd, str):
         shell = True
         if debugs:
             logg.info(": %s", cmd)

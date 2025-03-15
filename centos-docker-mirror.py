@@ -13,7 +13,6 @@ __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7101"
 
-# from __future__ import literal_string_interpolation # PEP498 Python3.6
 from typing import Optional, Dict, List, Tuple, Union
 from collections import OrderedDict
 import os
@@ -26,12 +25,6 @@ import datetime
 import configparser
 import logging
 logg = logging.getLogger("MIRROR")
-
-if sys.version[0] == '2': # pragma: nocover
-    range = xrange # pylint: disable=redefined-builtin, used-before-assignment, undefined-variable
-    stringtypes = basestring # pylint: disable=undefined-variable
-else:
-    stringtypes = str
 
 NIX = ""
 NEVER = False
@@ -954,20 +947,20 @@ def decodes(text: Union[bytes, str]) -> str:
     return text
 
 def sh___(cmd: Union[str, List[str]], shell: bool = True) -> int:
-    if isinstance(cmd, stringtypes):
+    if isinstance(cmd, str):
         logg.info(": %s", cmd)
     else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.check_call(cmd, shell=shell)
 
 def sx___(cmd: Union[str, List[str]], shell: bool = True) -> int:
-    if isinstance(cmd, stringtypes):
+    if isinstance(cmd, str):
         logg.info(": %s", cmd)
     else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
     return subprocess.call(cmd, shell=shell)
 def output(cmd: Union[str, List[str]], shell: bool = True) -> str:
-    if isinstance(cmd, stringtypes):
+    if isinstance(cmd, str):
         logg.info(": %s", cmd)
     else:
         logg.info(": %s", " ".join(["'%s'" % item for item in cmd]))
