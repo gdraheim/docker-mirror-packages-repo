@@ -1,4 +1,6 @@
 #! /usr/bin/python3
+# pylint: disable=possibly-unused-variable,unused-variable,line-too-long
+
 """ sync packages repo to disk and make docker mirror images from it.
     Try to run 'sync' followed be 'repo'. If a command starts with a
     number then it changes the version to be handled. A usual command
@@ -10,7 +12,6 @@ __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7101"
 
-# from __future__ import literal_string_interpolation # PEP498 Python3.6
 from typing import Optional, Dict, List, Union
 from collections import OrderedDict
 import os

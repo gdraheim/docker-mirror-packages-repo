@@ -91,7 +91,7 @@ def package_search(distro: str = NIX):
 
 def docker_local_build(cmd2: List[str] = []) -> int:
     """" cmd2 should be given as pairs (cmd,arg) but some items are recognized by their format directly"""
-    prefixes = ["FROM","from", "INTO", "into", "TAG", "tag", "COPY", "copy", "SAVE", "save", 
+    prefixes = ["FROM","from", "INTO", "into", "TAG", "tag", "COPY", "copy", "SAVE", "save",
                 "SEARCH", "search", "INSTALL", "install","USER", "user","TEST", "test", "SYMLINK", "symlink"]
     mirror = _mirror
     docker = DOCKER

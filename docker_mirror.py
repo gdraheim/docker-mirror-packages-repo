@@ -1,12 +1,13 @@
 #! /usr/bin/python3
-# from __future__ import print_function
+# pylint: disable=possibly-unused-variable,unused-variable,line-too-long
+from __future__ import print_function
 
 __copyright__ = "(C) 2025 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7101"
 
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 import os.path
 import sys
 import re
@@ -126,7 +127,7 @@ def decodes_(text):
             encoded = "utf-8"
         try:
             return text.decode(encoded)
-        except:
+        except UnicodeDecodeError:
             return text.decode("latin-1")
     return text
 def output3(cmd, shell=True, debug=True):
@@ -393,7 +394,7 @@ class DockerMirrorPackagesRepo:
             ver = ""
         if "." not in ver:
             latest = ""
-            for release in DIST:
+            for release in sorted(DIST):
                 codename = DIST[release]
                 if len(ver) >= 3 and ver.startswith(codename):
                     logg.debug("release (%s) %s", release, codename)
@@ -443,7 +444,7 @@ class DockerMirrorPackagesRepo:
             ver = ""
         if "." not in ver:
             latest = ""
-            for release in BASE:
+            for release in sorted(BASE):
                 if release.startswith(ver):
                     mainrelease = BASE[release]
                     logg.debug("release %s (%s)", release, mainrelease)
@@ -462,7 +463,7 @@ class DockerMirrorPackagesRepo:
         if version in ALMA:
             ver = version # ALMA.keys() are long version
         elif version in ALMA.values():
-            ver = max([os for os in ALMA if ALMA[os] == version])
+            ver = max([os for os, os_base in ALMA.items() if os_base == version])
         logg.debug("latest version %s for %s", ver, version)
         return ver or version
     def get_centos_docker_mirror(self, image):
@@ -534,7 +535,7 @@ class DockerMirrorPackagesRepo:
     def get_opensuse_docker_mirrors(self, image):
         main = self.get_opensuse_docker_mirror(image)
         return [main]
-    def docker_mirror(self, rmi, rep, ver, *hosts):
+    def docker_mirror(self, rmi, rep, ver, *hosts):  # pylint: disable=unused-argument
         req = rep.replace("/", "-")
         image = "{rmi}/{rep}:{ver}".format(**locals())
         cname = "{req}-{ver}".format(**locals())
@@ -705,7 +706,7 @@ class DockerMirrorPackagesRepo:
             info = self.stop_container(mirror.image, mirror.cname)
             done[mirror.cname] = info
         return done
-    def stop_container(self, image, container):
+    def stop_container(self, image, container):  # pylint: disable=unused-argument
         docker = DOCKER
         cmd = "{docker} inspect {container}"
         out, err, rc = output3(cmd.format(**locals()))
@@ -725,7 +726,7 @@ class DockerMirrorPackagesRepo:
             info = self.info_container(mirror.image, mirror.cname)
             done[mirror.cname] = info
         return done
-    def info_container(self, image, container):
+    def info_container(self, image, container): # pylint: disable=unused-argument
         addr = self.ip_container(container)
         return addr
     def get_containers(self, image):
@@ -743,7 +744,8 @@ class DockerMirrorPackagesRepo:
             done[mirror.cname] = addr
         return done
     #
-    def add_hosts(self, image, done={}):
+    def add_hosts(self, image, done=None):
+        done = done if done is not None else {}
         mirrors = self.get_docker_mirrors(image)
         args = []
         for mirror in mirrors:
@@ -821,7 +823,7 @@ class DockerMirrorPackagesRepo:
         if LOCAL:
             notfound = [mirror for mirror, addr in mirrors.items() if addr is None]
             if notfound:
-                logg.error("   no docker mirror image for %s" % (" ".join(notfound)))
+                logg.error("   no docker mirror image for %s", (" ".join(notfound)))
                 sys.exit(1)
         self.wait_mirrors(mirrors)
         if ADDHOSTS:
@@ -921,7 +923,7 @@ def repo_scripts():
 if __name__ == "__main__":
     from argparse import ArgumentParser, HelpFormatter
     cmdline = ArgumentParser(formatter_class=lambda prog: HelpFormatter(prog, max_help_position=36, width=81),  # type: ignore[arg-type]
-                             description="""starts local containers representing mirrors of package repo repositories 
+                             description="""starts local containers representing mirrors of package repo repositories
         which are required by a container type. Subsequent 'docker run' can use the '--add-hosts' from this
         helper script to divert 'pkg install' calls to a local docker container as the real source.""")
     cmdline.add_argument("-v", "--verbose", action="count", default=0, help="more verbose logging")

@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+# pylint: disable=possibly-unused-variable,unused-variable,line-too-long
 """ checking easy build with the local docker mirror packages repos """
 
 from typing import Union, Optional, List, Mapping, Iterable, Iterator, TextIO
@@ -59,7 +60,7 @@ def sx____(cmd: Union[str, List[str]], shell: bool = True) -> int:
     return subprocess.call(cmd, shell=shell)
 
 class CalledProcessError(subprocess.SubprocessError):
-    def __init__(self, args: Union[str, List[str]], returncode: int = 0, 
+    def __init__(self, args: Union[str, List[str]], returncode: int = 0,
         stdout: Union[str,bytes] = NIX, stderr: Union[str,bytes] = NIX) -> None:
         self.cmd = args
         self.returncode = returncode
@@ -67,7 +68,7 @@ class CalledProcessError(subprocess.SubprocessError):
         self.stderr = stderr
         self.output = self.stdout
 class CompletedProcess:
-    def __init__(self, args: Union[str, List[str]], returncode: int = 0, 
+    def __init__(self, args: Union[str, List[str]], returncode: int = 0,
         stdout: Union[str,bytes] = NIX, stderr: Union[str,bytes] = NIX) -> None:
         self.args = args
         self.returncode = returncode
@@ -83,9 +84,9 @@ class CompletedProcess:
     def out(self) -> str:
         return decodes(self.stdout).rstrip()
 
-def X(args: Union[str, List[str]], stdin: Optional[int]=None, inputs: Optional[bytes]=None, 
+def X(args: Union[str, List[str]], stdin: Optional[int]=None, inputs: Optional[bytes]=None,
     stdout: Optional[int]=None, stderr: Optional[int]=None,
-    shell: Optional[bool]=None, cwd: Optional[str]=None, timeout: Optional[int]=None, 
+    shell: Optional[bool]=None, cwd: Optional[str]=None, timeout: Optional[int]=None,
     check: bool=False, env: Optional[Mapping[bytes, str]]=None) -> CompletedProcess:
     """ a variant of subprocess.run() """
     shell = isinstance(args, str) if shell is None else shell
