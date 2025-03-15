@@ -34,6 +34,7 @@ else:
     stringtypes = str
 
 NIX = ""
+NEVER = False
 NOBASE = False
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
@@ -95,7 +96,7 @@ ALMA["9.3-20240410"] = "9.3"
 ALMA["9.4-20240506"] = "9.4"
 ALMA["9.4-20240530"] = "9.4"
 
-ARCHLIST = ["x86_64", "ppc64le", "aarch64", "s390x"] 
+ARCHLIST = ["x86_64", "ppc64le", "aarch64", "s390x"]
 
 CENTOS = "9.3-20240410"
 ARCHS = ["x86_64"]
@@ -191,9 +192,9 @@ def centos_baseversion(distro: str = NIX, centos: str = NIX) -> str:
     if centos in BASE:
         return centos
     if centos in BASE.values():
-        return max([os for os in BASE if BASE[os] == centos])
+        return max([os for os, os_base in BASE.items() if os_base == centos])
     if centos in ALMA.values():
-        return max([os for os in ALMA if ALMA[os] == centos])
+        return max([os for os, os_base in ALMA.items() if os_base == centos])
     return centos
 
 def centos_pull() -> None:
@@ -299,9 +300,9 @@ def centos_sync() -> None:
         subdirs = SUBDIRS9
     for base in subdirs:
         for subdir in subdirs[base]:
-            logg.info(F"#### [{base}] /{VARIANT}{subdir}")
+            logg.info("%s", F"#### [{base}] /{VARIANT}{subdir}")
             distro_sync_subdir(distro, centos, subdir)
-            logg.info(F"DONE [{base}] /{VARIANT}{subdir}")
+            logg.info("%s", F"DONE [{base}] /{VARIANT}{subdir}")
 
 def centos_mirror(distro: str = NIX, centos: str = NIX) -> str:
     return distro_mirror(distro, centos)
@@ -354,7 +355,8 @@ def centos_epelsync7(distro: str = NIX, centos: str = NIX) -> None:
     distro = distro or EPEL
     centos = centos or CENTOS
     distro_epelsyncs(distro, centos, [])
-def distro_epelsyncs(distro: str, centos: str, subdirs: List[str] = []) -> str:
+def distro_epelsyncs(distro: str, centos: str, subdirs: Optional[List[str]] = None) -> str:
+    subdirs = subdirs if subdirs is not None else []
     distro = distro or EPEL
     centos = centos or CENTOS
     rsync = RSYNC
@@ -523,7 +525,7 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
         sh___(F"{docker} exec {cname} yum install -y openssl")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/epel/{epel}")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
-    if False:
+    if NEVER:
         # instead we use an explicit epelrepo8_CMD
         for script in os.listdir(F"{scripts}/."):
             sh___(F"{docker} exec {cname} sed -i s:/usr/bin/python3:/usr/libexec/platform-python: /srv/scripts/{script}")
@@ -635,7 +637,6 @@ def centos_http_cmd(distro: str = NIX, centos: str = NIX) -> List[str]:
     return [python, "/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
 
 def centos_python(distro: str = NIX, centos: str = NIX) -> str:
-    global DISTROPYTHON
     distro = distro or DISTRO
     centos = centos or CENTOS
     if DISTROPYTHON:
@@ -948,7 +949,7 @@ def decodes(text: Union[bytes, str]) -> str:
             encoded = "utf-8"
         try:
             return text.decode(encoded)
-        except:
+        except UnicodeEncodeError:
             return text.decode("latin-1")
     return text
 
@@ -1012,13 +1013,13 @@ def centos_version2(distro: str = NIX, centos: str = NIX) -> Tuple[str, str]:
         return distro, centos
     if centos in BASE.values():
         distro = distro or "centos"
-        release = max([os for os in BASE if BASE[os] == centos])
+        release = max([os for os, os_base in BASE.items() if os_base == centos])
         return distro, release
     if centos in ALMA:
         return ALMALINUX, centos
     if centos in ALMA.values():
         distro = ALMALINUX
-        release = max([os for os in ALMA if ALMA[os] == centos])
+        release = max([os for os, os_base in ALMA.items() if os_base == centos])
         return distro, release
     if len(centos) <= 2:
         release = NIX

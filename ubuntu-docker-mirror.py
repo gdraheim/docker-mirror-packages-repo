@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+# pylint: disable=unused-variable,unused-argument,line-too-long
 """ sync packages repo to disk and make docker mirror images from it.
     Try to run 'sync' followed be 'repo'. If a command starts with a
     number then it changes the version to be handled. A usual command
@@ -11,7 +12,7 @@ __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7101"
 
 # from __future__ import literal_string_interpolation # PEP498 Python3.6
-from typing import Optional, Dict, List, Tuple, Union
+from typing import Dict, List, Union
 import os
 import os.path as path
 import sys
@@ -250,7 +251,7 @@ downloads = ["universe"]
 def ubuntu_check() -> None:
     print(": %s" % when("update,universe", downloads))
 
-def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None:
+def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None: # pylint: disable=redefined-outer-name
     distro = DISTRO
     ubuntu = UBUNTU
     repodir = REPODIR
