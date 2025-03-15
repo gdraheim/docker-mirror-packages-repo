@@ -27,17 +27,19 @@ NIX = ""
 LIST: List[str] = []
 
 IMAGESTESTREPO = os.environ.get("IMAGESTESTREPO", "localhost:5000/mirror-test")
-
-PYTHON = "python3"
+DOCKERDEF = os.environ.get("DOCKER_EXE", os.environ.get("DOCKER_BIN", "docker"))
+PYTHONDEF = os.environ.get("DOCKER_PYTHON", os.environ.get("DOCKER_PYTHON3", "python3"))
+MIRRORDEF = os.environ.get("DOCKER_MIRROR_PY", os.environ.get("DOCKER_MIRROR",  "docker_mirror.py"))
+DOCKER = DOCKERDEF
+PYTHON = PYTHONDEF
+MIRROR = MIRRORDEF
 SCRIPT = "ubuntu-docker-mirror.py"
-MIRROR = "docker_mirror.py"
 PKGREPO = "apt-get"
 PKGLIST = "apt-cache"
 ONLYVERSION = ""
 COVERAGE = False
 KEEP = False
 DRY_RSYNC = 1
-DOCKER = "docker"
 SLEEP = 66
 VV="-v"
 SKIPFULLIMAGE = True
@@ -901,8 +903,11 @@ if __name__ == "__main__":
     cmdline = OptionParser("%s test...")
     cmdline.add_option("-v", "--verbose", action="count", default=0, help="more verbose logging")
     cmdline.add_option("-^", "--quiet", action="count", default=0, help="less verbose logging")
+    cmdline.add_option("->", "--script", metavar="PY", default=SCRIPT, help="different path to [%default]")
+    cmdline.add_option("-M", "--mirror", metavar="PY", default=MIRROR, help="different path to [%default]")
+    cmdline.add_option("-D", "--docker", metavar="EXE", default=DOCKER, help="alternative to [%default] (e.g. podman)")
+    cmdline.add_option("-P", "--python", metavar="EXE", default=PYTHON, help="alternative to [%default] (=python3.11)")
     cmdline.add_option("-k", "--keep", action="count", default=0, help="keep testdir")
-    cmdline.add_option("-D", "--docker", metavar="EXE", default=DOCKER, help="use different docker/podman [%default]")
     cmdline.add_option("--dry-rsync", action="count", default=DRY_RSYNC, help="upstream rsync --dry-run [%default]")
     cmdline.add_option("--real-rsync", action="count", default=0, help="upstream rsync for real [%default]")
     cmdline.add_option("--sleep", metavar="SEC", default=SLEEP)
@@ -919,12 +924,15 @@ if __name__ == "__main__":
                        help="capture results as a junit xml file [%default]")
     opt, _args = cmdline.parse_args()
     logging.basicConfig(level=max(0, logging.WARNING - 10 * opt.verbose + 10 * opt.quiet))
+    SCRIPT = opt.script
+    MIRROR = opt.mirror
+    DOCKER = opt.docker
+    PYTHON = opt.python
     KEEP = opt.keep
     SLEEP = int(opt.sleep)
     ONLYVERSION = opt.only
     COVERAGE = opt.coverage
     DRY_RSYNC = opt.dry_rsync - opt.real_rsync
-    DOCKER = opt.docker
     SAVEBASEDISK = opt.savebasedisk
     SKIPFULLIMAGE = opt.skipfullimage
     KEEPFULLIMAGE = opt.keepfullimage

@@ -28,6 +28,7 @@ else:
 logg = logging.getLogger("mirror")
 IMAGESREPO = "localhost:5000/mirror-packages"
 DOCKER = "docker"
+
 NODETECT = False
 ADDHOSTS = False
 ADDEPEL = False
@@ -923,13 +924,13 @@ if __name__ == "__main__":
                              description="""starts local containers representing mirrors of package repo repositories 
         which are required by a container type. Subsequent 'docker run' can use the '--add-hosts' from this
         helper script to divert 'pkg install' calls to a local docker container as the real source.""")
-    cmdline.add_argument("-v", "--verbose", action="count", default=0, help="more logging")
+    cmdline.add_argument("-v", "--verbose", action="count", default=0, help="more verbose logging")
+    cmdline.add_argument("-^", "--quiet", action="count", default=0, help="less verbose logging")
+    cmdline.add_argument("-D", "--docker", metavar="EXE", default=DOCKER, help="alternative to [%default] (e.g. podman)")
     cmdline.add_argument("-a", "--add-hosts", "--add-host", action="store_true", default=ADDHOSTS,
                          help="show addhost options for 'docker run' [%(default)s]")
     cmdline.add_argument("-n", "--no-detect", '--nodetect', action="store_true", default=NODETECT,
                          help="skip implicit 'detect' during 'start' [%(default)s]")
-    cmdline.add_argument("-D", "--docker", metavar="EXE", default=DOCKER,
-                         help="use other docker exe or podman [%(default)s]")
     cmdline.add_argument("--imagesrepo", metavar="PREFIX", default=IMAGESREPO,
                          help="set $IMAGESREPO [%(default)s]")
     cmdline.add_argument("--epel", action="store_true", default=ADDEPEL,
@@ -948,7 +949,7 @@ if __name__ == "__main__":
     cmdline.add_argument("command", nargs="?", default="detect", help="|".join(commands))
     cmdline.add_argument("image", nargs="?", default=None, help="defaults to image name matching the local host system")
     opt = cmdline.parse_args()
-    logging.basicConfig(level=max(0, logging.WARNING - opt.verbose * 10))
+    logging.basicConfig(level=max(0, logging.WARNING - opt.verbose * 10 + opt.quiet * 10))
     DOCKER = opt.docker
     IMAGESREPO = opt.imagesrepo
     NODETECT = opt.no_detect

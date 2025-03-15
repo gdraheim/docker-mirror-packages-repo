@@ -15,9 +15,13 @@ logg = logging.getLogger("TEST")
 NIX = ""
 OK = True
 
-PYTHON = "python3"
+DOCKERDEF = os.environ.get("DOCKER_EXE", os.environ.get("DOCKER_BIN", "docker"))
+PYTHONDEF = os.environ.get("DOCKER_PYTHON", os.environ.get("DOCKER_PYTHON3", "python3"))
+MIRRORDEF = os.environ.get("DOCKER_MIRROR_PY", os.environ.get("DOCKER_MIRROR",  "docker_mirror.py"))
+DOCKER = DOCKERDEF
+PYTHON = PYTHONDEF
+MIRROR = MIRRORDEF
 SCRIPT = "docker_local_image.py"
-DOCKER = "docker"
 IMAGES = "docker-local"
 
 string_types = str
@@ -201,17 +205,36 @@ class DockerLocalImageTest(unittest.TestCase):
         x1 = X(F"{docker} inspect {images}/{testname}:{version}")
         self.assertTrue(greps(x1.out, "RepoTags"))
         sh____(F"{docker} rm -f {images}/{testname}:{version}")
+    def test_92156(self) -> None:
+        python = PYTHON
+        script = SCRIPT
+        docker = DOCKER
+        images = IMAGES
+        testname = self.testname()
+        version = self.testver()
+        sh____(F"{python} {script} FROM opensuse/leap:{version} INTO {images}/{testname}:{version} SEARCH mypy -vvv")
+        x1 = X(F"{docker} inspect {images}/{testname}:{version}")
+        self.assertTrue(greps(x1.out, "RepoTags"))
+        sh____(F"{docker} rm -f {images}/{testname}:{version}")
 
 if __name__ == "__main__":
     from optparse import OptionParser # pylint: disable=deprecated-module
-    _o = OptionParser("%prog [options] test*",
+    cmdline = OptionParser("%prog [options] test*",
                       epilog=__doc__.strip().split("\n", 1)[0])
-    _o.add_option("--failfast", action="store_true", default=False,
+    cmdline.add_option("-v", "--verbose", action="count", default=0, help="more verbose logging [%default]")
+    cmdline.add_option("-^", "--quiet", action="count", default=0, help="less verbose logging [%default]")
+    cmdline.add_option("->", "--script", metavar="PY", default=SCRIPT, help="different path to [%default]")
+    cmdline.add_option("-M", "--mirror", metavar="PY", default=MIRROR, help="different path to [%default]")
+    cmdline.add_option("-P", "--python", metavar="EXE", default=PYTHON, help="alternative to [%default] (=python3.11)")
+    cmdline.add_option("-D", "--docker", metavar="EXE", default=DOCKER, help="alternative to [%default] (e.g. podman)")
+    cmdline.add_option("--failfast", action="store_true", default=False,
                   help="Stop the test run on the first error or failure. [%default]")
-    _o.add_option("-v", "--verbose", action="count", default=0,
-                  help="increase logging level [%default]")
-    opt, cmdline_args = _o.parse_args()
-    logging.basicConfig(level=logging.WARNING - opt.verbose * 5)
+    opt, cmdline_args = cmdline.parse_args()
+    logging.basicConfig(level=max(0, logging.WARNING - 10 * opt.verbose + 10 * opt.quiet))
+    SCRIPT = opt.script
+    DOCKER = opt.docker
+    PYTHON = opt.python
+    MIRROR = opt.mirror
     # unittest.main()
     suite = unittest.TestSuite()
     if not cmdline_args: cmdline_args = ["test_*"]
