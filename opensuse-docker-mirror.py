@@ -1,5 +1,5 @@
 #! /usr/bin/python3
-# pylint: disable=possibly-unused-variable,unused-variable,line-too-long
+# pylint: disable=possibly-unused-variable,unused-variable,line-too-long,too-many-lines
 
 """ sync packages repo to disk and make docker mirror images from it.
     Try to run 'sync' followed be 'repo'. If a command starts with a
@@ -36,6 +36,16 @@ IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
 REPODIR = os.environ.get("REPODIR", "repo.d")
 
+DOCKERDEF = os.environ.get("DOCKER_EXE", os.environ.get("DOCKER_BIN", "docker"))
+PYTHONDEF = os.environ.get("DOCKER_PYTHON", os.environ.get("DOCKER_PYTHON3", "python3"))
+MIRRORDEF = os.environ.get("DOCKER_MIRROR_PY", os.environ.get("DOCKER_MIRROR",  "docker_mirror.py"))
+RSYNCDEF= os.environ.get("DOCKER_RSYNC", os.environ.get("DOCKER_RSYNC3", "rsync"))
+
+DOCKER = DOCKERDEF
+PYTHON = PYTHONDEF
+MIRROR = MIRRORDEF
+RSYNC = RSYNCDEF
+
 DATADIRS = [REPODATADIR,
             "/srv/docker-mirror-packages",
             "/data/docker-mirror-packages",
@@ -70,9 +80,7 @@ MIRRORS["opensuse"] = [RSYNC_SUSE2, RSYNC_SUSE3]
 ARCHLIST = [ "x86_64", "aarch64", "s390x", "ppc", "ppc64le" ]
 ARCHS = ["x86_64"]
 
-PYTHON = "python3"
-RSYNC = "rsync"
-DOCKER = "docker"
+DISTROPYTHON = "python3"
 BASELAYER = "base"
 MAKEMINI = False
 CREATEREPO = 0
@@ -211,12 +219,12 @@ def opensuse_sync_pack_(dist: str, repo: str, filters: Optional[List[str]] = Non
 # /etc/zypp/repos.d/oss.repo:baseurl=http://download.opensuse.org/distribution/leap/42.2/repo/oss/
 # /etc/zypp/repos.d/non-oss.repo:baseurl=http://download.opensuse.org/distribution/leap/42.2/repo/non-oss/
 
-opensuserepo_CMD = [F"/usr/bin/{PYTHON}", "/srv/scripts/filelist.py", "--data", "/srv/repo"]
+opensuserepo_CMD = [F"/usr/bin/{DISTROPYTHON}", "/srv/scripts/filelist.py", "--data", "/srv/repo"]
 opensuserepo_PORT = "80"
 def opensuse_base() -> str:
     return opensuse_repo(True)
 def opensuse_repo(onlybase: bool = False) -> str:
-    python = PYTHON
+    python = DISTROPYTHON
     docker = DOCKER
     distro = DISTRO
     leap = LEAP
@@ -506,16 +514,15 @@ if __name__ == "__main__":
     cmdline = OptionParser("%%prog [-options] [%s]" % opensuse_commands(),
                       epilog=re.sub("\\s+", " ", __doc__).strip())
     cmdline.formatter.max_help_position = 30
-    cmdline.add_option("-v", "--verbose", action="count", default=0,
-                       help="increase logging level [%default]")
+    cmdline.add_option("-v", "--verbose", action="count", default=0, help="more logging level [%default]")
+    cmdline.add_option("-^", "--quiet", action="count", default=0, help="less verbose logging [%default]")
+    cmdline.add_option("->", "--mirror", metavar="PY", default=MIRROR, help="different path to [%default]")
+    cmdline.add_option("-P", "--python", metavar="EXE", default=PYTHON, help="alternative to [%default] (=python3.11)")
+    cmdline.add_option("-D", "--docker", metavar="EXE", default=DOCKER,   help="alternative to [%default] (e.g. podman)")
+    cmdline.add_option("--rsync", metavar="EXE", default=RSYNC, help="alternative to [%default]")
+    cmdline.add_option("--distropython", metavar="EXE", default=DISTROPYTHON,  help="alternative to ./scripts [%default] runner")
     cmdline.add_option("-R", "--nobase", action="store_true", default=NOBASE,
                        help="rm */base when repo image is ready [%default]")
-    cmdline.add_option("-D", "--docker", metavar="EXE", default=DOCKER,
-                       help="use other docker exe or podman [%default]")
-    cmdline.add_option("--rsync", metavar="EXE", default=RSYNC,
-                       help="use other rsync exe [%default]")
-    cmdline.add_option("--python", metavar="EXE", default=PYTHON,
-                       help="use other python as script runner [%default]")
     cmdline.add_option("--repodir", metavar="DIR", default=REPODIR,
                        help="set $REPODIR [%default]")
     cmdline.add_option("--datadir", metavar="DIR", default=REPODATADIR,
@@ -535,7 +542,7 @@ if __name__ == "__main__":
     cmdline.add_option("--mini", action="store_true", default=MAKEMINI,
                        help="make /mini repo layer [%default]")
     opt, cmdline_args = cmdline.parse_args()
-    logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
+    logging.basicConfig(level=logging.WARNING - opt.verbose * 10 + opt.quiet * 10)
     CREATEREPO = opt.createrepo
     MAKEMINI = opt.mini
     if opt.arch:
@@ -554,6 +561,6 @@ if __name__ == "__main__":
     NOBASE = opt.nobase
     DOCKER = opt.docker
     RSYNC = opt.rsync
-    PYTHON = opt.python
+    DISTROPYTHON = opt.python
     LEAP_set(opt.ver)
     sys.exit(_main(cmdline_args or ["list"]))

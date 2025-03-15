@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+# pylint: disable=unused-variable,unused-argument,line-too-long,too-many-lines
 """ sync packages repo to disk and make docker mirror images from it.
     Try to run 'sync' followed be 'repo'. If a command starts with a
     number then it changes the version to be handled. A usual command
@@ -37,6 +38,17 @@ NOBASE = False
 IMAGESREPO = os.environ.get("IMAGESREPO", "localhost:5000/mirror-packages")
 REPODATADIR = os.environ.get("REPODATADIR", "")
 REPODIR = os.environ.get("REPODIR", "repo.d")
+
+DOCKERDEF = os.environ.get("DOCKER_EXE", os.environ.get("DOCKER_BIN", "docker"))
+PYTHONDEF = os.environ.get("DOCKER_PYTHON", os.environ.get("DOCKER_PYTHON3", "python3"))
+MIRRORDEF = os.environ.get("DOCKER_MIRROR_PY", os.environ.get("DOCKER_MIRROR",  "docker_mirror.py"))
+RSYNCDEF= os.environ.get("DOCKER_RSYNC", os.environ.get("DOCKER_RSYNC3", "rsync"))
+
+DISTROPYTHON = NIX # default for repo containers depends on centos version
+PYTHON = PYTHONDEF
+MIRROR = MIRRORDEF
+DOCKER = DOCKERDEF
+RSYNC = RSYNCDEF
 
 DATADIRS = [REPODATADIR,
             "/srv/docker-mirror-packages",
@@ -91,9 +103,6 @@ DISKSUFFIX = "disk" # suffix
 BASELAYER = "base"
 VARIANT = ""
 
-PYTHON = "" # default depends on centos version
-DOCKER = "docker"
-RSYNC = "rsync"
 
 CENTOS_MIRROR = "rsync://rsync.hrz.tu-chemnitz.de/ftp/pub/linux/centos"
 # "http://ftp.tu-chemnitz.de/pub/linux/centos/"
@@ -503,7 +512,7 @@ def distro_epelrepos(distro: str, centos: str, dists: Dict[str, List[str]]) -> N
     version = F"{epel}.{VARIANT}" if VARIANT else epel
     cname = F"{distro}-repo-{epel}"
     baseimage = centos_baseimage(DISTRO, centos)
-    out =  output(F"./docker_mirror.py start {baseimage} -a")
+    out =  output(F"{PYTHON} {MIRROR} start {baseimage} -a")
     addhosts = out.strip()
     PORT = centos_epel_port(distro, centos)
     CMD = str(centos_epel_cmd(distro, centos)).replace("'", '"')
@@ -626,10 +635,11 @@ def centos_http_cmd(distro: str = NIX, centos: str = NIX) -> List[str]:
     return [python, "/srv/scripts/mirrorlist.py", "--data", "/srv/repo"]
 
 def centos_python(distro: str = NIX, centos: str = NIX) -> str:
+    global DISTROPYTHON
     distro = distro or DISTRO
     centos = centos or CENTOS
-    if PYTHON:
-        return PYTHON
+    if DISTROPYTHON:
+        return DISTROPYTHON
     if centos.startswith("7"):
         return "/usr/bin/python"
     if centos.startswith("8"):
@@ -1083,16 +1093,15 @@ if __name__ == "__main__":
     cmdline = OptionParser("%%prog [-options] [%s]" % centos_commands(),
                       epilog=re.sub("\\s+", " ", __doc__).strip())
     cmdline.formatter.max_help_position = 30
-    cmdline.add_option("-v", "--verbose", action="count", default=0,
-                       help="increase logging level [%default]")
+    cmdline.add_option("-v", "--verbose", action="count", default=0, help="more logging level [%default]")
+    cmdline.add_option("-^", "--quiet", action="count", default=0, help="less verbose logging [%default]")
+    cmdline.add_option("->", "--mirror", metavar="PY", default=MIRROR, help="different path to [%default]")
+    cmdline.add_option("-P", "--python", metavar="EXE", default=PYTHON, help="alternative to [%default] (=python3.11)")
+    cmdline.add_option("-D", "--docker", metavar="EXE", default=DOCKER,   help="alternative to [%default] (e.g. podman)")
+    cmdline.add_option("--rsync", metavar="EXE", default=RSYNC, help="alternative to [%default]")
+    cmdline.add_option("--distropython", metavar="EXE", default=DISTROPYTHON, help="alternative to ./scripts [%default] runner")
     cmdline.add_option("-R", "--nobase", action="store_true", default=NOBASE,
                        help="rm */base when repo image is ready [%default]")
-    cmdline.add_option("-D", "--docker", metavar="EXE", default=DOCKER,
-                       help="use other docker exe or podman [%default]")
-    cmdline.add_option("--rsync", metavar="EXE", default=RSYNC,
-                       help="use other rsync exe [%default]")
-    cmdline.add_option("--python", metavar="EXE", default=PYTHON,
-                       help="use other python as script runner [%default]")
     cmdline.add_option("--repodir", metavar="DIR", default=REPODIR,
                        help="set $REPODIR [%default]")
     cmdline.add_option("--datadir", metavar="DIR", default=REPODATADIR,
@@ -1108,7 +1117,7 @@ if __name__ == "__main__":
     cmdline.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
                        help=F"use other arch list {ARCHS}")
     opt, cmdline_args = cmdline.parse_args()
-    logging.basicConfig(level=logging.WARNING - opt.verbose * 10)
+    logging.basicConfig(level=logging.WARNING - opt.verbose * 10 + opt.quiet * 10)
     if opt.arch:
         cmdline_badarchs = [arch for arch in opt.arch if arch not in ARCHLIST]
         if cmdline_badarchs:
@@ -1125,7 +1134,9 @@ if __name__ == "__main__":
     NOBASE = opt.nobase
     DOCKER = opt.docker
     RSYNC = opt.rsync
+    DISTROPYTHON = opt.distropython
     PYTHON = opt.python
+    MIRROR = opt.mirror
     CENTOS_set(opt.ver)
     #
     sys.exit(_main(cmdline_args or ["list"]))
