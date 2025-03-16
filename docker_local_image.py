@@ -31,8 +31,12 @@ RUNCMD=NIX
 TIMEOUT = 999
 _TAG="test_" + Time.now().strftime("%y%m%d%H%M")
 _FROM="ubuntu:24.04"
-INTO=os.environ.get("DOCKER_LOCAL_IMAGE_INTO", os.environ.get("DOCKER_LOCAL_IMAGE_TAG", _TAG))
-BASE=os.environ.get("DOCKER_LOCAL_IMAGE_BASE", os.environ.get("DOCKER_LOCAL_IMAGE_FROM", _FROM))
+FILEDEF=os.environ.get("DOCKER_LOCAL_IMAGE_DOCKERFILE", os.environ.get("DOCKER_LOCAL_IMAGE_FILE", NIX))
+INTODEF=os.environ.get("DOCKER_LOCAL_IMAGE_INTO", os.environ.get("DOCKER_LOCAL_IMAGE_TAG", _TAG))
+BASEDEF=os.environ.get("DOCKER_LOCAL_IMAGE_BASE", os.environ.get("DOCKER_LOCAL_IMAGE_FROM", _FROM))
+DOCKERFILES = [] if not FILEDEF else [FILEDEF]
+INTO = [] if not INTODEF else [INTODEF]
+BASE = BASEDEF
 
 def decodes(text: Union[str, bytes, None]) -> str:
     if text is None: return ""
@@ -297,13 +301,23 @@ if __name__ == "__main__":
                   help="change directory before building {%default}")
     _o.add_option("-b", "--base", "--from", metavar="NAME", default=BASE,
                   help="FROM=%default (or CENTOS)")
-    _o.add_option("-t", "--into", "--tag", metavar="NAME", default=INTO,
+    _o.add_option("-t", "--into", "--tag", metavar="NAME", action="append", default=INTO,
                   help="TAG=%default (")
+    _o.add_option("-f", "--file", "Dockerfile", action="append", default=DOCKERFILES,
+                  help="start builds with this dockerfile")
     opt, args = _o.parse_args()
     logging.basicConfig(level = logging.WARNING - opt.verbose * 10)
     DOCKER=opt.docker
     PYTHON=opt.python
-    BSAE=opt.base
+    BASE=opt.base
     INTO=opt.into
     CHDIR=opt.chdir
+    DOCKERFILES=opt.file
+    for dockerfile in DOCKERFILES:
+        if os.path.exists(dockerfile):
+            with open(dockerfile) as f:
+                dockerfilelines = list(f)
+                done = docker_local_build(dockerfilelines)
+                if done:
+                    sys.exit(done)
     sys.exit(docker_local_build(args))
