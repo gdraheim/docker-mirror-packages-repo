@@ -395,6 +395,13 @@ def ubuntu_mainrepo(distro: str = NIX, ubuntu: str = NIX, imagesrepo: str = NIX)
     base = BASELAYER
     return F"{imagesrepo}/{distro}-repo/{base}:{version}"
 
+def ubuntu_local(distro: str = NIX, centos: str = NIX) -> int:
+    """ show ini section for diskpath and --universe """
+    mainsection = ubuntu_baseimage(distro, centos)
+    mainbaseimage = ubuntu_baserepo(distro, centos)
+    maindiskpath = ubuntu_diskpath()
+    return F"[{mainsection}]\nimage={mainbaseimage}\nmount={maindiskpath}"
+
 def ubuntu_list(distro: str = NIX, ubuntu: str = NIX) -> int:
     docker = DOCKER
     print(F"REPOSITORY:TAG\tSIZE          # {docker} images {{baseimage}} {{baserepo}} {{mainrepo}}")

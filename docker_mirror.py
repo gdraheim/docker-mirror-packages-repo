@@ -582,7 +582,7 @@ class DockerMirrorPackagesRepo:
         epelimages = self.get_epel_docker_mirror_images(rep)
         diskrepos = self.get_epel_docker_mirror_disks(rep, "mirrors.fedoraproject.org")
         epelrepos = epelimages + list(diskrepos.keys())
-        logg.debug("select %s from images %s", released, epelrepos)
+        logg.debug("[%s] select %s from images %s", rep, released, epelrepos)
         for image in epelrepos:
             tagline = re.sub(".*:", "", image)
             tagname = re.sub(" .*", "", tagline)

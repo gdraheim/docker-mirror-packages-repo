@@ -817,6 +817,16 @@ def centos_epeldropdisk() -> str:
         shutil.rmtree(path_srv)
     return path_srv
 
+def centos_epelsection(distro: str = NIX, centos: str = NIX, imagesrepo: str = NIX) -> str:
+    imagesrepo = imagesrepo or IMAGESREPO
+    distro = "epel"
+    rel = major(centos_release(distro, centos or CENTOS))
+    ver = F"{rel}.{VARIANT}" if VARIANT else rel
+    base = BASELAYER
+    latest = centos_epelupdated(distro, centos) or datetime.date.today()
+    yymm = latest.strftime("%y%m")
+    return F"{distro}-repo.x.{yymm}"
+
 def centos_epelbaserepo(distro: str = NIX, centos: str = NIX, imagesrepo: str = NIX) -> str:
     imagesrepo = imagesrepo or IMAGESREPO
     distro = "epel"
@@ -840,6 +850,16 @@ def centos_mainrepo(distro: str = NIX, centos: str = NIX, imagesrepo: str = NIX)
     version = F"{rel}.{VARIANT}" if VARIANT else rel
     base = BASELAYER
     return F"{imagesrepo}/{distro}-repo/{base}:{version}"
+
+def centos_local(distro: str = NIX, centos: str = NIX) -> int:
+    """ show ini section for diskpath and --epel """
+    mainsection = centos_baseimage(distro, centos)
+    mainbaseimage = centos_baserepo(distro, centos)
+    maindiskpath = centos_diskpath()
+    epelsection = centos_epelsection(distro, centos)
+    epelbaseimage = centos_epelbaserepo(distro, centos)
+    epeldiskpath = centos_epeldiskpath(distro, centos)
+    return F"[{mainsection}]\nimage={mainbaseimage}\nmount={maindiskpath}\n\n[{epelsection}]\nimage={epelbaseimage}\nmount={epeldiskpath}"
 
 def centos_list(distro: str = NIX, centos: str = NIX) -> int:
     docker = DOCKER

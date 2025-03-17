@@ -299,6 +299,13 @@ def opensuse_mainrepo(distro: str = NIX, leap: str = NIX, imagesrepo: str = NIX)
     base = BASELAYER
     return F"{imagesrepo}/{distro}-repo/{base}:{version}"
 
+def opensuse_local(distro: str = NIX, centos: str = NIX) -> int:
+    """ show ini section for diskpath and --epel """
+    mainsection = opensuse_baseimage(distro, centos)
+    mainbaseimage = opensuse_baserepo(distro, centos)
+    maindiskpath = opensuse_diskpath()
+    return F"[{mainsection}]\nimage={mainbaseimage}\nmount={maindiskpath}"
+
 def opensuse_list(distro: str = NIX, leap: str = NIX) -> int:
     docker = DOCKER
     print(F"REPOSITORY:TAG\tSIZE          # {docker} images {{baseimage}} {{baserepo}} {{mainrepo}}")
