@@ -2,7 +2,7 @@
 __copyright__ = "(C) 2025 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.7.7101"
+__version__ = "1.7.7107"
 
 # pylint: disable=unused-import,line-too-long,too-many-lines
 from typing import Optional, Union, Dict, List, Any, Sequence, Callable, Iterable, cast, NamedTuple
