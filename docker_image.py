@@ -27,7 +27,7 @@ RUNUSER=NIX
 RUNEXE=NIX
 RUNCMD=NIX
 TIMEOUT=int(os.environ.get("DOCKER_IMAGE_TIMEOUT", 999))
-FILEDEF=os.environ.get("DOCKER_IMAGE_DOCKERFILE", os.environ.get("DOCKER_IMAGE_FILE", NIX))
+FILEDEF=os.environ.get("DOCKER_IMAGE_DOCKERFILE", "Dockerfile")
 INTODEF=os.environ.get("DOCKER_IMAGE_INTO", os.environ.get("DOCKER_IMAGE_TAG", "test_" + Time.now().strftime("%y%m%d%H%M")))
 BASEDEF=os.environ.get("DOCKER_IMAGE_BASE", os.environ.get("DOCKER_IMAGE_FROM", "ubuntu:24.04"))
 DOCKERDEF = os.environ.get("DOCKER_EXE", os.environ.get("DOCKER_BIN", "docker"))
@@ -367,21 +367,21 @@ def docker_local_build(cmdlist: List[str] = [], cyclic: Optional[List[str]] = No
 if __name__ == "__main__":
     from optparse import OptionParser  # pylint: disable=deprecated-module
     cmdline = OptionParser("%prog [options] [FROM image] [INTO image] [INSTALL pack]", epilog=__doc__.strip().split("\n", 1)[0])
-    cmdline.formatter.max_help_position = 30
-    cmdline.add_option("-v", "--verbose", action="count", default=0, help="more logging [%(default)s]")
-    cmdline.add_option("-^", "--quiet", action="count", default=0, help="less logging [%(default)s]")
+    cmdline.formatter.max_help_position = 32
+    cmdline.add_option("-v", "--verbose", action="count", default=0, help="more logging [%default]")
+    cmdline.add_option("-^", "--quiet", action="count", default=0, help="less logging [%default]")
     cmdline.add_option("->", "--mirror", metavar="PY", default=MIRROR, help="different path to [%default]")
-    cmdline.add_option("-D", "--docker", metavar="EXE", default=DOCKER, help="use another docker container tool [%(default)s]")
-    cmdline.add_option("-P", "--python", metavar="EXE", default=PYTHON, help="use another python execution engine [%(default)s]")
-    cmdline.add_option("--epel", action="store_true", default=ADDEPEL, help="addhosts for epel as well [%(default)s]")
-    cmdline.add_option("--updates", "--update", action="store_true", default=UPDATES, help="addhosts using updates variant [%(default)s]")
-    cmdline.add_option("--universe", action="store_true", default=UNIVERSE, help="addhosts using universe variant [%(default)s]")
+    cmdline.add_option("-D", "--docker", metavar="EXE", default=DOCKER, help="use another docker container tool [%default]")
+    cmdline.add_option("-P", "--python", metavar="EXE", default=PYTHON, help="use another python execution engine [%default]")
+    cmdline.add_option("--epel", action="store_true", default=ADDEPEL, help="addhosts for epel as well [%default]")
+    cmdline.add_option("--updates", "--update", action="store_true", default=UPDATES, help="addhosts using updates variant [%default]")
+    cmdline.add_option("--universe", action="store_true", default=UNIVERSE, help="addhosts using universe variant [%default]")
     cmdline.add_option("--add-host", action="append", default=ADDHOST, help="additional addhosts over docker_mirror.py")
-    cmdline.add_option("-l", "--local", "--localmirrors", action="count", default=0, help="fail if local mirror not found [%(default)s]")
-    cmdline.add_option("-C", "--chdir", metavar="PATH", default="", help="change directory before building {%(default)s}")
-    cmdline.add_option("-b", "--base", "--from", metavar="NAME", default=BASE, help="FROM=%default (or CENTOS)")
-    cmdline.add_option("-t", "--into", "--tag", metavar="NAME", action="append", default=INTO, help="TAG=%default (")
-    cmdline.add_option("-f", "--file", metavar="Dockerfile", default=DOCKERFILE, help="set dockerfile name for BUILD")
+    cmdline.add_option("-l", "--local", "--localmirrors", action="count", default=0, help="fail if local mirror not found [%default]")
+    cmdline.add_option("-C", "--chdir", metavar="PATH", default="", help="change directory before building [%default]")
+    cmdline.add_option("-b", "--base", "--from", metavar="N", default=BASE, help="FROM %default (or CENTOS)")
+    cmdline.add_option("-t", "--into", "--tag", metavar="N", action="append", default=INTO, help="INTO %default tags")
+    cmdline.add_option("-f", "--file", metavar="M", default=DOCKERFILE, help="set [%default] name for BUILD")
     opt, cmdline_args = cmdline.parse_args()
     logging.basicConfig(level = logging.WARNING - opt.verbose * 10 + opt.quiet * 10)
     DOCKER=opt.docker
