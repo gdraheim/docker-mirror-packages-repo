@@ -182,6 +182,18 @@ class DockerLocalImageTest(unittest.TestCase):
     def test_90001_hello(self) -> None:
         print("... starting the testsuite ...")
         logg.info("starting the testsuite ...")
+    def test_91094(self) -> None:
+        """ almalinux has python3 and python3.11 """
+        python = PYTHON
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
+        docker = DOCKER
+        images = IMAGES
+        testname = self.testname()
+        version = self.testver()
+        sh____(F"{python} {script} FROM almalinux:{version} INTO {images}/{testname}:{version} SEARCH setuptools -vvv")
+        x1 = X(F"{docker} inspect {images}/{testname}:{version}")
+        self.assertTrue(greps(x1.out, "RepoTags"))
+        sh____(F"{docker} rm -f {images}/{testname}:{version}")
     def test_91154(self) -> None:
         python = PYTHON
         script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
