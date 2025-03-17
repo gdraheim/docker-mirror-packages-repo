@@ -26,18 +26,24 @@ CONTAINER="into-"
 RUNUSER=NIX
 RUNEXE=NIX
 RUNCMD=NIX
-TIMEOUT=int(os.environ("DOCKER_IMAGE_TIMEOUT", 999))
+TIMEOUT=int(os.environ.get("DOCKER_IMAGE_TIMEOUT", 999))
 FILEDEF=os.environ.get("DOCKER_IMAGE_DOCKERFILE", os.environ.get("DOCKER_IMAGE_FILE", NIX))
 INTODEF=os.environ.get("DOCKER_IMAGE_INTO", os.environ.get("DOCKER_IMAGE_TAG", "test_" + Time.now().strftime("%y%m%d%H%M")))
 BASEDEF=os.environ.get("DOCKER_IMAGE_BASE", os.environ.get("DOCKER_IMAGE_FROM", "ubuntu:24.04"))
 DOCKERDEF = os.environ.get("DOCKER_EXE", os.environ.get("DOCKER_BIN", "docker"))
 PYTHONDEF = os.environ.get("DOCKER_PYTHON", os.environ.get("DOCKER_PYTHON3", "python3"))
-MIRRORDEF=os.environ.get("DOCKER_MIRROR_PY", os.environ.get("DOCKER_MIRROR", "docker_mirror.py"))
+MIRRORDEF=os.environ.get("DOCKER_MIRROR_PY", os.environ.get("DOCKER_MIRROR", _mirror))
 INTO = [] if not INTODEF else [INTODEF]
 BASE = BASEDEF
 PYTHON = PYTHONDEF
+MIRROR = MIRRORDEF
 DOCKER = DOCKERDEF
 DOCKERFILE = FILEDEF
+ADDHOSTS=[]
+ADDEPEL=0
+UPDATES=0
+UNIVERSE=0
+LOCAL=0
 
 if sys.version_info >= (3,10):
     from typing import TypeAlias
@@ -106,7 +112,16 @@ def docker_local_build(cmdlist: List[str] = [], cyclic: Optional[List[str]] = No
                 "SEARCH", "search", "INSTALL", "install","USER", "user","RUN", "run", "TEST", "test", 
                 "SYMLINK", "symlink"]
     cyclic = cyclic if cyclic is not None else []
-    mirror = _mirror
+    mirror = MIRROR
+    mirroroptions = []
+    if LOCAL:
+        mirroroptions.append("--local")
+    if UPDATES:
+        mirroroptions.append("--updates")
+    if UNIVERSE:
+        mirroroptions.append("--universe")
+    if ADDEPEL:
+        mirroroptions.append("--epel")
     docker = DOCKER
     dockerfile = DOCKERFILE
     tagging: str = INTO
@@ -203,7 +218,7 @@ def docker_local_build(cmdlist: List[str] = [], cyclic: Optional[List[str]] = No
             distro = output(F"{mirror} detect {building}")
             taggingbase  = os.path.basename(tagging).replace(":","-").replace(".","-")
             into = F"build-{taggingbase}"
-            addhosts = output(F"{mirror} start {distro} --add-hosts --no-detect")
+            addhosts = output(F"{mirror} start {distro} --add-hosts --no-detect {mirroroptions}")
             sh____(F"{docker} rm -f {into}")
             sh____(F"{docker} run -d --name={into} --rm=true {addhosts} {building} sleep {timeout}")
             continue
@@ -349,28 +364,35 @@ def docker_local_build(cmdlist: List[str] = [], cyclic: Optional[List[str]] = No
 
 if __name__ == "__main__":
     from optparse import OptionParser  # pylint: disable=deprecated-module
-    _o = OptionParser("%prog [options] test*",
-                      epilog=__doc__.strip().split("\n", 1)[0])
-    _o.add_option("-v", "--verbose", action="count", default=0,
-                  help="increase logging level [%default]")
-    _o.add_option("-D", "--docker", metavar="EXE", default=DOCKER,
-                  help="use another docker container tool [%default]")
-    _o.add_option("-p", "--python", metavar="EXE", default=PYTHON,
-                  help="use another python execution engine [%default]")
-    _o.add_option("-C", "--chdir", metavar="PATH", default="",
-                  help="change directory before building {%default}")
-    _o.add_option("-b", "--base", "--from", metavar="NAME", default=BASE,
-                  help="FROM=%default (or CENTOS)")
-    _o.add_option("-t", "--into", "--tag", metavar="NAME", action="append", default=INTO,
-                  help="TAG=%default (")
-    _o.add_option("-f", "--file", metavar="Dockerfile", default=DOCKERFILE,
-                  help="set dockerfile name for BUILD")
-    opt, args = _o.parse_args()
-    logging.basicConfig(level = logging.WARNING - opt.verbose * 10)
+    cmdline = OptionParser("%prog [options] [FROM image] [INTO image] [INSTALL pack]", epilog=__doc__.strip().split("\n", 1)[0])
+    cmdline.formatter.max_help_position = 30
+    cmdline.add_option("-v", "--verbose", action="count", default=0, help="more logging [%(default)s]")
+    cmdline.add_option("-^", "--quiet", action="count", default=0, help="less logging [%(default)s]")
+    cmdline.add_option("->", "--mirror", metavar="PY", default=MIRROR, help="different path to [%default]")
+    cmdline.add_option("-D", "--docker", metavar="EXE", default=DOCKER, help="use another docker container tool [%(default)s]")
+    cmdline.add_option("-P", "--python", metavar="EXE", default=PYTHON, help="use another python execution engine [%(default)s]")
+    cmdline.add_option("--epel", action="store_true", default=ADDEPEL, help="addhosts for epel as well [%(default)s]")
+    cmdline.add_option("--updates", "--update", action="store_true", default=UPDATES, help="addhosts using updates variant [%(default)s]")
+    cmdline.add_option("--universe", action="store_true", default=UNIVERSE, help="addhosts using universe variant [%(default)s]")
+    cmdline.add_option("-a", "--add-hosts", action="append", default=ADDHOSTS, help="additional addhosts over docker_mirror.py")
+    cmdline.add_option("-l", "--local", "--localmirrors", action="count", default=0, help="fail if local mirror not found [%(default)s]")
+    cmdline.add_option("-C", "--chdir", metavar="PATH", default="", help="change directory before building {%(default)s}")
+    cmdline.add_option("-b", "--base", "--from", metavar="NAME", default=BASE, help="FROM=%default (or CENTOS)")
+    cmdline.add_option("-t", "--into", "--tag", metavar="NAME", action="append", default=INTO, help="TAG=%default (")
+    cmdline.add_option("-f", "--file", metavar="Dockerfile", default=DOCKERFILE, help="set dockerfile name for BUILD")
+    opt, cmdline_args = cmdline.parse_args()
+    logging.basicConfig(level = logging.WARNING - opt.verbose * 10 + opt.quiet * 10)
     DOCKER=opt.docker
     PYTHON=opt.python
+    MIRROR=opt.mirror
     BASE=opt.base
     INTO=opt.into
     CHDIR=opt.chdir
     DOCKERFILE=opt.file
-    sys.exit(docker_local_build(args))
+    ADDHOSTS = opt.add_hosts
+    ADDEPEL = opt.epel  # centos epel-repo
+    UPDATES = opt.updates
+    UNIVERSE = opt.universe  # ubuntu universe repo
+    LOCAL = opt.local
+    sys.exit(docker_local_build(cmdline_args))
+
