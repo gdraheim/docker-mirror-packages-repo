@@ -38,6 +38,12 @@ DOCKERFILES = [] if not FILEDEF else [FILEDEF]
 INTO = [] if not INTODEF else [INTODEF]
 BASE = BASEDEF
 
+if sys.version_info >= (3,10):
+    from typing import TypeAlias
+    intExitCode: TypeAlias = int
+else:
+    intExitCode = int
+
 def decodes(text: Union[str, bytes, None]) -> str:
     if text is None: return ""
     if isinstance(text, bytes):
@@ -93,10 +99,12 @@ def package_search(distro: str = NIX):
         return "zypper --no-refresh search"
     return "apt-cache search"
 
-def docker_local_build(cmd2: List[str] = []) -> int:
+def docker_local_build(cmdlist: List[str] = [], cyclic: Optional[List[str]] = None) -> intExitCode:
     """" cmd2 should be given as pairs (cmd,arg) but some items are recognized by their format directly"""
-    prefixes = ["FROM","from", "INTO", "into", "TAG", "tag", "COPY", "copy", "SAVE", "save",
-                "SEARCH", "search", "INSTALL", "install","USER", "user","TEST", "test", "SYMLINK", "symlink"]
+    needsargument = ["FROM","from", "INTO", "into", "TAG", "tag", "COPY", "copy", "SAVE", "save",
+                "SEARCH", "search", "INSTALL", "install","USER", "user","RUN", "run", "TEST", "test", 
+                "SYMLINK", "symlink"]
+    cyclic = cyclic if cyclic is not None else []
     mirror = _mirror
     docker = DOCKER
     tagging: str = INTO
@@ -106,175 +114,208 @@ def docker_local_build(cmd2: List[str] = []) -> int:
     runuser = RUNUSER
     runexe = RUNEXE
     runcmd = RUNCMD
-    cmd: str = NIX
+    waitcmd: str = NIX
     search = NIX
     refresh = NIX
     distro = NIX
     package = NIX
-    logg.info("-- %s", cmd2)
-    for ncmd in cmd2:
-        logg.info("--next %s", ncmd)
-        arg = NIX
-        if not cmd:
-            if ncmd in prefixes:
-                cmd = ncmd
+    logg.info("-- %s", cmdlist)
+    for nextarg in cmdlist:
+        if waitcmd:
+            cmd2 = F"{waitcmd} {nextarg}"
+            waitcmd = NIX
+        else:
+            if " " in nextarg:
+                cmd2 = nextarg
+            elif "@" in nextarg:
+                cmd2 = F"INSTALL {nextarg}"
+            elif nextarg.startswith(":"):
+                cmd2 = "MAKE {nextcmd}"
+            elif nextarg in needsargument:
+                waitcmd = nextarg
                 continue
-            logg.debug("ARG %s not in %s", ncmd, prefixes)
-            for prefix in prefixes:
-                if ncmd.startswith(prefix + " "):
-                    cmd, arg = ncmd.split(" ", 1)
-                    break
-            if not cmd and "@" in ncmd:
-                cmd = "INSTALL"
-            if not cmd and ncmd.startswith(":"):
-                cmd = "MAKE"
-            if not cmd:
-                logg.warning("did not find a command in %s", ncmd)
+            else:
+                logg.error("unrecognized command %s", nextarg)
+                return os.EX_USAGE
+        if " " in cmd2:
+            cmd, arg = cmd2.split(" ", 1)
+        else:
+            cmd, arg = cmd2, NIX
+        logg.info("- %s [%s]", cmd, arg)
+        if cmd in ["FILE", "file", "IMPORT", "import"]:
+            if not arg:
+                logg.error("no dockerfile provided: %s", arg)
+                return os.EX_USAGE
+            elif not os.path.exists(arg):
+                logg.error("no dockerfile provided: %s", arg)
+                return os.EX_OSFILE
+            else:
+                try:
+                    filename = os.path.realpath(arg)
+                    if filename in cyclic:
+                        logg.error("cycle detection: '%s' = %s", arg, filename)
+                        return os.EX_OSERR
+                    cyclic2 = cyclic + [filename]
+                    with open(arg, filename, encoding="utf-8") as f:
+                        cmdlist2 = [line.rstrip() for line in f]
+                        exitcode = docker_local_build(cmdlist2, cyclic2)
+                        if exitcode:
+                            return exitcode
+                except (OSError, IOError) as e:
+                    logg.error("on import %s: %s", arg, e)
+                    return os.EX_IOERR
+        if cmd in  ["FROM","from"]:
+            building = arg
+            continue
+        if cmd in  ["INTO","into","TAG","tag"]:
+            if not arg:
+                logg.warning("no tag value given")
                 continue
-        if arg is NIX:
-            arg = ncmd
-        if arg:
-            logg.debug("CMD=%s ARG=%s", cmd, arg)
-            if cmd in  ["FROM","from"]:
-                building = arg
-                cmd = NIX
-                continue
-            if cmd in  ["INTO","into","TAG","tag"]:
-                logg.info("--into %s", arg)
-                if into:
-                    runcmds = runexe.split(" ") + runcmd.split(" ") if runexe else runcmd.split(" ")
-                    runs = F"-c 'USER {runuser}'" if runuser else NIX
-                    cmds = F"-c 'CMD {runcmds}'" if runcmd else NIX
-                    sx____(F"{docker} rmi {tagging}")
-                    sx____(F"{docker} stop {into}")
-                    sh____(F"{docker} commit {cmds} {runs} {into} {tagging}")
-                    sh____(F"{docker} rm -f {into}")
-                    into = NIX
-                tagging = arg
-                into = CONTAINER+os.path.basename(tagging).replace(":","-").replace(".","-")
-                distro = output(F"{mirror} detect {building}")
-                addhosts = output(F"{mirror} start {distro} --add-hosts --no-detect")
+            if into:
+                runcmds = runexe.split(" ") + runcmd.split(" ") if runexe else runcmd.split(" ")
+                runs = F"-c 'USER {runuser}'" if runuser else NIX
+                cmds = F"-c 'CMD {runcmds}'" if runcmd else NIX
+                sx____(F"{docker} rmi {tagging}")
+                sx____(F"{docker} stop {into}")
+                sh____(F"{docker} commit {cmds} {runs} {into} {tagging}")
                 sh____(F"{docker} rm -f {into}")
-                sh____(F"{docker} run -d --name={into} --rm=true {addhosts} {building} sleep {timeout}")
-                cmd = NIX
+                into = NIX
+            tagging = arg
+            into = CONTAINER+os.path.basename(tagging).replace(":","-").replace(".","-")
+            distro = output(F"{mirror} detect {building}")
+            addhosts = output(F"{mirror} start {distro} --add-hosts --no-detect")
+            sh____(F"{docker} rm -f {into}")
+            sh____(F"{docker} run -d --name={into} --rm=true {addhosts} {building} sleep {timeout}")
+            continue
+        if cmd in  ["EXE", "exe"]:
+            if not arg:
+                logg.warning("no exe value given")
                 continue
-            if cmd in  ["EXE", "exe"]:
-                runexe = arg
-                cmd = NIX
+            runexe = arg
+            continue
+        if cmd in  ["CMD", "cmd"]:
+            if not arg:
+                logg.warning("no cmd value given")
                 continue
-            if cmd in  ["CMD", "cmd"]:
-                runcmd = arg
-                cmd = NIX
+            runcmd = arg
+            continue
+        if cmd in  ["USER", "user"]:
+            if not arg:
+                logg.warning("no user value given")
                 continue
-            if cmd in  ["USER", "user"]:
-                runuser = arg
-                cmd = NIX
+            runuser = arg
+            continue
+        if cmd in  ["SEARCH", "search"]:
+            pattern = arg
+            if not arg:
+                logg.warning("no search pattern given")
                 continue
-            if cmd in  ["SEARCH", "search"]:
-                logg.info("--search %s", arg)
-                if not refresh:
-                    refresh = package_refresh(distro)
-                    if refresh:
-                        sx____(F"{docker} exec {into} {refresh}")
-                search = package_search(distro)
-                pack = arg
-                sx____(F"{docker} exec {into} {search} {pack}")
-                cmd = NIX
-                continue
-            if cmd in  ["INSTALL", "install"]:
-                logg.debug("--install %s", arg)
-                if not refresh:
-                    refresh = package_refresh(distro)
-                    logg.debug("install %s", refresh)
-                    if refresh:
-                        sx____(F"{docker} exec {into} {refresh}")
-                if "@" in arg:
-                    test, pack = arg.split("@", 1)
-                else:
-                    test, pack = NIX, arg
-                package = package_tool(distro)
-                logg.debug("TEST %s PACK %s FROM %s", test, pack, arg)
-                if test:
-                    sx____(F"{docker} exec {into} bash -c 'test -f {test} || {package} install -y {pack}'")
-                else:
-                    sx____(F"{docker} exec {into} {package} install -y {pack}")
-                cmd = NIX
-                continue
-            if cmd in  ["MAKE", "MAKE"]:
-                logg.info("--make %s", arg)
-                if arg.startswith(":"):
-                    dst = arg[1:]
-                else:
-                    dst = arg
-                if dst.endswith("/"):
-                    sx____(F"{docker} exec {into} mkdir -p {dst}")
-                else:
-                    if "/" in dst:
-                        dstdir = os.path.dirname(dst)
-                        sx____(F"{docker} exec {into} mkdir -p {dstdir}")
-                    sx____(F"{docker} exec {into} touch {dst}")
-                cmd = NIX
-                continue
-            if cmd in  ["COPY", "copy"]:
-                logg.info("--copy %s", arg)
-                if ":" in arg:
-                    src, dst = arg.split(":", 1)
-                else:
-                    src, dst = arg, NIX
-                sx____(F"{docker} copy {src} {into}:{dst}")
-                cmd = NIX
-                continue
-            if cmd in  ["SAVE", "save"]:
-                logg.info("--save %s", arg)
-                if ":" in arg:
-                    src, dst = arg.split(":", 1)
-                else:
-                    src, dst = arg, "./"
-                sx____(F"{docker} copy {into}:{src} {dst}")
-                cmd = NIX
-                continue
-            if cmd in  ["SYMLINK", "symlink"]:
-                logg.info("--symlink %s", arg)
-                if ":" in arg:
-                    src, dst = arg.split(":", 1)
-                else:
-                    src, dst = arg, "/tmp"
-                if "/" not in dst and "/" in src:
-                    srcdir=os.path.dirname(src)
-                    srcname=os.path.basename(src)
-                    sx____(F"{docker} exec {into} ln -s {srcname} {srcdir}/{dst}")
-                else:
-                    sx____(F"{docker} exec {into} ln -s {src} {dst}")
-                cmd = NIX
-                continue
-            if cmd in  ["TEST", "test"]:
-                logg.info("--test %s", arg)
-                if arg.startswith(":"):
-                    dst = arg[1:]
-                    sh____(F"{docker} exec {into} wc -l {dst}")
-                else:
-                    dst = arg
-                    sh____(F"{docker} exec {into} {dst}")
-                cmd = NIX
-                continue
-            if cmd in ["COMMIT", "commit"]:
-                logg.info("--commit")
-                if into:
-                    runcmds = runexe.split(" ") + runcmd.split(" ") if runexe else runcmd.split(" ")
-                    runs = F"-c 'USER {runuser}'" if runuser else NIX
-                    cmds = F"-c 'CMD {runcmds}'" if runcmd else NIX
-                    sx____(F"{docker} rmi {tagging}")
-                    sh____(F"{docker} commit {cmds} {runs} {into} {tagging}")
-                    sh____(F"{docker} rm -f {into}")
-                    into = NIX
-                cmd = NIX
-                continue
-            logg.error("unknown cmd %s", cmd)
+            if not refresh:
+                refresh = package_refresh(distro)
+                if refresh:
+                    sx____(F"{docker} exec {into} {refresh}")
+            search = package_search(distro)
+            sx____(F"{docker} exec {into} {search} {pattern}")
             cmd = NIX
             continue
-        else:
-            cmd = NIX
-            logg.error("cmd %s no arg %s", cmd, arg)
+        if cmd in  ["INSTALL", "install"]:
+            if "@" in arg:
+                test, pack = arg.split("@", 1)
+            else:
+                test, pack = NIX, arg
+            if not pack:
+                logg.warning("no install pack given")
+                continue
+            if not refresh:
+                refresh = package_refresh(distro)
+                logg.debug("install %s", refresh)
+                if refresh:
+                    sx____(F"{docker} exec {into} {refresh}")
+            package = package_tool(distro)
+            logg.debug("TEST %s PACK %s FROM %s", test, pack, arg)
+            if test:
+                sx____(F"{docker} exec {into} bash -c 'test -f {test} || {package} install -y {pack}'")
+            else:
+                sx____(F"{docker} exec {into} {package} install -y {pack}")
+            continue
+        if cmd in  ["MAKE", "MAKE"]:
+            if arg.startswith(":"):
+                dst = arg[1:]
+            else:
+                dst = arg
+            if not dst:
+                logg.warning("no make dst given")
+                continue
+            if dst.endswith("/"):
+                sx____(F"{docker} exec {into} mkdir -p {dst}")
+            else:
+                if "/" in dst:
+                    dstdir = os.path.dirname(dst)
+                    sx____(F"{docker} exec {into} mkdir -p {dstdir}")
+                sx____(F"{docker} exec {into} touch {dst}")
+            continue
+        if cmd in  ["COPY", "copy"]:
+            logg.info("--copy %s", arg)
+            if ":" in arg:
+                src, dst = arg.split(":", 1)
+            else:
+                src, dst = arg, NIX
+            if not src:
+                logg.warning("no copy src given")
+                continue
+            if not dst:
+                logg.warning("no copy dst given")
+                continue
+            sx____(F"{docker} copy {src} {into}:{dst}")
+            continue
+        if cmd in  ["SAVE", "save"]:
+            logg.info("--save %s", arg)
+            if ":" in arg:
+                src, dst = arg.split(":", 1)
+            else:
+                src, dst = arg, "./"
+            sx____(F"{docker} copy {into}:{src} {dst}")
+            continue
+        if cmd in  ["SYMLINK", "symlink"]:
+            logg.info("--symlink %s", arg)
+            if ":" in arg:
+                src, dst = arg.split(":", 1)
+            else:
+                src, dst = arg, "/tmp"
+            if "/" not in dst and "/" in src:
+                srcdir=os.path.dirname(src)
+                srcname=os.path.basename(src)
+                sx____(F"{docker} exec {into} ln -s {srcname} {srcdir}/{dst}")
+            else:
+                sx____(F"{docker} exec {into} ln -s {src} {dst}")
+            continue
+        if cmd in  ["TEST", "test"]:
+            logg.info("--test %s", arg)
+            if arg.startswith(":"):
+                dst = arg[1:]
+                sh____(F"{docker} exec {into} wc -l {dst}")
+            else:
+                dst = arg
+                sh____(F"{docker} exec {into} {dst}")
+            continue
+        if cmd in  ["RUN", "run"]:
+            logg.info("- RUN %s", arg)
+            dst = arg.replace("'", "\\'")
+            sh____(F"{docker} exec {into} bash -c '{dst}'")
+            continue
+        if cmd in ["COMMIT", "commit"]:
+            logg.info("--commit")
+            if into:
+                runcmds = runexe.split(" ") + runcmd.split(" ") if runexe else runcmd.split(" ")
+                runs = F"-c 'USER {runuser}'" if runuser else NIX
+                cmds = F"-c 'CMD {runcmds}'" if runcmd else NIX
+                sx____(F"{docker} rmi {tagging}")
+                sh____(F"{docker} commit {cmds} {runs} {into} {tagging}")
+                sh____(F"{docker} rm -f {into}")
+                into = NIX
+            continue
+        logg.error("unknown cmd %s", cmd)
+        continue
     if into:
         logg.info("--ends")
         runcmds = runexe.split(" ") + runcmd.split(" ") if runexe else runcmd.split(" ")
@@ -283,7 +324,6 @@ def docker_local_build(cmd2: List[str] = []) -> int:
         sx____(F"{docker} rmi {tagging}")
         sh____(F"{docker} commit {cmds} {runs} {into} {tagging}")
         sh____(F"{docker} rm -f {into}")
-        into = NIX
     addhosts = output(F"{mirror} stop {distro} --add-hosts --no-detect")
     return 0
 
@@ -303,7 +343,7 @@ if __name__ == "__main__":
                   help="FROM=%default (or CENTOS)")
     _o.add_option("-t", "--into", "--tag", metavar="NAME", action="append", default=INTO,
                   help="TAG=%default (")
-    _o.add_option("-f", "--file", "Dockerfile", action="append", default=DOCKERFILES,
+    _o.add_option("-f", "--file", metavar="Dockerfile", action="append", default=DOCKERFILES,
                   help="start builds with this dockerfile")
     opt, args = _o.parse_args()
     logging.basicConfig(level = logging.WARNING - opt.verbose * 10)
@@ -313,11 +353,5 @@ if __name__ == "__main__":
     INTO=opt.into
     CHDIR=opt.chdir
     DOCKERFILES=opt.file
-    for dockerfile in DOCKERFILES:
-        if os.path.exists(dockerfile):
-            with open(dockerfile) as f:
-                dockerfilelines = list(f)
-                done = docker_local_build(dockerfilelines)
-                if done:
-                    sys.exit(done)
+    args = ["FILE {dockerfile}" for dockerfile in DOCKERFILES] + args
     sys.exit(docker_local_build(args))
