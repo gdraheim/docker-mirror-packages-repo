@@ -21,22 +21,23 @@ _mirror = os.path.join(_maindir, "docker_mirror.py")
 
 NIX = ""
 SKIP = True
-DOCKER = "docker"
-PYTHON = "/usr/bin/python3"
 SAVETO = "localhost:5000/testing"
 CONTAINER="into-"
 RUNUSER=NIX
 RUNEXE=NIX
 RUNCMD=NIX
-TIMEOUT = 999
-_TAG="test_" + Time.now().strftime("%y%m%d%H%M")
-_FROM="ubuntu:24.04"
-FILEDEF=os.environ.get("DOCKER_LOCAL_IMAGE_DOCKERFILE", os.environ.get("DOCKER_LOCAL_IMAGE_FILE", NIX))
-INTODEF=os.environ.get("DOCKER_LOCAL_IMAGE_INTO", os.environ.get("DOCKER_LOCAL_IMAGE_TAG", _TAG))
-BASEDEF=os.environ.get("DOCKER_LOCAL_IMAGE_BASE", os.environ.get("DOCKER_LOCAL_IMAGE_FROM", _FROM))
-DOCKERFILE = NIX
+TIMEOUT=int(os.environ("DOCKER_IMAGE_TIMEOUT", 999))
+FILEDEF=os.environ.get("DOCKER_IMAGE_DOCKERFILE", os.environ.get("DOCKER_IMAGE_FILE", NIX))
+INTODEF=os.environ.get("DOCKER_IMAGE_INTO", os.environ.get("DOCKER_IMAGE_TAG", "test_" + Time.now().strftime("%y%m%d%H%M")))
+BASEDEF=os.environ.get("DOCKER_IMAGE_BASE", os.environ.get("DOCKER_IMAGE_FROM", "ubuntu:24.04"))
+DOCKERDEF = os.environ.get("DOCKER_EXE", os.environ.get("DOCKER_BIN", "docker"))
+PYTHONDEF = os.environ.get("DOCKER_PYTHON", os.environ.get("DOCKER_PYTHON3", "python3"))
+MIRRORDEF=os.environ.get("DOCKER_MIRROR_PY", os.environ.get("DOCKER_MIRROR", "docker_mirror.py"))
 INTO = [] if not INTODEF else [INTODEF]
 BASE = BASEDEF
+PYTHON = PYTHONDEF
+DOCKER = DOCKERDEF
+DOCKERFILE = FILEDEF
 
 if sys.version_info >= (3,10):
     from typing import TypeAlias
@@ -199,8 +200,9 @@ def docker_local_build(cmdlist: List[str] = [], cyclic: Optional[List[str]] = No
                 sh____(F"{docker} rm -f {into}")
                 into = NIX
             tagging = arg
-            into = CONTAINER+os.path.basename(tagging).replace(":","-").replace(".","-")
             distro = output(F"{mirror} detect {building}")
+            taggingbase  = os.path.basename(tagging).replace(":","-").replace(".","-")
+            into = F"build-{taggingbase}"
             addhosts = output(F"{mirror} start {distro} --add-hosts --no-detect")
             sh____(F"{docker} rm -f {into}")
             sh____(F"{docker} run -d --name={into} --rm=true {addhosts} {building} sleep {timeout}")
