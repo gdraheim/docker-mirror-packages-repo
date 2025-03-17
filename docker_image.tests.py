@@ -239,14 +239,14 @@ class DockerLocalImageTest(unittest.TestCase):
         self.assertTrue(greps(x1.out, "RepoTags"))
         sh____(F"{docker} rm -f {images}/{testname}:{version}")
     def test_92094(self) -> None:
-        """ almalinux does not have it (may be in EPEL?)"""
+        """ almalinux does not have it - but python3-mypy is on EPEL"""
         python = PYTHON
-        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local --epel"
         docker = DOCKER
         images = IMAGES
         testname = self.testname()
         version = self.testver()
-        sh____(F"{python} {script} FROM almalinux:{version} INTO {images}/{testname}:{version} SEARCH mypy -vvv")
+        sh____(F"{python} {script} FROM almalinux:{version} INTO {images}/{testname}:{version} INSTALL epel-release SEARCH mypy -vvv")
         x1 = X(F"{docker} inspect {images}/{testname}:{version}")
         self.assertTrue(greps(x1.out, "RepoTags"))
         sh____(F"{docker} rm -f {images}/{testname}:{version}")
