@@ -39,7 +39,7 @@ PYTHON = PYTHONDEF
 MIRROR = MIRRORDEF
 DOCKER = DOCKERDEF
 DOCKERFILE = FILEDEF
-ADDHOSTS=[]
+ADDHOST=[]
 ADDEPEL=0
 UPDATES=0
 UNIVERSE=0
@@ -218,7 +218,9 @@ def docker_local_build(cmdlist: List[str] = [], cyclic: Optional[List[str]] = No
             distro = output(F"{mirror} detect {building}")
             taggingbase  = os.path.basename(tagging).replace(":","-").replace(".","-")
             into = F"build-{taggingbase}"
-            addhosts = output(F"{mirror} start {distro} --add-hosts --no-detect {mirroroptions}")
+            addhosts = output(F"{mirror} start {distro} --add-hosts --no-detect " + " ".join(mirroroptions))
+            if ADDHOST:
+                addhosts += "".join([F"--add-host {addhost}" for addhost in ADDHOST])
             sh____(F"{docker} rm -f {into}")
             sh____(F"{docker} run -d --name={into} --rm=true {addhosts} {building} sleep {timeout}")
             continue
@@ -374,7 +376,7 @@ if __name__ == "__main__":
     cmdline.add_option("--epel", action="store_true", default=ADDEPEL, help="addhosts for epel as well [%(default)s]")
     cmdline.add_option("--updates", "--update", action="store_true", default=UPDATES, help="addhosts using updates variant [%(default)s]")
     cmdline.add_option("--universe", action="store_true", default=UNIVERSE, help="addhosts using universe variant [%(default)s]")
-    cmdline.add_option("-a", "--add-hosts", action="append", default=ADDHOSTS, help="additional addhosts over docker_mirror.py")
+    cmdline.add_option("--add-host", action="append", default=ADDHOST, help="additional addhosts over docker_mirror.py")
     cmdline.add_option("-l", "--local", "--localmirrors", action="count", default=0, help="fail if local mirror not found [%(default)s]")
     cmdline.add_option("-C", "--chdir", metavar="PATH", default="", help="change directory before building {%(default)s}")
     cmdline.add_option("-b", "--base", "--from", metavar="NAME", default=BASE, help="FROM=%default (or CENTOS)")
@@ -389,7 +391,7 @@ if __name__ == "__main__":
     INTO=opt.into
     CHDIR=opt.chdir
     DOCKERFILE=opt.file
-    ADDHOSTS = opt.add_hosts
+    ADDHOST = opt.add_host
     ADDEPEL = opt.epel  # centos epel-repo
     UPDATES = opt.updates
     UNIVERSE = opt.universe  # ubuntu universe repo

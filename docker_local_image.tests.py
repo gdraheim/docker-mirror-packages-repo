@@ -24,6 +24,7 @@ PYTHON = PYTHONDEF
 MIRROR = MIRRORDEF
 SCRIPT = "docker_local_image.py"
 IMAGES = "docker-local"
+LOCAL = 0
 
 string_types = str
 xrange = range
@@ -175,7 +176,7 @@ class DockerLocalImageTest(unittest.TestCase):
         logg.info("starting the testsuite ...")
     def test_91154(self) -> None:
         python = PYTHON
-        script = SCRIPT
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
         docker = DOCKER
         images = IMAGES
         testname = self.testname()
@@ -186,7 +187,7 @@ class DockerLocalImageTest(unittest.TestCase):
         sh____(F"{docker} rm -f {images}/{testname}:{version}")
     def test_91155(self) -> None:
         python = PYTHON
-        script = SCRIPT
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
         docker = DOCKER
         images = IMAGES
         testname = self.testname()
@@ -197,7 +198,7 @@ class DockerLocalImageTest(unittest.TestCase):
         sh____(F"{docker} rm -f {images}/{testname}:{version}")
     def test_91156(self) -> None:
         python = PYTHON
-        script = SCRIPT
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
         docker = DOCKER
         images = IMAGES
         testname = self.testname()
@@ -206,9 +207,9 @@ class DockerLocalImageTest(unittest.TestCase):
         x1 = X(F"{docker} inspect {images}/{testname}:{version}")
         self.assertTrue(greps(x1.out, "RepoTags"))
         sh____(F"{docker} rm -f {images}/{testname}:{version}")
-    def test_92156(self) -> None:
+    def test_92157(self) -> None:
         python = PYTHON
-        script = SCRIPT
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
         docker = DOCKER
         images = IMAGES
         testname = self.testname()
@@ -228,6 +229,7 @@ if __name__ == "__main__":
     cmdline.add_option("-M", "--mirror", metavar="PY", default=MIRROR, help="different path to [%default]")
     cmdline.add_option("-P", "--python", metavar="EXE", default=PYTHON, help="alternative to [%default] (=python3.11)")
     cmdline.add_option("-D", "--docker", metavar="EXE", default=DOCKER, help="alternative to [%default] (e.g. podman)")
+    cmdline.add_option("-l", "--local", action="count", default=0, help="fail if local mirror not found [%(default)s]")
     cmdline.add_option("--failfast", action="store_true", default=False,
                   help="Stop the test run on the first error or failure. [%default]")
     opt, cmdline_args = cmdline.parse_args()
@@ -236,6 +238,7 @@ if __name__ == "__main__":
     DOCKER = opt.docker
     PYTHON = opt.python
     MIRROR = opt.mirror
+    LOCAL = opt.local
     # unittest.main()
     suite = unittest.TestSuite()
     if not cmdline_args: cmdline_args = ["test_*"]
