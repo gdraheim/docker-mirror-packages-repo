@@ -168,8 +168,16 @@ class DockerLocalImageTest(unittest.TestCase):
     def testver(self, testname: str = NIX) -> None:
         testname = testname or self.caller_testname()
         ver3 = testname[-3:]
+        if ver3.startswith("0"):
+            return ver3[1] + "." + ver3[2]
         if ver3.startswith("14"):
             return "42" + "." + ver3[2]
+        if ver3.startswith("2"):
+            num = ver3[2]
+            if num == "4":
+                return ver3[0:2] + ".04"
+            if num == "9":
+                return ver3[0:2] + ".10"
         return ver3[0:2] + "." + ver3[2]
     def test_90001_hello(self) -> None:
         print("... starting the testsuite ...")
@@ -207,6 +215,29 @@ class DockerLocalImageTest(unittest.TestCase):
         x1 = X(F"{docker} inspect {images}/{testname}:{version}")
         self.assertTrue(greps(x1.out, "RepoTags"))
         sh____(F"{docker} rm -f {images}/{testname}:{version}")
+    def test_91224(self) -> None:
+        python = PYTHON
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
+        docker = DOCKER
+        images = IMAGES
+        testname = self.testname()
+        version = self.testver()
+        sh____(F"{python} {script} FROM ubuntu:{version} INTO {images}/{testname}:{version} SEARCH setuptools -vvv")
+        x1 = X(F"{docker} inspect {images}/{testname}:{version}")
+        self.assertTrue(greps(x1.out, "RepoTags"))
+        sh____(F"{docker} rm -f {images}/{testname}:{version}")
+    def test_92094(self) -> None:
+        """ almalinux does not have it (may be in EPEL?)"""
+        python = PYTHON
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
+        docker = DOCKER
+        images = IMAGES
+        testname = self.testname()
+        version = self.testver()
+        sh____(F"{python} {script} FROM almalinux:{version} INTO {images}/{testname}:{version} SEARCH mypy -vvv")
+        x1 = X(F"{docker} inspect {images}/{testname}:{version}")
+        self.assertTrue(greps(x1.out, "RepoTags"))
+        sh____(F"{docker} rm -f {images}/{testname}:{version}")
     def test_92156(self) -> None:
         """ mypy is first distributed as python311-mypy in opensuse 15.6 """
         python = PYTHON
@@ -216,6 +247,40 @@ class DockerLocalImageTest(unittest.TestCase):
         testname = self.testname()
         version = self.testver()
         sh____(F"{python} {script} FROM opensuse/leap:{version} INTO {images}/{testname}:{version} SEARCH mypy -vvv")
+        x1 = X(F"{docker} inspect {images}/{testname}:{version}")
+        self.assertTrue(greps(x1.out, "RepoTags"))
+        sh____(F"{docker} rm -f {images}/{testname}:{version}")
+    def test_92204(self) -> None:
+        """ ubuntu:20.04 does already have a python3-mypy """
+        python = PYTHON
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
+        docker = DOCKER
+        images = IMAGES
+        testname = self.testname()
+        version = self.testver()
+        sh____(F"{python} {script} FROM ubuntu:{version} INTO {images}/{testname}:{version} SEARCH mypy -vvv")
+        x1 = X(F"{docker} inspect {images}/{testname}:{version}")
+        self.assertTrue(greps(x1.out, "RepoTags"))
+        sh____(F"{docker} rm -f {images}/{testname}:{version}")
+    def test_92224(self) -> None:
+        python = PYTHON
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
+        docker = DOCKER
+        images = IMAGES
+        testname = self.testname()
+        version = self.testver()
+        sh____(F"{python} {script} FROM ubuntu:{version} INTO {images}/{testname}:{version} SEARCH mypy -vvv")
+        x1 = X(F"{docker} inspect {images}/{testname}:{version}")
+        self.assertTrue(greps(x1.out, "RepoTags"))
+        sh____(F"{docker} rm -f {images}/{testname}:{version}")
+    def test_92244(self) -> None:
+        python = PYTHON
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
+        docker = DOCKER
+        images = IMAGES
+        testname = self.testname()
+        version = self.testver()
+        sh____(F"{python} {script} FROM ubuntu:{version} INTO {images}/{testname}:{version} SEARCH mypy -vvv")
         x1 = X(F"{docker} inspect {images}/{testname}:{version}")
         self.assertTrue(greps(x1.out, "RepoTags"))
         sh____(F"{docker} rm -f {images}/{testname}:{version}")

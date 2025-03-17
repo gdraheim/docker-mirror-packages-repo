@@ -95,15 +95,19 @@ def q_str(part: Union[str, int, None]) -> str:
 
 def package_tool(distro: str = NIX):
     if "centos" in distro or "almalinux" in distro or "rhel" in distro:
-        return "yum --setopt=repo_gpgcheck=false"
+        return "yum --setopt=repo_gpgcheck=false --setopt=sslverify=false"
     if "opensuse" in distro:
         return "zypper --no-gpg-checks --no-refresh"
     return "apt-get -o Acquire::AllowInsecureRepositories=true"
 def package_refresh(distro: str = NIX):
+    if "centos" in distro or "almalinux" in distro or "rhel" in distro:
+        return "yum --setopt=repo_gpgcheck=false --setopt=sslverify=false check-update"
     if "opensuse" in distro:
         return "zypper --no-gpg-checks refresh"
     return "apt-get -o Acquire::AllowInsecureRepositories=true update"
 def package_search(distro: str = NIX):
+    if "centos" in distro or "almalinux" in distro or "rhel" in distro:
+        return "yum --setopt=repo_gpgcheck=false --setopt=sslverify=false search"
     if "opensuse" in distro:
         return "zypper --no-refresh search"
     return "apt-cache search"
@@ -412,4 +416,3 @@ if __name__ == "__main__":
     UNIVERSE = opt.universe  # ubuntu universe repo
     LOCAL = opt.local
     sys.exit(docker_local_build(cmdline_args))
-
