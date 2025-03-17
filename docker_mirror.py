@@ -928,13 +928,13 @@ if __name__ == "__main__":
         helper script to divert 'pkg install' calls to a local docker container as the real source.""")
     cmdline.add_argument("-v", "--verbose", action="count", default=0, help="more verbose logging")
     cmdline.add_argument("-^", "--quiet", action="count", default=0, help="less verbose logging")
-    cmdline.add_argument("-D", "--docker", metavar="EXE", default=DOCKER, help="alternative to [%default] (e.g. podman)")
+    cmdline.add_argument("-D", "--docker", metavar="EXE", default=DOCKER, help="alternative to [%(default)s] (e.g. podman)")
     cmdline.add_argument("-a", "--add-hosts", "--add-host", action="store_true", default=ADDHOSTS,
                          help="show addhost options for 'docker run' [%(default)s]")
     cmdline.add_argument("-n", "--no-detect", '--nodetect', action="store_true", default=NODETECT,
                          help="skip implicit 'detect' during 'start' [%(default)s]")
     cmdline.add_argument("--imagesrepo", metavar="PREFIX", default=IMAGESREPO,
-                         help="set $IMAGESREPO [%(default)s]")
+                         help="set [%(default)s]")
     cmdline.add_argument("--epel", action="store_true", default=ADDEPEL,
                          help="addhosts for epel as well [%(default)s]")
     cmdline.add_argument("--updates", "--update", action="store_true", default=UPDATES,
