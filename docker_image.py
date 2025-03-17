@@ -338,7 +338,10 @@ def docker_local_build(cmdlist: List[str] = [], cyclic: Optional[List[str]] = No
         if cmd in  ["RUN", "run"]:
             logg.info("- RUN %s", arg)
             dst = arg.replace("'", "\\'")
-            sh____(F"{docker} exec {into} bash -c '{dst}'")
+            if runuser:
+                sh____(F"{docker} exec --user {runuser} {into} bash -c '{dst}'")
+            else:
+                sh____(F"{docker} exec {into} bash -c '{dst}'")
             continue
         if cmd in ["COMMIT", "commit"]:
             logg.info("--commit")
