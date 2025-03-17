@@ -34,7 +34,7 @@ _FROM="ubuntu:24.04"
 FILEDEF=os.environ.get("DOCKER_LOCAL_IMAGE_DOCKERFILE", os.environ.get("DOCKER_LOCAL_IMAGE_FILE", NIX))
 INTODEF=os.environ.get("DOCKER_LOCAL_IMAGE_INTO", os.environ.get("DOCKER_LOCAL_IMAGE_TAG", _TAG))
 BASEDEF=os.environ.get("DOCKER_LOCAL_IMAGE_BASE", os.environ.get("DOCKER_LOCAL_IMAGE_FROM", _FROM))
-DOCKERFILES = [] if not FILEDEF else [FILEDEF]
+DOCKERFILE = NIX
 INTO = [] if not INTODEF else [INTODEF]
 BASE = BASEDEF
 
@@ -107,6 +107,7 @@ def docker_local_build(cmdlist: List[str] = [], cyclic: Optional[List[str]] = No
     cyclic = cyclic if cyclic is not None else []
     mirror = _mirror
     docker = DOCKER
+    dockerfile = DOCKERFILE
     tagging: str = INTO
     building: str = BASE
     timeout: int = TIMEOUT
@@ -142,22 +143,39 @@ def docker_local_build(cmdlist: List[str] = [], cyclic: Optional[List[str]] = No
         else:
             cmd, arg = cmd2, NIX
         logg.info("- %s [%s]", cmd, arg)
-        if cmd in ["FILE", "file", "IMPORT", "import"]:
+        if cmd in ["FILE", "file"]:
             if not arg:
-                logg.error("no dockerfile provided: %s", arg)
+                logg.error("no dockerfile value provided: %s", arg)
                 return os.EX_USAGE
             elif not os.path.exists(arg):
-                logg.error("no dockerfile provided: %s", arg)
+                logg.error("no dockerfile value provided: %s", arg)
                 return os.EX_OSFILE
             else:
+                dockerfile = arg
+        elif cmd in ["BUILD", "build"]:
+            directory = arg
+            if not arg:
+                logg.error("no build directory provided: %s", directory)
+                return os.EX_USAGE
+            elif not os.path.isdir(arg):
+                logg.error("no build directory provided: %s", directory)
+                return os.EX_OSFILE
+            else:
+                filename = os.path.realpath(os.path.join(directory, dockerfile))
+                if not os.path.isfile(filename):
+                    logg.error("dockerfile does not exist: %s", filename)
+                    return os.EX_OSFILE
                 try:
-                    filename = os.path.realpath(arg)
                     if filename in cyclic:
                         logg.error("cycle detection: '%s' = %s", arg, filename)
                         return os.EX_OSERR
                     cyclic2 = cyclic + [filename]
                     with open(arg, filename, encoding="utf-8") as f:
                         cmdlist2 = [line.rstrip() for line in f]
+                        missing2 = [cmd2 for cmd2 in cmdlist2 if cmd2 in needsargument]
+                        if missing2:
+                            logg.error("in %s/%s  missing arguments for %s", directory, dockerfile, " and ".join(missing2))
+                            return os.EX_DATAERR
                         exitcode = docker_local_build(cmdlist2, cyclic2)
                         if exitcode:
                             return exitcode
@@ -343,8 +361,8 @@ if __name__ == "__main__":
                   help="FROM=%default (or CENTOS)")
     _o.add_option("-t", "--into", "--tag", metavar="NAME", action="append", default=INTO,
                   help="TAG=%default (")
-    _o.add_option("-f", "--file", metavar="Dockerfile", action="append", default=DOCKERFILES,
-                  help="start builds with this dockerfile")
+    _o.add_option("-f", "--file", metavar="Dockerfile", default=DOCKERFILE,
+                  help="set dockerfile name for BUILD")
     opt, args = _o.parse_args()
     logging.basicConfig(level = logging.WARNING - opt.verbose * 10)
     DOCKER=opt.docker
@@ -352,6 +370,5 @@ if __name__ == "__main__":
     BASE=opt.base
     INTO=opt.into
     CHDIR=opt.chdir
-    DOCKERFILES=opt.file
-    args = ["FILE {dockerfile}" for dockerfile in DOCKERFILES] + args
+    DOCKERFILE=opt.file
     sys.exit(docker_local_build(args))
