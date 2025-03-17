@@ -22,7 +22,7 @@ MIRRORDEF = os.environ.get("DOCKER_MIRROR_PY", os.environ.get("DOCKER_MIRROR",  
 DOCKER = DOCKERDEF
 PYTHON = PYTHONDEF
 MIRROR = MIRRORDEF
-SCRIPT = "docker_local_image.py"
+SCRIPT = "docker_image.py"
 IMAGES = "docker-local"
 LOCAL = 0
 
