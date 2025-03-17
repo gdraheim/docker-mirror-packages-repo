@@ -134,6 +134,7 @@ test_7%: ; ./centos-docker-mirror.tests.py $@ -vv $V $K
 test_9%: ; ./docker_image.tests.py $@ -vv $V $K $(LOCAL)
 m_%: ; ./docker_mirror.tests.py $@ -vv $V $K 
 o_%: ; ./opensuse-docker-mirror.tests.py $@ -vv $V $K 
+images: ; ./docker_image.tests.py -vv $V $K $(LOCAL)
 
 dry precheck: ; ./docker_mirror.tests.py -vv $V $K --dryrun
 check: mm oo cc uu

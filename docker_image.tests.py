@@ -207,7 +207,8 @@ class DockerLocalImageTest(unittest.TestCase):
         x1 = X(F"{docker} inspect {images}/{testname}:{version}")
         self.assertTrue(greps(x1.out, "RepoTags"))
         sh____(F"{docker} rm -f {images}/{testname}:{version}")
-    def test_92157(self) -> None:
+    def test_92156(self) -> None:
+        """ mypy is first distributed as python311-mypy in opensuse 15.6 """
         python = PYTHON
         script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
         docker = DOCKER
