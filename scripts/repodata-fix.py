@@ -3,7 +3,7 @@
 __copyright__ = "(C) 2018-2025 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
-__version__ = "1.7.7111"
+__version__ = "1.7.7112"
 
 import xml.dom.minidom as minidom
 import os.path as path
