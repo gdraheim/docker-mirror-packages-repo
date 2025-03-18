@@ -26,20 +26,10 @@ ubuntubash:
                                                              --add-host security.ubuntu.com:$$IP ubuntu:$(UBUNTU) sleep 9999
 	docker exec -it ubuntu-bash-$(UBUNTU) bash
 
+debiansync.10: ; ./ubuntu-docker-mirror.py debian:10 sync -v 
+
 ### ubuntu versions
 
-ubuntu.24.04: ;	$(MAKE) ubuntudir UBUNTU=24.04
-ubuntu.23.10: ;	$(MAKE) ubuntudir UBUNTU=23.10
-ubuntu.23.04: ;	$(MAKE) ubuntudir UBUNTU=23.04
-ubuntu.22.10: ;	$(MAKE) ubuntudir UBUNTU=22.10
-ubuntu.22.04: ;	$(MAKE) ubuntudir UBUNTU=22.04
-ubuntu.21.10: ;	$(MAKE) ubuntudir UBUNTU=21.10
-ubuntu.21.04: ;	$(MAKE) ubuntudir UBUNTU=21.04
-ubuntu.20.10: ;	$(MAKE) ubuntudir UBUNTU=20.10
-ubuntu.20.04: ;	$(MAKE) ubuntudir UBUNTU=20.04
-ubuntu.19.10: ;	$(MAKE) ubuntudir UBUNTU=19.10
-ubuntu.18.04: ;	$(MAKE) ubuntudir UBUNTU=18.04
-ubuntu.16.04: ; $(MAKE) ubuntudir UBUNTU=16.04
 ubuntusync.24.04: ; $(MAKE) ubuntusync UBUNTU=24.04
 ubuntusync.23.10: ; $(MAKE) ubuntusync UBUNTU=23.10
 ubuntusync.23.04: ; $(MAKE) ubuntusync UBUNTU=23.04
@@ -120,14 +110,12 @@ ubuntubase.19.10: ; $(MAKE) ubuntubase UBUNTU=19.10
 ubuntubase.18.04: ; $(MAKE) ubuntubase UBUNTU=18.04
 ubuntubase.16.04: ; $(MAKE) ubuntubase UBUNTU=16.04
 
-ubuntudisk: ubuntudisk.16.04  ubuntudisk.18.04  ubuntudisk.20.04  ubuntudisk.22.04  ubuntudisk.24.04
 ubuntudisk.24.04: ; ./ubuntu-docker-mirror.py 24.04 disk -v --universe
 ubuntudisk.22.04: ; ./ubuntu-docker-mirror.py 22.04 disk -v --universe
 ubuntudisk.20.04: ; ./ubuntu-docker-mirror.py 20.04 disk -v --universe
 ubuntudisk.18.04: ; ./ubuntu-docker-mirror.py 18.04 disk -v --universe
 ubuntudisk.16.04: ; ./ubuntu-docker-mirror.py 16.04 disk -v --universe
 
-ubuntudu: ubuntudu.16.04  ubuntudu.18.04  ubuntudu.20.04  ubuntudu.22.04  ubuntu.24.04
 ubuntudu.24.04: ; ./ubuntu-docker-mirror.py 24.04 du -v
 ubuntudu.22.04: ; ./ubuntu-docker-mirror.py 22.04 du -v
 ubuntudu.20.04: ; ./ubuntu-docker-mirror.py 20.04 du -v

@@ -52,13 +52,17 @@ UBUNTU = "24.04"
 DISKSUFFIX = "disk" # suffix
 VARIANT = ""
 
-ARCHLIST = ["amd64", "i386"]
+ARCHLIST = ["amd64", "i386", "arm64", "armhf"]
 ARCHS = ["amd64", "i386"]
 
 RSYNC_UBUNTU = "rsync://ftp5.gwdg.de/pub/linux/debian/ubuntu"
+RSYNC_DEBIAN = "rsync://ftp5.gwdg.de/pub/linux/debian/debian"
+
 
 MIRRORS: Dict[str, List[str]] = {}
 MIRRORS["ubuntu"] = [RSYNC_UBUNTU]
+MIRRORS["debian"] = [RSYNC_DEBIAN]
+
 
 UBUNTU_TMP = "ubuntu.tmp"
 
@@ -85,11 +89,61 @@ DIST["23.04"] = "lunatic"  # Lunatic Lobster
 DIST["23.10"] = "mantic"   # Mantic Minotaur
 DIST["24.04"] = "noble"    # Noble Numbat       (April 2029)
 
+DEBIANDIST: Dict[str, str] = {}
+DEBIANDIST["6"] = "squeeze"
+DEBIANDIST["7"] = "wheezy"
+DEBIANDIST["8"] = "jessie"
+DEBIANDIST["9"] = "stretch"
+DEBIANDIST["10"] = "buster"
+DEBIANDIST["11"] = "bullseye"
+DEBIANDIST["12"] = "bookworm"
+DEBIANDIST["13"] = "trixie"
+DEBIANDIST["13"] = "forky"
+
+DEBIANDATE: Dict[str, str] = {}
+DEBIANDATE["10.1"] = "201909"
+DEBIANDATE["10.2"] = "201911"
+DEBIANDATE["10.3"] = "202002"
+DEBIANDATE["10.4"] = "202005"
+DEBIANDATE["10.5"] = "202008"
+DEBIANDATE["10.6"] = "202009"
+DEBIANDATE["10.7"] = "202012"
+DEBIANDATE["10.8"] = "202102"
+DEBIANDATE["10.9"] = "202103"
+DEBIANDATE["10.10"] = "202103"
+DEBIANDATE["10.11"] = "202110"
+DEBIANDATE["10.12"] = "202203"
+DEBIANDATE["10.13"] = "202209"
+DEBIANDATE["11.1"] = "202101"
+DEBIANDATE["11.2"] = "202112"
+DEBIANDATE["11.3"] = "202203"
+DEBIANDATE["11.4"] = "202207"
+DEBIANDATE["11.5"] = "202209"
+DEBIANDATE["11.6"] = "202212"
+DEBIANDATE["11.7"] = "202304"
+DEBIANDATE["11.8"] = "202310"
+DEBIANDATE["11.9"] = "202402"
+DEBIANDATE["11.10"] = "202406"
+DEBIANDATE["11.11"] = "202408"
+DEBIANDATE["12.1"] = "202307"
+DEBIANDATE["12.2"] = "202310"
+DEBIANDATE["12.4"] = "202312"
+DEBIANDATE["12.5"] = "202402"
+DEBIANDATE["12.6"] = "202406"
+DEBIANDATE["12.7"] = "202408"
+DEBIANDATE["12.8"] = "202409"
+DEBIANDATE["12.9"] = "202501"
+DEBIANDATE["12.10"] = "202503"
+DEBIANDATE["13.1"] = "202506" # TODO: in the future
+
 MAIN_REPOS = ["main"]
 UPDATES_REPOS = ["main", "restricted"]
 UNIVERSE_REPOS = ["main", "restricted", "universe"]
 MULTIVERSE_REPOS = ["main", "restricted", "universe", "multiverse"]
 AREAS = {"1": "", "2": "-updates", "3": "-backports", "4": "-security"}
+
+# debian
+PROPOSED_REPOS = ["main", "updates", "proposed-updates"]
 
 REPOS = UPDATES_REPOS
 
@@ -132,31 +186,43 @@ BASEVERSION["16.10"] = "16.04"
 
 def ubuntu_sync() -> None:
     ubuntu_dir()
-    # release files:
-    ubuntu_sync_base_1()
-    ubuntu_sync_base_2()
-    ubuntu_sync_base_3()
-    ubuntu_sync_base_4()
-    # main:
-    ubuntu_sync_main_1()
-    ubuntu_sync_restricted_1()
-    ubuntu_sync_universe_1()
-    ubuntu_sync_multiverse_1()
-    # updates:
-    ubuntu_sync_main_2()
-    ubuntu_sync_restricted_2()
-    ubuntu_sync_universe_2()
-    ubuntu_sync_multiverse_2()
-    # backports:
-    ubuntu_sync_main_3()
-    ubuntu_sync_restricted_3()
-    ubuntu_sync_universe_3()
-    ubuntu_sync_multiverse_3()
-    # security:
-    ubuntu_sync_main_4()
-    ubuntu_sync_restricted_4()
-    ubuntu_sync_universe_4()
-    ubuntu_sync_multiverse_4()
+    if DISTRO in ["ubuntu"]:
+        # release files:
+        ubuntu_sync_base_1()
+        ubuntu_sync_base_2()
+        ubuntu_sync_base_3()
+        ubuntu_sync_base_4()
+        # main:
+        ubuntu_sync_main_1()
+        ubuntu_sync_restricted_1()
+        ubuntu_sync_universe_1()
+        ubuntu_sync_multiverse_1()
+        # updates:
+        ubuntu_sync_main_2()
+        ubuntu_sync_restricted_2()
+        ubuntu_sync_universe_2()
+        ubuntu_sync_multiverse_2()
+        # backports:
+        ubuntu_sync_main_3()
+        ubuntu_sync_restricted_3()
+        ubuntu_sync_universe_3()
+        ubuntu_sync_multiverse_3()
+        # security:
+        ubuntu_sync_main_4()
+        ubuntu_sync_restricted_4()
+        ubuntu_sync_universe_4()
+        ubuntu_sync_multiverse_4()
+    elif DISTRO in ["debian"]:
+        # release files:
+        debian_sync_base_1()
+        debian_sync_base_2()
+        # main:
+        debian_sync_main_1()
+        # updates:
+        debian_sync_main_2()
+    else:
+        logg.error("unknown distro %s", DISTRO)
+        raise UserWarning("unknown distro")
 
 def ubuntu_datadir() -> str:
     for data in reversed(DATADIRS):
@@ -196,6 +262,9 @@ def ubuntu_dir(variant: str = "") -> str:
         os.mkdir(dirlink)  # local dir
         logg.warning("%s/. local dir", dirlink)
     return dirlink
+
+def debian_sync_base_1() -> None: ubuntu_sync_base(dist=DEBIANDIST[UBUNTU])
+def debian_sync_base_2() -> None: ubuntu_sync_base(dist=DEBIANDIST[UBUNTU] + "-updates")
 
 def ubuntu_sync_base_1() -> None: ubuntu_sync_base(dist=DIST[UBUNTU])
 def ubuntu_sync_base_2() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-updates")
@@ -240,6 +309,9 @@ def ubuntu_sync_restricted_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-s
 def ubuntu_sync_universe_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-security", main="universe", when=when("universe,multiverse", REPOS))
 def ubuntu_sync_multiverse_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-security", main="multiverse", when=when("multiverse", REPOS))
 
+def debian_sync_main_1() -> None: ubuntu_sync_main(dist=DEBIANDIST[UBUNTU], main="main", when=when("main,updates,proposed", REPOS))
+def debian_sync_main_2() -> None: ubuntu_sync_main(dist=DEBIANDIST[UBUNTU] + "-updates", main="main", when=when("main,updates,proposed", REPOS))
+
 downloads = ["universe"]
 def ubuntu_check() -> None:
     print(": %s" % when("update,universe", downloads))
@@ -256,11 +328,22 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None: # pylint: d
     # excludes = " ".join(["--exclude '%s'" % parts for parts in nolinux])
     options = "--ignore-times --exclude=.~tmp~"
     for arch in ARCHS:
-        sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-{arch} {maindir} {options}")
-        sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-{arch}  {maindir} {options}")
+        sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-{arch} {maindir} {options} --copy-links")
     if TRUE:
-        sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/source       {maindir} {options}")
-    gzlist = [F"{maindir}/binary-{arch}/Packages.gz" for arch in ARCHS ]
+        sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/source       {maindir} {options} --copy-links")
+    if distro in ["debian"]:
+        gzlist: List[str] = []
+        for arch in ARCHS:
+            packages_gz = F"{maindir}/binary-{arch}/Packages.gz"
+            packages_diff = F"{maindir}/binary-{arch}/Packages.diff"
+            if os.path.isfile(packages_gz):
+                gzlist.append(packages_gz)
+            elif os.path.isdir(packages_diff):
+                for gzname in os.listdir(packages_diff):
+                    if gzname.endswith(".gz"):
+                        gzlist.append(os.path.join(packages_diff, gzname))
+    else:
+        gzlist = [F"{maindir}/binary-{arch}/Packages.gz" for arch in ARCHS ]
     cache = ubuntu_cache()
     tmpfile = F"{cache}/Packages.{dist}.{main}.tmp"
     if outdated(tmpfile, *gzlist):
@@ -286,7 +369,7 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None: # pylint: d
                 if not skip:
                     print(filename, file=f)
                     syncing += 1
-        logg.info("syncing %s of %s filenames in %s", syncing, filenames, "&".join(gzlist))
+        logg.info("syncing %s of %s filenames in %s", syncing, filenames, " & ".join(gzlist))
     pooldir = F"{repodir}/{distro}.{version}/pools/{dist}/{main}/pool"
     if not path.isdir(pooldir): os.makedirs(pooldir)
     if when:
@@ -514,21 +597,33 @@ def ubuntu_version(distro: str = NIX, ubuntu: str = NIX) -> str:
     ubuntu = ubuntu or UBUNTU
     if ":" in ubuntu:
         distro, ubuntu = ubuntu.split(":", 1)
-    if len(ubuntu) <= 2:
-        found = max([os for os in DIST if os.startswith(ubuntu)])
-        logg.info("UBUNTU:=%s (max %s)", found, ubuntu)
-        return found
-    if ubuntu in DIST.values():
-        for version, dist in DIST.items():
-            if dist == ubuntu:
-                logg.info("UBUNTU %s -> %s", dist, version)
-                return version
-    elif ubuntu not in DIST:
-        logg.warning("UBUNTU=%s is not a known os version", ubuntu)
-        return ubuntu
+    if distro in ["ubuntu"]:
+        if len(ubuntu) <= 2:
+            found = max([os for os in DIST if os.startswith(ubuntu)])
+            logg.info("UBUNTU:=%s (max %s)", found, ubuntu)
+            return found
+        if ubuntu in DIST.values():
+            for version, dist in DIST.items():
+                if dist == ubuntu:
+                    logg.info("UBUNTU %s -> %s", dist, version)
+                    return version
+        elif ubuntu not in DIST:
+            logg.warning("UBUNTU=%s is not a known os version", ubuntu)
+            return ubuntu
+        else:
+            logg.debug("UBUNTU=%s override", ubuntu)
+            return ubuntu
+    elif distro in ["debian"]:
+        if ubuntu not in DEBIANDIST:
+            logg.warning("UBUNTU=%s is not a known os version", ubuntu)
+            return ubuntu
+        else:
+            logg.debug("UBUNTU=%s override", ubuntu)
+            return ubuntu
     else:
-        logg.debug("UBUNTU=%s override", ubuntu)
-        return ubuntu
+        logg.error("not a known distro %s", distro)
+        raise UserWarning("not a known distro")
+
 
 def UBUNTU_set(ubuntu: str) -> str:
     global UBUNTU, DISTRO # pylint: disable=global-statement
@@ -555,6 +650,9 @@ def ubuntu_commands() -> str:
 def _main(args: List[str]) -> int:
     for arg in args:
         if arg[0] in "123456789":
+            UBUNTU_set(arg)
+            continue
+        if ":" in arg and arg.split(":", 1)[1][0] in "123456789":
             UBUNTU_set(arg)
             continue
         funcname = "ubuntu_" + arg.replace("-", "_")
