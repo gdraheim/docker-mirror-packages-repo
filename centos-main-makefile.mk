@@ -39,13 +39,15 @@ centosbash:
 ### centos versions
 almapull.9.1: ; $(MAKE) centospull CENTOS=$(ALMALINUX) DISTRO=almalinux
 
+almasync.9.5: ; $(MAKE) centossync CENTOS=9.5 DISTRO=almalinux
+almarepo.9.5: ; $(MAKE) centosrepo CENTOS=9.4 DISTRO=almalinux
 almasync.9.4: ; $(MAKE) centossync CENTOS=9.4 DISTRO=almalinux
-almasync.9.3: ; $(MAKE) centossync CENTOS=9.3 DISTRO=almalinux
-almasync.9.2: ; $(MAKE) centossync CENTOS=9.2 DISTRO=almalinux
-almasync.9.1: ; $(MAKE) centossync CENTOS=9.1 DISTRO=almalinux
 almarepo.9.4: ; $(MAKE) centosrepo CENTOS=9.4 DISTRO=almalinux
+almasync.9.3: ; $(MAKE) centossync CENTOS=9.3 DISTRO=almalinux
 almarepo.9.3: ; $(MAKE) centosrepo CENTOS=9.3 DISTRO=almalinux
+almasync.9.2: ; $(MAKE) centossync CENTOS=9.2 DISTRO=almalinux
 almarepo.9.2: ; $(MAKE) centosrepo CENTOS=9.2 DISTRO=almalinux
+almasync.9.1: ; $(MAKE) centossync CENTOS=9.1 DISTRO=almalinux
 almarepo.9.1: ; $(MAKE) centosrepo CENTOS=9.1 DISTRO=almalinux
 centossync.8.5 centossync.8.5.2111: ; $(MAKE) centossync CENTOS=8.5.2111
 centossync.8.4 centossync.8.4.2105: ; $(MAKE) centossync CENTOS=8.4.2105
@@ -114,11 +116,13 @@ centosbase.7.5 centosbase.7.5.1804: ; $(MAKE) centosbase CENTOS=7.5.1804
 centosbase.7.4 centosbase.7.4.1708: ; $(MAKE) centosbase CENTOS=7.4.1708 
 centosbase.7.3 centosbase.7.3.1611: ; $(MAKE) centosbase CENTOS=7.3.1611 
 
+almadisk.9.5: ; $(MAKE) centosdisk CENTOS=9.5 DISTRO=almalinux
+almabase.9.5: ; $(MAKE) centosbase CENTOS=9.5 DISTRO=almalinux
 almadisk.9.4: ; $(MAKE) centosdisk CENTOS=9.4 DISTRO=almalinux
-almadisk.9.3: ; $(MAKE) centosdisk CENTOS=9.3 DISTRO=almalinux
-almadisk.9.2: ; $(MAKE) centosdisk CENTOS=9.2 DISTRO=almalinux
-almadisk.9.1: ; $(MAKE) centosdisk CENTOS=9.1 DISTRO=almalinux
 almabase.9.4: ; $(MAKE) centosbase CENTOS=9.4 DISTRO=almalinux
+almadisk.9.3: ; $(MAKE) centosdisk CENTOS=9.3 DISTRO=almalinux
 almabase.9.3: ; $(MAKE) centosbase CENTOS=9.3 DISTRO=almalinux
+almadisk.9.2: ; $(MAKE) centosdisk CENTOS=9.2 DISTRO=almalinux
 almabase.9.2: ; $(MAKE) centosbase CENTOS=9.2 DISTRO=almalinux
+almadisk.9.1: ; $(MAKE) centosdisk CENTOS=9.1 DISTRO=almalinux
 almabase.9.1: ; $(MAKE) centosbase CENTOS=9.1 DISTRO=almalinux
