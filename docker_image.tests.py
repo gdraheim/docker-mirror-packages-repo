@@ -194,6 +194,18 @@ class DockerLocalImageTest(unittest.TestCase):
         x1 = X(F"{docker} inspect {images}/{testname}:{version}")
         self.assertTrue(greps(x1.out, "RepoTags"))
         sh____(F"{docker} rm -f {images}/{testname}:{version}")
+    def test_91099(self) -> None:
+        """ almalinux has python3 and python3.11 """
+        python = PYTHON
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
+        docker = DOCKER
+        images = IMAGES
+        testname = self.testname()
+        version = "9.4" # self.testver() # !!!!!
+        sh____(F"{python} {script} --epel FROM almalinux:{version} INTO {images}/{testname}:{version} INSTALL epel-release SEARCH setuptools -vvv")
+        x1 = X(F"{docker} inspect {images}/{testname}:{version}")
+        self.assertTrue(greps(x1.out, "RepoTags"))
+        sh____(F"{docker} rm -f {images}/{testname}:{version}")
     def test_91154(self) -> None:
         python = PYTHON
         script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
@@ -228,6 +240,17 @@ class DockerLocalImageTest(unittest.TestCase):
         self.assertTrue(greps(x1.out, "RepoTags"))
         sh____(F"{docker} rm -f {images}/{testname}:{version}")
     def test_91224(self) -> None:
+        python = PYTHON
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
+        docker = DOCKER
+        images = IMAGES
+        testname = self.testname()
+        version = self.testver()
+        sh____(F"{python} {script} FROM ubuntu:{version} INTO {images}/{testname}:{version} SEARCH setuptools -vvv")
+        x1 = X(F"{docker} inspect {images}/{testname}:{version}")
+        self.assertTrue(greps(x1.out, "RepoTags"))
+        sh____(F"{docker} rm -f {images}/{testname}:{version}")
+    def test_91244(self) -> None:
         python = PYTHON
         script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
         docker = DOCKER
@@ -296,6 +319,40 @@ class DockerLocalImageTest(unittest.TestCase):
         x1 = X(F"{docker} inspect {images}/{testname}:{version}")
         self.assertTrue(greps(x1.out, "RepoTags"))
         sh____(F"{docker} rm -f {images}/{testname}:{version}")
+    def test_93156(self) -> None:
+        python = PYTHON
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
+        docker = DOCKER
+        images = IMAGES
+        testname = self.testname()
+        version = self.testver()
+        sh____(F"{python} {script} FROM opensuse/leap:{version} INTO {images}/{testname}:{version} INSTALL python3-setuptools INSTALL python311-setuptools TEST 'python3 --version' TEST 'python3.11 --version'")
+        x1 = X(F"{docker} inspect {images}/{testname}:{version}")
+        self.assertTrue(greps(x1.out, "RepoTags"))
+        sh____(F"{docker} rm -f {images}/{testname}:{version}")
+    def test_93224(self) -> None:
+        python = PYTHON
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
+        docker = DOCKER
+        images = IMAGES
+        testname = self.testname()
+        version = self.testver()
+        sh____(F"{python} {script} FROM ubuntu:{version} INTO {images}/{testname}:{version} INSTALL python3-setuptools TEST 'python3 --version'")
+        x1 = X(F"{docker} inspect {images}/{testname}:{version}")
+        self.assertTrue(greps(x1.out, "RepoTags"))
+        sh____(F"{docker} rm -f {images}/{testname}:{version}")
+    def test_93244(self) -> None:
+        python = PYTHON
+        script = SCRIPT if not LOCAL else F"{SCRIPT} --local"
+        docker = DOCKER
+        images = IMAGES
+        testname = self.testname()
+        version = self.testver()
+        sh____(F"{python} {script} FROM ubuntu:{version} INTO {images}/{testname}:{version} INSTALL python3-setuptools TEST 'python3 --version'")
+        x1 = X(F"{docker} inspect {images}/{testname}:{version}")
+        self.assertTrue(greps(x1.out, "RepoTags"))
+        sh____(F"{docker} rm -f {images}/{testname}:{version}")
+
 
 if __name__ == "__main__":
     from optparse import OptionParser # pylint: disable=deprecated-module
