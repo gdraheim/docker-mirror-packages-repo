@@ -47,7 +47,9 @@ KEEPFULLIMAGE = False
 KEEPBASEIMAGE = False
 SAVEBASEDISK = False
 
-DISTRO1 = "opensuse"
+class DistroVer(NamedTuple):
+    distro: str
+    ver: str
 
 def sh(cmd: str, **args: Any) -> str:
     logg.debug("sh %s", cmd)
@@ -182,12 +184,12 @@ class OpensuseMirrorTest(unittest.TestCase):
         python = PYTHON
         cover = F"{python} -m coverage run -a" if COVERAGE else python
         return cover
-    def testver(self, testname: str = NIX) -> None:
+    def testver(self, testname: str = NIX) -> DistroVer:
         testname = testname or self.caller_testname()
         ver3 = testname[-3:]
         if ver3.startswith("14"):
-            return "42" + "." + ver3[2]
-        return ver3[0:2] + "." + ver3[2]
+            return DistroVer("opensuse", "42" + "." + ver3[2])
+        return DistroVer("opensuse", ver3[0:2] + "." + ver3[2])
     def imagesdangling(self) -> List[str]:
         images: List[str] = []
         docker = DOCKER
@@ -309,7 +311,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual("./scripts", out.strip())
         self.coverage()
     def test_50132(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "13.2")
         cover = self.cover()
         script = SCRIPT
@@ -322,7 +324,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_50140(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "42.0")
         cover = self.cover()
         script = SCRIPT
@@ -335,7 +337,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertIn("is not a known os version", errs)
         self.coverage()
     def test_50142(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "42.2")
         cover = self.cover()
         script = SCRIPT
@@ -348,7 +350,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_50143(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "42.3")
         cover = self.cover()
         script = SCRIPT
@@ -361,7 +363,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_50151(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "15.1")
         cover = self.cover()
         script = SCRIPT
@@ -374,7 +376,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_50152(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "15.2")
         cover = self.cover()
         script = SCRIPT
@@ -387,7 +389,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_50153(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "15.3")
         cover = self.cover()
         script = SCRIPT
@@ -400,7 +402,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_50154(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "15.4")
         cover = self.cover()
         script = SCRIPT
@@ -413,7 +415,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_50155(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "15.5")
         cover = self.cover()
         script = SCRIPT
@@ -426,7 +428,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_50156(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "15.6")
         cover = self.cover()
         script = SCRIPT
@@ -439,7 +441,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_50159(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "15.9")
         cover = self.cover()
         script = SCRIPT
@@ -452,7 +454,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertIn("is not a known os version", errs)
         self.coverage()
     def test_50160(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "16.0")
         cover = self.cover()
         script = SCRIPT
@@ -571,7 +573,7 @@ class OpensuseMirrorTest(unittest.TestCase):
     def test_51160(self) -> None:
         self.check_dir(self.testname())
     def check_dir(self, testname: str) -> None:
-        ver = self.testver(testname)
+        distro, ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         tmp = self.testdir(testname)
@@ -579,7 +581,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         script = SCRIPT
         data = F"{tmp}/data"
         repo = F"{tmp}/repo"
-        want = F"{repo}/{DISTRO1}.{ver}"
+        want = F"{repo}/{distro}.{ver}"
         os.makedirs(data)
         #
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
@@ -591,7 +593,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
         #
-        want = F"{repo}/{DISTRO1}.{ver}.alt"
+        want = F"{repo}/{distro}.{ver}.alt"
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo} --variant=alt"
         run = runs(cmd)
         have = run.stdout.strip()
@@ -601,21 +603,21 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
         #
-        want = os.path.abspath(F"{data}/{DISTRO1}.{ver}.disk/srv/repo")
+        want = os.path.abspath(F"{data}/{distro}.{ver}.disk/srv/repo")
         cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo}"
         run = runs(cmd)
         have = run.stdout.strip()
         logg.debug("out: %s", have)
         self.assertEqual(want, have)
         #
-        want = os.path.abspath(F"{data}/{DISTRO1}.{ver}.altdisk/srv/repo")
+        want = os.path.abspath(F"{data}/{distro}.{ver}.altdisk/srv/repo")
         cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo} --variant=alt"
         run = runs(cmd)
         have = run.stdout.strip()
         logg.debug("out: %s", have)
         self.assertEqual(want, have)
         #
-        want = os.path.abspath(F"{data}/{DISTRO1}.{ver}.altdisktmp/srv/repo")
+        want = os.path.abspath(F"{data}/{distro}.{ver}.altdisktmp/srv/repo")
         cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo} --variant=alt --disksuffix=disktmp"
         run = runs(cmd)
         have = run.stdout.strip()
@@ -629,7 +631,7 @@ class OpensuseMirrorTest(unittest.TestCase):
     def test_53160(self) -> None:
         self.check_sync(self.testname())
     def check_sync(self, testname: str) -> None:
-        ver = self.testver(testname)
+        _distro, ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         tmp = self.testdir(testname)
@@ -664,7 +666,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.make_repo_test(self.testname())
     def make_repo_test(self, testname: str, makeoptions: str = NIX) -> None:
         self.rm_container(testname)
-        ver = self.testver(testname)
+        distro, ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         docker = DOCKER
@@ -673,7 +675,6 @@ class OpensuseMirrorTest(unittest.TestCase):
         mirror = MIRROR
         pkgrepo = PKGREPO
         pkglist = PKGLIST
-        distro = DISTRO1
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
         cmd = F"{cover} {script} {ver} baseimage {VV}"
@@ -754,7 +755,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.make_disk_test(self.testname())
     def make_disk_test(self, testname: str, makeoptions: str = NIX) -> None:
         self.rm_container(testname)
-        ver = self.testver(testname)
+        distro, ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         docker = DOCKER
@@ -763,7 +764,6 @@ class OpensuseMirrorTest(unittest.TestCase):
         mirror = MIRROR
         pkgrepo = PKGREPO
         pkglist = PKGLIST
-        distro = DISTRO1
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
         cmd = F"{cover} {script} {ver} base {VV} --imagesrepo={imagesrepo} {makeoptions}"

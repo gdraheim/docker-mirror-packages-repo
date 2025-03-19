@@ -62,6 +62,10 @@ VER3["9.2"] = "9.2-20230718"
 VER3["9.3"] = "9.3-20240410"
 VER3["9.4"] = "9.4-20240530"
 
+class DistroVer(NamedTuple):
+    distro: str
+    ver: str
+
 def major(version):
     if len(version) > 2:
         if version[1] == ".":
@@ -210,7 +214,10 @@ class CentosMirrorTest(unittest.TestCase):
         rel1 = ver3[2]
         if ver2.startswith("0") or ver2.startswith("1"):
             ver2 = ver2[1]
-        return ver2 + "." + rel1
+        if ver2 in ["6", "7", "8"]:
+            return DistroVer("centos", ver2 + "." + rel1)
+        else:
+            return DistroVer("almalinux", ver2 + "." + rel1)
     def imagesdangling(self) -> List[str]:
         images: List[str] = []
         docker = DOCKER
@@ -332,7 +339,7 @@ class CentosMirrorTest(unittest.TestCase):
         self.assertEqual("./scripts", out.strip())
         self.coverage()
     def test_70168(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         version = "6.8"
         self.assertEqual(ver, "6.8")
         cover = self.cover()
@@ -346,7 +353,7 @@ class CentosMirrorTest(unittest.TestCase):
         self.assertIn("is not a known os version", errs)
         self.coverage()
     def test_70173(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "7.3")
         version = "7.3.1611"
         cover = self.cover()
@@ -360,7 +367,7 @@ class CentosMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_70177(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         version = "7.7.1908"
         self.assertEqual(ver, "7.7")
         cover = self.cover()
@@ -374,7 +381,7 @@ class CentosMirrorTest(unittest.TestCase):
         self.assertIn("", errs)
         self.coverage()
     def test_70183(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "8.3")
         version = "8.3.2011"
         cover = self.cover()
@@ -388,7 +395,7 @@ class CentosMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_70191(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "9.1")
         version = "9.1-20230407"
         cover = self.cover()
@@ -402,7 +409,7 @@ class CentosMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_70196(self) -> None:
-        ver = self.testver()
+        _distro, ver = self.testver()
         self.assertEqual(ver, "9.6")
         cover = self.cover()
         script = SCRIPT
@@ -519,13 +526,10 @@ class CentosMirrorTest(unittest.TestCase):
     def test_71194(self) -> None:
         self.check_dir(self.testname())
     def check_dir(self, testname: str) -> None:
-        ver = self.testver(testname)
+        distro, ver = self.testver(testname)
         ver3 = VER3[ver]
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
-        distro = DISTRO1
-        if ver3.startswith("7") or ver3.startswith("8"):
-            distro = DISTRO2
         tmp = self.testdir(testname)
         cover = self.cover()
         script = SCRIPT
@@ -591,7 +595,7 @@ class CentosMirrorTest(unittest.TestCase):
     def test_72194(self) -> None:
         self.check_epeldir(self.testname())
     def check_epeldir(self, testname: str) -> None:
-        ver = self.testver(testname)
+        _basedistro, ver = self.testver(testname)
         # ver3 = VER3[ver]
         epel = major(ver)
         if ONLYVERSION and ver != ONLYVERSION:
@@ -657,7 +661,7 @@ class CentosMirrorTest(unittest.TestCase):
     def test_73194(self) -> None:
         self.check_sync(self.testname())
     def check_sync(self, testname: str) -> None:
-        ver = self.testver(testname)
+        _distro, ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         tmp = self.testdir(testname)
@@ -677,7 +681,7 @@ class CentosMirrorTest(unittest.TestCase):
     def test_74194(self) -> None:
         self.check_epelsync(self.testname())
     def check_epelsync(self, testname: str) -> None:
-        ver = self.testver(testname)
+        _basedistro, ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         tmp = self.testdir(testname)
@@ -712,7 +716,7 @@ class CentosMirrorTest(unittest.TestCase):
         self.make_repo_test(self.testname(), "--epel")
     def make_repo_test(self, testname: str, addepel: str = NIX) -> None:
         self.rm_container(testname)
-        ver = self.testver(testname)
+        distro, ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         docker = DOCKER
@@ -825,7 +829,7 @@ class CentosMirrorTest(unittest.TestCase):
         self.make_disk_test(self.testname(), "--epel")
     def make_disk_test(self, testname: str, addepel: str = NIX) -> None:
         self.rm_container(testname)
-        ver = self.testver(testname)
+        distro, ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         docker = DOCKER
@@ -834,7 +838,6 @@ class CentosMirrorTest(unittest.TestCase):
         mirror = MIRROR
         pkgrepo = F"{PKGREPO} --nogpgcheck --setopt sslverify=false"
         pkglist = PKGLIST
-        distro = DISTRO1
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
         if TRUE:
