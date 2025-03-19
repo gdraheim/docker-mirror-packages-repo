@@ -78,6 +78,8 @@ ALMA["9.3-20231124"] = "9.3"
 ALMA["9.3-20240410"] = "9.3"
 ALMA["9.4-20240506"] = "9.4"
 ALMA["9.4-20240530"] = "9.4"
+ALMA["9.5-20241118"] = "9.5"
+ALMA["9.5-20250307"] = "9.5"
 
 DIST = {}
 DIST["12.04"] = "precise"  # Precise Pangolin
@@ -100,6 +102,20 @@ DIST["22.10"] = "kinetic"  # Kinetic Kudu
 DIST["23.04"] = "lunatic"  # Lunatic Lobster
 DIST["23.10"] = "mantic"   # Mantic Minotaur
 DIST["24.04"] = "noble"    # Noble Numbat       (April 2029)
+DIST["24.10"] = "oracular" # Oracular Oriole
+DIST["25.04"] = "plucky"   # Plucky Puffin
+DIST["25.10"] = "qbeta"    # Beta Q             (April 2031)
+
+DEBIANDIST: Dict[str, str] = {}
+DEBIANDIST["6"] = "squeeze"
+DEBIANDIST["7"] = "wheezy"
+DEBIANDIST["8"] = "jessie"
+DEBIANDIST["9"] = "stretch"
+DEBIANDIST["10"] = "buster"
+DEBIANDIST["11"] = "bullseye"
+DEBIANDIST["12"] = "bookworm"
+DEBIANDIST["13"] = "trixie"
+DEBIANDIST["13"] = "forky"
 
 OPENSUSE = {}
 OPENSUSE["13.2"] = "opensuse"  # no docker image
@@ -287,6 +303,8 @@ class DockerMirrorPackagesRepo:
             return self.get_opensuse_latest(image)
         if image.startswith("ubuntu:"):
             return self.get_ubuntu_latest(image)
+        if image.startswith("debian:"):
+            return self.get_ubuntu_latest(image)
         return ""
     def get_docker_latest_version(self, image):
         """ converts a shorthand version into the version string used on an image name. """
@@ -307,6 +325,9 @@ class DockerMirrorPackagesRepo:
         if image.startswith("ubuntu:"):
             version = image[len("ubuntu:"):]
             return self.get_ubuntu_latest_version(version)
+        if image.startswith("debian:"):
+            version = image[len("debian:"):]
+            return self.get_debian_latest_version(version)
         return ""
     def get_docker_mirror(self, image):
         """ attach local centos-repo / opensuse-repo to docker-start enviroment.
@@ -325,6 +346,8 @@ class DockerMirrorPackagesRepo:
             return self.get_opensuse_docker_mirror(image)
         if image.startswith("ubuntu:"):
             return self.get_ubuntu_docker_mirror(image)
+        if image.startswith("debian:"):
+            return self.get_debian_docker_mirror(image)
         return None
     def get_docker_mirrors(self, image):
         """ attach local centos-repo / opensuse-repo to docker-start enviroment.
@@ -353,6 +376,8 @@ class DockerMirrorPackagesRepo:
             mirrors = self.get_opensuse_docker_mirrors(image)
         if image.startswith("ubuntu:"):
             mirrors = self.get_ubuntu_docker_mirrors(image)
+        if image.startswith("debian:"):
+            mirrors = self.get_debian_docker_mirrors(image)
         if ":" in image:
             if image in config.sections():
                 cname1 = config[image].get("cname", "")
@@ -420,6 +445,39 @@ class DockerMirrorPackagesRepo:
         return self.docker_mirror(rmi, rep, ver, "archive.ubuntu.com", "security.ubuntu.com")
     def get_ubuntu_docker_mirrors(self, image):
         main = self.get_ubuntu_docker_mirror(image)
+        return [main]
+    def get_debian_latest_version(self, version):
+        """ allows to use 'debian:10' or 'debian:buster' """
+        ver = version
+        if ver in ["latest"]:
+            ver = ""
+        if "." not in ver:
+            latest = ""
+            for release in sorted(DEBIANDIST):
+                codename = DEBIANDIST[release]
+                if len(ver) >= 3 and ver.startswith(codename):
+                    logg.debug("release (%s) %s", release, codename)
+                    if latest < release:
+                        latest = release
+                elif release.startswith(ver):
+                    logg.debug("release %s (%s)", release, codename)
+                    if latest < release:
+                        latest = release
+            if latest:
+                ver = latest
+        return ver or version
+    def get_debian_docker_mirror(self, image):
+        """ detects a local debian mirror or starts a local
+            docker container with a debian repo mirror. It
+            will return the extra_hosts setting to start
+            other docker containers"""
+        rmi = IMAGESREPO
+        rep = "debian-repo"
+        if UPDATES: rep = "debian-repo/updates"
+        ver = self.get_debian_latest_version(onlyversion(image))
+        return self.docker_mirror(rmi, rep, ver, "deb.debian.org")
+    def get_debian_docker_mirrors(self, image):
+        main = self.get_debian_docker_mirror(image)
         return [main]
     def get_centos_latest(self, image, default=None):
         if image.startswith("centos:"):
