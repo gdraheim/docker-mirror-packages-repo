@@ -106,7 +106,7 @@ DIST["24.10"] = "oracular" # Oracular Oriole
 DIST["25.04"] = "plucky"   # Plucky Puffin
 DIST["25.10"] = "qbeta"    # Beta Q             (April 2031)
 
-DEBIANDIST: Dict[str, str] = {}
+DEBIANDIST = {}
 DEBIANDIST["6"] = "squeeze"
 DEBIANDIST["7"] = "wheezy"
 DEBIANDIST["8"] = "jessie"

@@ -404,13 +404,13 @@ def repo_image(repos: List[str]) -> str:
     cname = F"{distro}-repo-{version}"  # container name
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} run --name={cname} --detach {baseimage} sleep 9999")
-    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu")
-    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu")
+    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{distro}")
+    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{distro}")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
-    sh___(F"{docker} cp {repodir}/{distro}.{version}/dists {cname}:/srv/repo/ubuntu")
+    sh___(F"{docker} cp {repodir}/{distro}.{version}/dists {cname}:/srv/repo/{distro}")
     sh___(F"{docker} exec {cname} apt-get update")
     sh___(F"{docker} exec {cname} apt-get install -y {python}")
-    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/ubuntu/pool")
+    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{distro}/pool")
     base = BASELAYER
     PORT = ubuntu_http_port()
     CMD = str(ubuntu_http_cmd()).replace("'", '"')
@@ -418,10 +418,14 @@ def repo_image(repos: List[str]) -> str:
     for main in repos:
         sh___(F"{docker} rm --force {cname}")
         sh___(F"{docker} run --name={cname} --detach {imagesrepo}/{distro}-repo/{base}:{version} sleep 9999")
-        for dist in [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]:
+        if distro in ["debian"]:
+            dists = [DEBIANDIST[ubuntu], DEBIANDIST[ubuntu] + "-security"]
+        else:
+            dists = [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]
+        for dist in dists:
             pooldir = F"{repodir}/{distro}.{version}/pools/{dist}/{main}/pool"
             if path.isdir(pooldir):
-                sh___(F"{docker} cp {pooldir}  {cname}:/srv/repo/ubuntu/")
+                sh___(F"{docker} cp {pooldir}  {cname}:/srv/repo/{distro}/")
                 base = main
         if base == main:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
@@ -445,10 +449,14 @@ def ubuntu_disk() -> str:
     sh___(F"cp -r --link {repodir}/{distro}.{version}/dists {srv}/repo/ubuntu")
     sh___(F"mkdir -p {srv}/repo/ubuntu/pool")
     for main in REPOS:
-        for dist in [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]:
+        if distro in ["debian"]:
+            dists = [DEBIANDIST[ubuntu], DEBIANDIST[ubuntu] + "-security"]
+        else:
+            dists = [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]
+        for dist in dists:
             pooldir = F"{repodir}/{distro}.{version}/pools/{dist}/{main}/pool"
             if path.isdir(pooldir):
-                sh___(F"cp -r --link --no-clobber {pooldir}  {srv}/repo/ubuntu/")
+                sh___(F"cp -r --link --no-clobber {pooldir}  {srv}/repo/{distro}/")
     host_srv = os.path.realpath(srv)
     return F"\nmount = {host_srv}/repo\n"
 

@@ -47,8 +47,11 @@ SKIPFULLIMAGE = True
 KEEPFULLIMAGE = False
 KEEPBASEIMAGE = False
 SAVEBASEDISK = False
+DISTROS = ["ubuntu", "debian"]
 
-DISTRO1= "ubuntu"
+class DistroVer(NamedTuple):
+    distro: str
+    ver: str
 
 def sh(cmd: str, **args: Any) -> str:
     logg.debug("sh %s", cmd)
@@ -183,15 +186,19 @@ class UbuntuMirrorTest(unittest.TestCase):
         python = PYTHON
         cover = F"{python} -m coverage run -a" if COVERAGE else python
         return cover
-    def testver(self, testname: str = NIX) -> None:
+    def testver(self, testname: str = NIX) -> DistroVer:
         testname = testname or self.caller_testname()
         ver3 = testname[-3:]
         major2 = ver3[0:2]
+        if major2 in ["01", "02"]:
+            return DistroVer("debian", str(int(ver3)))
+        if major2 in ["06", "07", "08", "09", "10", "11", "12", "13"]:
+            return DistroVer("debian", str(int(major2)) + "." + ver3)
         minor1 = ver3[2]
         minor2 = { "0": "10", "1": "11", "2": "12", "3": "03", "4": "04", #
                    "5": "05", "6": "06", "7": "07", "8": "08", "9": "09"}
         # assuming that Ubuntu never had a release in january/february
-        return  major2 + "." + minor2[minor1]
+        return  DistroVer("ubuntu", major2 + "." + minor2[minor1])
     def imagesdangling(self) -> List[str]:
         images: List[str] = []
         docker = DOCKER
@@ -575,7 +582,7 @@ class UbuntuMirrorTest(unittest.TestCase):
     def test_61244(self) -> None:
         self.check_dir(self.testname())
     def check_dir(self, testname: str) -> None:
-        ver = self.testver(testname)
+        distro, ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         tmp = self.testdir(testname)
@@ -583,7 +590,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         script = SCRIPT
         data = F"{tmp}/data"
         repo = F"{tmp}/repo"
-        want = F"{repo}/{DISTRO1}.{ver}"
+        want = F"{repo}/{distro}.{ver}"
         os.makedirs(data)
         #
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo}"
@@ -595,7 +602,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
         #
-        want = F"{repo}/{DISTRO1}.{ver}.alt"
+        want = F"{repo}/{distro}.{ver}.alt"
         cmd = F"{cover} {script} {ver} dir --datadir={data} --repodir={repo} --variant=alt"
         run = runs(cmd)
         have = run.stdout.strip()
@@ -605,21 +612,21 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(want))
         self.assertIn(data, os.readlink(want))
         #
-        want = os.path.abspath(F"{data}/{DISTRO1}.{ver}.disk/srv/repo")
+        want = os.path.abspath(F"{data}/{distro}.{ver}.disk/srv/repo")
         cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo}"
         run = runs(cmd)
         have = run.stdout.strip()
         logg.debug("out: %s", have)
         self.assertEqual(want, have)
         #
-        want = os.path.abspath(F"{data}/{DISTRO1}.{ver}.altdisk/srv/repo")
+        want = os.path.abspath(F"{data}/{distro}.{ver}.altdisk/srv/repo")
         cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo} --variant=alt"
         run = runs(cmd)
         have = run.stdout.strip()
         logg.debug("out: %s", have)
         self.assertEqual(want, have)
         #
-        want = os.path.abspath(F"{data}/{DISTRO1}.{ver}.altdisktmp/srv/repo")
+        want = os.path.abspath(F"{data}/{distro}.{ver}.altdisktmp/srv/repo")
         cmd = F"{cover} {script} {ver} diskpath --datadir={data} --repodir={repo} --variant=alt --disksuffix=disktmp"
         run = runs(cmd)
         have = run.stdout.strip()
@@ -633,7 +640,7 @@ class UbuntuMirrorTest(unittest.TestCase):
     def test_63244(self) -> None:
         self.check_sync(self.testname())
     def check_sync(self, testname: str) -> None:
-        ver = self.testver(testname)
+        distro, ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         tmp = self.testdir(testname)
@@ -650,6 +657,8 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertEqual(0, ret)
         self.coverage(testname)
         self.rm_testdir(testname)
+    def test_65010(self) -> None:
+        self.make_repo_test(self.testname())
     def test_65184(self) -> None:
         self.make_repo_test(self.testname())
     def test_65204(self) -> None:
@@ -668,7 +677,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.make_repo_test(self.testname(), "--universe")
     def make_repo_test(self, testname: str, makeoptions: str = NIX) -> None:
         self.rm_container(testname)
-        ver = self.testver(testname)
+        distro, ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         docker = DOCKER
@@ -677,17 +686,16 @@ class UbuntuMirrorTest(unittest.TestCase):
         mirror = MIRROR
         pkgrepo = F"{PKGREPO} -o APT::Get::AllowUnauthenticated=true"
         pkglist = PKGLIST
-        distro = DISTRO1
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
         cmd = F"{cover} {script} {ver} baseimage {VV}"
         run = runs(cmd)
         baseimage = run.stdout.strip()
         logg.debug("baseimage %s", baseimage)
-        cmd = F"{cover} {script} {ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
+        cmd = F"{cover} {script} {distro}:{ver} pull {VV} --docker='{docker}' --imagesrepo='{imagesrepo}'"
         ret = calls(cmd)
         if not SKIPFULLIMAGE:
-            cmd = F"{cover} {script} {ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' {makeoptions} -vvv"
+            cmd = F"{cover} {script} {distro}:{ver} repo {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' {makeoptions} -vvv"
             ret = calls(cmd)
             self.assertEqual(0, ret)
         cmd = F"{cover} {script} list --docker='{docker}' --imagesrepo='{imagesrepo}'"
@@ -742,6 +750,8 @@ class UbuntuMirrorTest(unittest.TestCase):
             self.rm_images(testname)
     def test_67001(self) -> None:
         self.make_disk_cleanup()
+    def test_67010(self) -> None:
+        self.make_disk_test(self.testname())
     def test_67184(self) -> None:
         self.make_disk_test(self.testname())
     def test_67204(self) -> None:
@@ -760,7 +770,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.make_disk_test(self.testname(), "--universe")
     def make_disk_test(self, testname: str, makeoptions: str = NIX) -> None:
         self.rm_container(testname)
-        ver = self.testver(testname)
+        distro, ver = self.testver(testname)
         if ONLYVERSION and ver != ONLYVERSION:
             self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
         docker = DOCKER
@@ -769,30 +779,29 @@ class UbuntuMirrorTest(unittest.TestCase):
         mirror = MIRROR
         pkgrepo = F"{PKGREPO} -o APT::Get::AllowUnauthenticated=true"
         pkglist = PKGLIST
-        distro = DISTRO1
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
-        cmd = F"{cover} {script} {ver} base {VV} --imagesrepo={imagesrepo} {makeoptions}"
+        cmd = F"{cover} {script} {distro}:{ver} base {VV} --imagesrepo={imagesrepo} {makeoptions}"
         run = runs(cmd)
         basemade = run.out
         logg.info("basemade = %s", basemade)
-        cmd = F"{cover} {script} {ver} diskpath {VV} --disksuffix={testname}_disk"
+        cmd = F"{cover} {script} {distro}:{ver} diskpath {VV} --disksuffix={testname}_disk"
         run = runs(cmd)
         diskpath = run.out
         logg.debug("diskpath = %s", diskpath)
         self.assertIn(testname, diskpath)
         if os.path.isdir(diskpath):
-            cmd = F"{cover} {script} {ver} dropdisk {VV} --disksuffix={testname}_disk"
+            cmd = F"{cover} {script} {distro}:{ver} dropdisk {VV} --disksuffix={testname}_disk"
             ret = calls(cmd)
         self.assertFalse(os.path.isdir(diskpath))
-        cmd = F"{cover} {script} {ver} disk {VV} --disksuffix={testname}_disk --imagesrepo={imagesrepo} {makeoptions}"
+        cmd = F"{cover} {script} {distro}:{ver} disk {VV} --disksuffix={testname}_disk --imagesrepo={imagesrepo} {makeoptions}"
         ret = calls(cmd)
         self.assertTrue(os.path.isdir(diskpath))
-        cmd = F"{cover} {script} {ver} baserepo {VV} --imagesrepo={imagesrepo}"
+        cmd = F"{cover} {script} {distro}:{ver} baserepo {VV} --imagesrepo={imagesrepo}"
         run = runs(cmd)
         baserepo = run.out
         logg.info("baserepo = %s", baserepo)
-        cmd = F"{cover} {script} {ver} image {VV} --imagesrepo={imagesrepo}"
+        cmd = F"{cover} {script} {distro}:{ver} image {VV} --imagesrepo={imagesrepo}"
         run = runs(cmd)
         image = run.out
         logg.info("image = %s", image)
@@ -810,7 +819,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         addhost = run.stdout.strip()
         logg.info("addhost = %s", addhost)
         self.assertEqual(0, ret)
-        cmd = F"{cover} {script} {ver} baseimage {VV}"
+        cmd = F"{cover} {script} {distro}:{ver} baseimage {VV}"
         run = runs(cmd)
         baseimage = run.stdout.strip()
         logg.debug("baseimage = %s", baseimage)
@@ -875,7 +884,7 @@ class UbuntuMirrorTest(unittest.TestCase):
             logg.warning("written %s", cachefile)
         #
         if os.path.isdir(diskpath) and not KEEPFULLIMAGE:
-            cmd = F"{cover} {script} {ver} dropdisk {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' --disksuffix={testname}_"
+            cmd = F"{cover} {script} {distro}:{ver} dropdisk {VV} --docker='{docker}' --imagesrepo='{imagesrepo}' --disksuffix={testname}_"
             ret = calls(cmd)
         self.coverage(testname)
         self.rm_testdir(testname)
@@ -883,10 +892,9 @@ class UbuntuMirrorTest(unittest.TestCase):
         if not KEEPFULLIMAGE:
             self.rm_images(testname)
     def make_disk_cleanup(self) -> None:
-        distro = DISTRO1
         cache = get_CACHE_HOME()
         if SAVEBASEDISK:
-            for distro in [DISTRO1]:
+            for distro in DISTROS:
                 cachefiles = glob(os.path.join(cache, F"docker_mirror.{distro}.*.ini"))
                 for cachefile in cachefiles:
                     logg.info(" rm %s", cachefile)

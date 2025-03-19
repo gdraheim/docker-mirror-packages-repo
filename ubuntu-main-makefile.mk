@@ -27,6 +27,11 @@ ubuntubash:
 	docker exec -it ubuntu-bash-$(UBUNTU) bash
 
 debiansync.10: ; ./ubuntu-docker-mirror.py debian:10 sync -v 
+debianrepo.10: ; ./ubuntu-docker-mirror.py debian:10 repo -v 
+debiandisk.10: ; ./ubuntu-docker-mirror.py debian:10 disk -v 
+debiandropdisk.10: ; ./ubuntu-docker-mirror.py debian:10 dropdisk -v 
+
+
 
 ### ubuntu versions
 
