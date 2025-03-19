@@ -88,6 +88,9 @@ DIST["22.10"] = "kinetic"  # Kinetic Kudu
 DIST["23.04"] = "lunatic"  # Lunatic Lobster
 DIST["23.10"] = "mantic"   # Mantic Minotaur
 DIST["24.04"] = "noble"    # Noble Numbat       (April 2029)
+DIST["24.10"] = "oracular" # Oracular Oriole
+DIST["25.04"] = "plucky"   # Plucky Puffin
+DIST["25.10"] = "qbeta"    # Beta Q             (April 2031)
 
 DEBIANDIST: Dict[str, str] = {}
 DEBIANDIST["6"] = "squeeze"
