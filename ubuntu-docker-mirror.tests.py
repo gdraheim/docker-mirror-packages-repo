@@ -777,7 +777,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         cover = self.cover()
         script = SCRIPT
         mirror = MIRROR
-        pkgrepo = F"{PKGREPO} -o APT::Get::AllowUnauthenticated=true"
+        pkgrepo = F"{PKGREPO} -o APT::Get::AllowUnauthenticated=true -o Acquire::AllowInsecureRepositories=true"
         pkglist = PKGLIST
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
@@ -831,7 +831,9 @@ class UbuntuMirrorTest(unittest.TestCase):
         ret = calls(cmd)
         logg.info("install clean: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} {pkgrepo} update"
+        # https://manpages.debian.org/stretch/apt/apt.conf.5.de.html
+        debugs="-oDebug::Acquire:http=1 -oDebug::pkgAcquire=1"
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} {debugs} update"
         ret = calls(cmd)
         logg.info("install refresh: %s", ret)
         self.assertEqual(0, ret)

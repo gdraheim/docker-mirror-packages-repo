@@ -11,7 +11,7 @@ __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7112"
 
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Tuple
 import os
 import os.path as path
 import sys
@@ -62,6 +62,7 @@ RSYNC_DEBIAN = "rsync://ftp5.gwdg.de/pub/linux/debian/debian"
 MIRRORS: Dict[str, List[str]] = {}
 MIRRORS["ubuntu"] = [RSYNC_UBUNTU]
 MIRRORS["debian"] = [RSYNC_DEBIAN]
+MIRRORS["debian-security"] = [RSYNC_DEBIAN+"-security"]
 
 
 UBUNTU_TMP = "ubuntu.tmp"
@@ -145,8 +146,12 @@ UNIVERSE_REPOS = ["main", "restricted", "universe"]
 MULTIVERSE_REPOS = ["main", "restricted", "universe", "multiverse"]
 AREAS = {"1": "", "2": "-updates", "3": "-backports", "4": "-security"}
 
-# debian
-PROPOSED_REPOS = ["main", "updates", "proposed-updates"]
+DEBIANREPOS = ["main", "contrib", "non-free"]
+DISTRODIST: Dict[str, Tuple[str, str]] = {}
+DISTRODIST["buster-security"] = ("debian-security", "buster/updates")
+DISTRODIST["bookworm-security"] = ("debian-security", "bookworm-security")
+DISTRODIST["bullseye-security"] = ("debian-security", "bullseye-security")
+DISTRODIST["trixie-security"] = ("debian-security", "trixie-security")
 
 REPOS = UPDATES_REPOS
 
@@ -221,8 +226,11 @@ def ubuntu_sync() -> None:
         debian_sync_base_2()
         # main:
         debian_sync_main_1()
-        # updates:
+        # main/updates:
         debian_sync_main_2()
+        # security updates:
+        debian_sync_main_3()
+
     else:
         logg.error("unknown distro %s", DISTRO)
         raise UserWarning("unknown distro")
@@ -234,9 +242,9 @@ def ubuntu_datadir() -> str:
             return data
     return REPODIR
 
-def ubuntu_dir(variant: str = "") -> str:
-    distro = DISTRO
-    ubuntu = UBUNTU
+def ubuntu_dir(distro: str = NIX, ubuntu: str = NIX, variant: str = NIX) -> str:
+    distro = distro or DISTRO
+    ubuntu = ubuntu or UBUNTU
     repodir = REPODIR
     variant = variant or VARIANT
     version = F"{ubuntu}.{variant}" if variant else ubuntu
@@ -278,9 +286,8 @@ def ubuntu_sync_base(dist: str) -> None:
     cache = ubuntu_cache()
     distro = DISTRO
     ubuntu = UBUNTU
-    repodir = REPODIR
-    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
-    distdir = F"{repodir}/{distro}.{version}/dists/{dist}"
+    rootdir = ubuntu_dir(distro, ubuntu, VARIANT)
+    distdir = F"{rootdir}/dists/{dist}"
     if not path.isdir(distdir):
         os.makedirs(distdir)
     tmpfile = F"{cache}/Release.{dist}.base.tmp"
@@ -292,7 +299,7 @@ def ubuntu_sync_base(dist: str) -> None:
     mirror = MIRRORS[distro][0]
     options = "--ignore-times --files-from=" + tmpfile
     # excludes = " ".join(["--exclude '%s'" % parts for parts in nolinux])
-    sh___(F"{rsync} -v {mirror}/dists/{dist} {repodir}/{distro}.{version}/dists/{dist} {options}")
+    sh___(F"{rsync} -v {mirror}/dists/{dist} {rootdir}/dists/{dist} {options}")
 
 def when(levels: str, repos: List[str]) -> List[str]: return [item for item in levels.split(",") if item and item in repos]
 def ubuntu_sync_main_1() -> None: ubuntu_sync_main(dist=DIST[UBUNTU], main="main", when=when("updates,restricted,universe,multiverse", REPOS))
@@ -312,8 +319,9 @@ def ubuntu_sync_restricted_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-s
 def ubuntu_sync_universe_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-security", main="universe", when=when("universe,multiverse", REPOS))
 def ubuntu_sync_multiverse_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-security", main="multiverse", when=when("multiverse", REPOS))
 
-def debian_sync_main_1() -> None: ubuntu_sync_main(dist=DEBIANDIST[UBUNTU], main="main", when=when("main,updates,proposed", REPOS))
-def debian_sync_main_2() -> None: ubuntu_sync_main(dist=DEBIANDIST[UBUNTU] + "-updates", main="main", when=when("main,updates,proposed", REPOS))
+def debian_sync_main_1() -> None: ubuntu_sync_main(dist=DEBIANDIST[UBUNTU], main="main", when=when("main,contrib,non-free", DEBIANREPOS))
+def debian_sync_main_2() -> None: ubuntu_sync_main(dist=DEBIANDIST[UBUNTU] + "-updates", main="main", when=when("main,contrib,non-free", DEBIANREPOS))
+def debian_sync_main_3() -> None: ubuntu_sync_main(dist=DEBIANDIST[UBUNTU] + "-security", main="main", when=when("main,contrib,non-free", DEBIANREPOS))
 
 downloads = ["universe"]
 def ubuntu_check() -> None:
@@ -322,18 +330,21 @@ def ubuntu_check() -> None:
 def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None: # pylint: disable=redefined-outer-name
     distro = DISTRO
     ubuntu = UBUNTU
-    repodir = REPODIR
-    version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
-    maindir = F"{repodir}/{distro}.{version}/dists/{dist}/{main}"
-    if not path.isdir(maindir): os.makedirs(maindir)
+    distrodir, distdir = distro, dist
+    if dist in DISTRODIST:
+        distrodir, distdir = DISTRODIST[dist]
+    rootdir = ubuntu_dir(distrodir, ubuntu, VARIANT)
+    maindir = F"{rootdir}/dists/{distdir}/{main}"
+    if not path.isdir(maindir): 
+        os.makedirs(maindir)
     rsync = RSYNC
-    mirror = MIRRORS[distro][0]
+    mirror = MIRRORS[distrodir][0]
     # excludes = " ".join(["--exclude '%s'" % parts for parts in nolinux])
     options = "--ignore-times --exclude=.~tmp~"
     for arch in ARCHS:
-        sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/binary-{arch} {maindir} {options} --copy-links")
+        sh___(F"{rsync} -rv {mirror}/dists/{distdir}/{main}/binary-{arch} {maindir} {options} --copy-links")
     if TRUE:
-        sh___(F"{rsync} -rv {mirror}/dists/{dist}/{main}/source       {maindir} {options} --copy-links")
+        sh___(F"{rsync} -rv {mirror}/dists/{distdir}/{main}/source       {maindir} {options} --copy-links")
     if distro in ["debian"]:
         gzlist: List[str] = []
         for arch in ARCHS:
@@ -373,7 +384,7 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None: # pylint: d
                     print(filename, file=f)
                     syncing += 1
         logg.info("syncing %s of %s filenames in %s", syncing, filenames, " & ".join(gzlist))
-    pooldir = F"{repodir}/{distro}.{version}/pools/{dist}/{main}/pool"
+    pooldir = F"{rootdir}/pools/{distdir}/{main}/pool"
     if not path.isdir(pooldir): os.makedirs(pooldir)
     if when:
         # instead of {exlude} we have nolinux filtered in the Packages above
@@ -395,11 +406,12 @@ def repo_image(repos: List[str]) -> str:
     docker = DOCKER
     distro = DISTRO
     ubuntu = UBUNTU
-    repodir = REPODIR
+    # repodir = REPODIR
     baseimage = ubuntu_baseimage(distro, ubuntu)
     imagesrepo = IMAGESREPO
     python = DISTROPYTHON
     scripts = ubuntu_scripts()
+    rootdir = ubuntu_dir(distro, ubuntu, VARIANT)
     version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
     cname = F"{distro}-repo-{version}"  # container name
     sx___(F"{docker} rm --force {cname}")
@@ -407,7 +419,7 @@ def repo_image(repos: List[str]) -> str:
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{distro}")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{distro}")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
-    sh___(F"{docker} cp {repodir}/{distro}.{version}/dists {cname}:/srv/repo/{distro}")
+    sh___(F"{docker} cp {rootdir}/dists {cname}:/srv/repo/{distro}")
     sh___(F"{docker} exec {cname} apt-get update")
     sh___(F"{docker} exec {cname} apt-get install -y {python}")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{distro}/pool")
@@ -419,13 +431,16 @@ def repo_image(repos: List[str]) -> str:
         sh___(F"{docker} rm --force {cname}")
         sh___(F"{docker} run --name={cname} --detach {imagesrepo}/{distro}-repo/{base}:{version} sleep 9999")
         if distro in ["debian"]:
-            dists = [DEBIANDIST[ubuntu], DEBIANDIST[ubuntu] + "-security"]
+            dists = [DEBIANDIST[ubuntu], DEBIANDIST[ubuntu] + "-updates", DEBIANDIST[ubuntu] + "-security"]
         else:
             dists = [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]
         for dist in dists:
-            pooldir = F"{repodir}/{distro}.{version}/pools/{dist}/{main}/pool"
+            distrodir, distdir = distro, dist
+            if dist in DISTRODIST:
+                distrodir, distdir = DISTRODIST[dist]
+            pooldir = F"{rootdir}/pools/{distdir}/{main}/pool"
             if path.isdir(pooldir):
-                sh___(F"{docker} cp {pooldir}  {cname}:/srv/repo/{distro}/")
+                sh___(F"{docker} cp {pooldir}  {cname}:/srv/repo/{distrodir}/")
                 base = main
         if base == main:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
@@ -439,24 +454,67 @@ def repo_image(repos: List[str]) -> str:
 def ubuntu_disk() -> str:
     distro = DISTRO
     ubuntu = UBUNTU
-    repodir = REPODIR
     version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
-    rootdir = ubuntu_dir(variant=F"{VARIANT}{DISKSUFFIX}")
-    srv = F"{rootdir}/srv"
+    diskdir = ubuntu_dir(distro, ubuntu, variant=F"{VARIANT}{DISKSUFFIX}")
+    srv = F"{diskdir}/srv"
     logg.info("srv = %s", srv)
     sh___(F"test ! -d {srv} || rm -rf {srv}")
-    sh___(F"mkdir -p {srv}/repo/ubuntu")
-    sh___(F"cp -r --link {repodir}/{distro}.{version}/dists {srv}/repo/ubuntu")
-    sh___(F"mkdir -p {srv}/repo/ubuntu/pool")
-    for main in REPOS:
+    sh___(F"mkdir -p {srv}/repo/{distro}/pool")
+    oldreleasefile = NIX
+    repos = DEBIANREPOS if distro in ["debian"] else REPOS
+    for main in repos:
         if distro in ["debian"]:
-            dists = [DEBIANDIST[ubuntu], DEBIANDIST[ubuntu] + "-security"]
+            dists = [DEBIANDIST[ubuntu], DEBIANDIST[ubuntu] + "-updates", DEBIANDIST[ubuntu] + "-security"]
         else:
             dists = [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]
         for dist in dists:
-            pooldir = F"{repodir}/{distro}.{version}/pools/{dist}/{main}/pool"
+            distrodir, distdir = distro, dist
+            if dist in DISTRODIST:
+                distrodir, distdir = DISTRODIST[dist]
+            rootdir = ubuntu_dir(distrodir, ubuntu, variant=F"{VARIANT}")
+            maindir = F"{rootdir}/dists/{distdir}/{main}"
+            maindir_srv = F"{srv}/repo/{distrodir}/dists/{distdir}/{main}"
+            if not os.path.isdir(maindir_srv):
+                os.makedirs(maindir_srv)
+            for arch in ARCHS:
+                if os.path.isdir(F"{maindir}/binary-{arch}"):
+                    sh___(F"cp -r --link {maindir}/binary-{arch} {maindir_srv}/")
+            for source in ["source"]:
+                if os.path.isdir(F"{maindir}/{source}"):
+                    sh___(F"cp -r --link {maindir}/{source} {maindir_srv}/")
+            pooldir = F"{rootdir}/pools/{distdir}/{main}/pool"
+            updates = "" if "/" not in distrodir else "/"+distrodir.split("/", 1)[1]
             if path.isdir(pooldir):
-                sh___(F"cp -r --link --no-clobber {pooldir}  {srv}/repo/{distro}/")
+                if not os.path.isdir(F"{srv}/repo/{distrodir}"):
+                    os.makedirs(F"{srv}/repo/{distrodir}")
+                sh___(F"cp -r --link --no-clobber {pooldir}  {srv}/repo/{distrodir}/")
+            sourcedir = F"{srv}/repo/{distrodir}/dists/{distdir}/{main}/source"
+            template = NIX
+            if os.path.isdir(sourcedir):
+                if os.path.isfile(F"{sourcedir}/Release"):
+                    template = F"{sourcedir}/Release"
+                elif oldreleasefile:
+                    template = oldreleasefile
+            if template and os.path.isfile(template) and distro in ["debian"]:
+                oldreleasefile = template
+                lines = []
+                with open(template, "r", encoding="utf-8") as templatefile:
+                    for line in templatefile:
+                        if line.startswith("Component:") or line.startswith("Components:"):
+                            continue
+                        if line.startswith("Architecture:") or line.startswith("Architectures:"):
+                            continue
+                        if line.startswith("Codename:") or line.startswith("Archive:"):
+                            continue
+                        lines.append(line.rstrip())
+                lines += [ "Codename: " + dist]
+                lines += [ "Components: "+ " ".join(REPOS)]
+                lines += [ "Architectures: "+ " ".join(ARCHS)]
+                releasefile = F"{srv}/repo/{distrodir}/dists/{distdir}/Release"
+                with open(releasefile, "w", encoding="utf-8") as r:
+                    for line in lines:
+                        print(line, file=r)
+                logg.info("written %s", releasefile)
     host_srv = os.path.realpath(srv)
     return F"\nmount = {host_srv}/repo\n"
 
