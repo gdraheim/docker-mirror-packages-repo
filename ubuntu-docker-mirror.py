@@ -500,33 +500,6 @@ def ubuntu_disk() -> str:
                 if not os.path.isdir(F"{srv}/repo/{distrodir}"):
                     os.makedirs(F"{srv}/repo/{distrodir}")
                 sh___(F"cp -r --link --no-clobber {pooldir}  {srv}/repo/{distrodir}/")
-            sourcedir = F"{srv}/repo/{distrodir}/dists/{distdir}/{main}/source"
-            template = NIX
-            if os.path.isdir(sourcedir):
-                if os.path.isfile(F"{sourcedir}/Release"):
-                    template = F"{sourcedir}/Release"
-                elif oldreleasefile:
-                    template = oldreleasefile
-            if template and os.path.isfile(template) and distro in ["debian"]:
-                oldreleasefile = template
-                lines = []
-                with open(template, "r", encoding="utf-8") as templatefile:
-                    for line in templatefile:
-                        if line.startswith("Component:") or line.startswith("Components:"):
-                            continue
-                        if line.startswith("Architecture:") or line.startswith("Architectures:"):
-                            continue
-                        if line.startswith("Codename:") or line.startswith("Archive:"):
-                            continue
-                        lines.append(line.rstrip())
-                lines += [ "Codename: " + dist]
-                lines += [ "Components: "+ " ".join(REPOS)]
-                lines += [ "Architectures: "+ " ".join(ARCHS)]
-                releasefile = F"{srv}/repo/{distrodir}/dists/{distdir}/Release"
-                with open(releasefile, "w", encoding="utf-8") as r:
-                    for line in lines:
-                        print(line, file=r)
-                logg.info("written %s", releasefile)
     host_srv = os.path.realpath(srv)
     return F"\nmount = {host_srv}/repo\n"
 
