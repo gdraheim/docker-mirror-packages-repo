@@ -146,6 +146,7 @@ UNIVERSE_REPOS = ["main", "restricted", "universe"]
 MULTIVERSE_REPOS = ["main", "restricted", "universe", "multiverse"]
 AREAS = {"1": "", "2": "-updates", "3": "-backports", "4": "-security"}
 
+UBUNTUREPOS = ["main", "restricted", "universe", "multiverse"]
 DEBIANREPOS = ["main", "contrib", "non-free"]
 DISTRODIST: Dict[str, Tuple[str, str]] = {}
 DISTRODIST["buster-security"] = ("debian-security", "buster/updates")
@@ -335,7 +336,7 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None: # pylint: d
         distrodir, distdir = DISTRODIST[dist]
     rootdir = ubuntu_dir(distrodir, ubuntu, VARIANT)
     maindir = F"{rootdir}/dists/{distdir}/{main}"
-    if not path.isdir(maindir): 
+    if not path.isdir(maindir):
         os.makedirs(maindir)
     rsync = RSYNC
     mirror = MIRRORS[distrodir][0]
@@ -461,7 +462,7 @@ def ubuntu_disk() -> str:
     sh___(F"test ! -d {srv} || rm -rf {srv}")
     sh___(F"mkdir -p {srv}/repo/{distro}/pool")
     oldreleasefile = NIX
-    repos = DEBIANREPOS if distro in ["debian"] else REPOS
+    repos = DEBIANREPOS if distro in ["debian"] else UBUNTUREPOS
     for main in repos:
         if distro in ["debian"]:
             dists = [DEBIANDIST[ubuntu], DEBIANDIST[ubuntu] + "-updates", DEBIANDIST[ubuntu] + "-security"]
@@ -472,6 +473,15 @@ def ubuntu_disk() -> str:
             if dist in DISTRODIST:
                 distrodir, distdir = DISTRODIST[dist]
             rootdir = ubuntu_dir(distrodir, ubuntu, variant=F"{VARIANT}")
+            relsdir = F"{rootdir}/dists/{distdir}"
+            relsdir_srv = F"{srv}/repo/{distrodir}/dists/{distdir}"
+            if main == "main":
+                for relfile in ["Release", "Release.gpg", "InRelease"]:
+                    releasefile = os.path.join(relsdir, relfile)
+                    if os.path.isfile(releasefile):
+                        if not os.path.isdir(relsdir_srv):
+                            os.makedirs(relsdir_srv)
+                        sh___(F"cp {releasefile} {relsdir_srv}/")
             maindir = F"{rootdir}/dists/{distdir}/{main}"
             maindir_srv = F"{srv}/repo/{distrodir}/dists/{distdir}/{main}"
             if not os.path.isdir(maindir_srv):
@@ -482,6 +492,8 @@ def ubuntu_disk() -> str:
             for source in ["source"]:
                 if os.path.isdir(F"{maindir}/{source}"):
                     sh___(F"cp -r --link {maindir}/{source} {maindir_srv}/")
+            if main not in REPOS:
+                logg.warning("'%s' not in renabled REPOS %s", main, REPOS)
             pooldir = F"{rootdir}/pools/{distdir}/{main}/pool"
             updates = "" if "/" not in distrodir else "/"+distrodir.split("/", 1)[1]
             if path.isdir(pooldir):
