@@ -462,11 +462,11 @@ def ubuntu_disk() -> str:
     logg.info("srv = %s", srv)
     sh___(F"test ! -d {srv} || rm -rf {srv}")
     sh___(F"mkdir -p {srv}/repo/{distro}/pool")
-    oldreleasefile = NIX
-    repos = DEBIANREPOS if distro in ["debian"] else UBUNTUREPOS
     if distro in ["debian"]:
+        repos = DEBIANREPOS
         dists = [DEBIANDIST[ubuntu], DEBIANDIST[ubuntu] + "-updates", DEBIANDIST[ubuntu] + "-security"]
     else:
+        repos = UBUNTUREPOS
         dists = [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]
     if TRUE:  # base layer needs all Release info files even when pool files are not copied
         for dist in dists:
