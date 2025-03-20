@@ -54,6 +54,7 @@ VARIANT = ""
 
 ARCHLIST = ["amd64", "i386", "arm64", "armhf"]
 ARCHS = ["amd64", "i386"]
+NOARCHS = ["source"]
 
 RSYNC_UBUNTU = "rsync://ftp5.gwdg.de/pub/linux/debian/ubuntu"
 RSYNC_DEBIAN = "rsync://ftp5.gwdg.de/pub/linux/debian/debian"
@@ -344,8 +345,8 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None: # pylint: d
     options = "--ignore-times --exclude=.~tmp~"
     for arch in ARCHS:
         sh___(F"{rsync} -rv {mirror}/dists/{distdir}/{main}/binary-{arch} {maindir} {options} --copy-links")
-    if TRUE:
-        sh___(F"{rsync} -rv {mirror}/dists/{distdir}/{main}/source       {maindir} {options} --copy-links")
+    for source in NOARCHS:
+        sh___(F"{rsync} -rv {mirror}/dists/{distdir}/{main}/{source}      {maindir} {options} --copy-links")
     if distro in ["debian"]:
         gzlist: List[str] = []
         for arch in ARCHS:
@@ -463,11 +464,11 @@ def ubuntu_disk() -> str:
     sh___(F"mkdir -p {srv}/repo/{distro}/pool")
     oldreleasefile = NIX
     repos = DEBIANREPOS if distro in ["debian"] else UBUNTUREPOS
-    for main in repos:
-        if distro in ["debian"]:
-            dists = [DEBIANDIST[ubuntu], DEBIANDIST[ubuntu] + "-updates", DEBIANDIST[ubuntu] + "-security"]
-        else:
-            dists = [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]
+    if distro in ["debian"]:
+        dists = [DEBIANDIST[ubuntu], DEBIANDIST[ubuntu] + "-updates", DEBIANDIST[ubuntu] + "-security"]
+    else:
+        dists = [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]
+    if TRUE:  # base layer needs all Release info files even when pool files are not copied
         for dist in dists:
             distrodir, distdir = distro, dist
             if dist in DISTRODIST:
@@ -475,13 +476,18 @@ def ubuntu_disk() -> str:
             rootdir = ubuntu_dir(distrodir, ubuntu, variant=F"{VARIANT}")
             relsdir = F"{rootdir}/dists/{distdir}"
             relsdir_srv = F"{srv}/repo/{distrodir}/dists/{distdir}"
-            if main == "main":
-                for relfile in ["Release", "Release.gpg", "InRelease"]:
-                    releasefile = os.path.join(relsdir, relfile)
-                    if os.path.isfile(releasefile):
-                        if not os.path.isdir(relsdir_srv):
-                            os.makedirs(relsdir_srv)
-                        sh___(F"cp {releasefile} {relsdir_srv}/")
+            for relfile in ["Release", "Release.gpg", "InRelease"]:
+                releasefile = os.path.join(relsdir, relfile)
+                if os.path.isfile(releasefile):
+                    if not os.path.isdir(relsdir_srv):
+                        os.makedirs(relsdir_srv)
+                    sh___(F"cp {releasefile} {relsdir_srv}/")
+    for main in repos:
+        for dist in dists:
+            distrodir, distdir = distro, dist
+            if dist in DISTRODIST:
+                distrodir, distdir = DISTRODIST[dist]
+            rootdir = ubuntu_dir(distrodir, ubuntu, variant=F"{VARIANT}")
             maindir = F"{rootdir}/dists/{distdir}/{main}"
             maindir_srv = F"{srv}/repo/{distrodir}/dists/{distdir}/{main}"
             if not os.path.isdir(maindir_srv):
@@ -489,7 +495,7 @@ def ubuntu_disk() -> str:
             for arch in ARCHS:
                 if os.path.isdir(F"{maindir}/binary-{arch}"):
                     sh___(F"cp -r --link {maindir}/binary-{arch} {maindir_srv}/")
-            for source in ["source"]:
+            for source in NOARCHS:
                 if os.path.isdir(F"{maindir}/{source}"):
                     sh___(F"cp -r --link {maindir}/{source} {maindir_srv}/")
             if main not in REPOS:
