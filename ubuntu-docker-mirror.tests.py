@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# pylint: disable=possibly-unused-variable,unused-variable,line-too-long
+# pylint: disable=possibly-unused-variable,unused-variable,line-too-long,too-many-lines
 
 __copyright__ = "(C) 2025 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
@@ -190,11 +190,13 @@ class UbuntuMirrorTest(unittest.TestCase):
         testname = testname or self.caller_testname()
         ver3 = testname[-3:]
         major2 = ver3[0:2]
-        if major2 in ["01", "02"]:
-            return DistroVer("debian", str(int(ver3)))
-        if major2 in ["06", "07", "08", "09", "10", "11", "12", "13"]:
-            return DistroVer("debian", str(int(major2)) + "." + ver3)
         minor1 = ver3[2]
+        if major2 in ["01", "02"]:
+            return DistroVer("debian", str(int(ver3))) # debian:10 to debian:29
+        if ver3 in ["110", "111", "112", "113", "114","115","116","117","118", "119"]:
+            return DistroVer("debian", str(int(ver3[-2:]))) # "debian:10 to debian:19"
+        if major2 in ["12", "13"]: # allowing debian:13.1 (not tested)
+            return DistroVer("debian", str(int(major2)) + "." + minor1)
         minor2 = { "0": "10", "1": "11", "2": "12", "3": "03", "4": "04", #
                    "5": "05", "6": "06", "7": "07", "8": "08", "9": "09"}
         # assuming that Ubuntu never had a release in january/february
@@ -276,7 +278,7 @@ class UbuntuMirrorTest(unittest.TestCase):
             calls(cmd)
         return images
     #
-    def test_60100(self) -> None:
+    def test_60001(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} --help"
@@ -284,7 +286,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         logg.debug("out: %s", out)
         self.assertIn("imagesrepo=PREFIX", out)
         self.coverage()
-    def test_60101(self) -> None:
+    def test_60011(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} commands"
@@ -296,7 +298,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertIn("|datadir|", out)
         self.assertIn("|version", out)
         self.coverage()
-    def test_60108(self) -> None:
+    def test_60018(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} badcommand"
@@ -304,14 +306,14 @@ class UbuntuMirrorTest(unittest.TestCase):
         logg.debug("out: %s", run.out)
         self.assertEqual(1, run.ret)
         self.coverage()
-    def test_60110(self) -> None:
+    def test_60020(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} datadir"
         out = sh(cmd)
         logg.debug("out: %s", out)
         self.coverage()
-    def test_60111(self) -> None:
+    def test_60021(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} scripts"
@@ -319,8 +321,66 @@ class UbuntuMirrorTest(unittest.TestCase):
         logg.debug("out: %s", out)
         self.assertEqual("./scripts", out.strip())
         self.coverage()
+    def test_60110(self) -> None:
+        distro, ver = self.testver()
+        self.assertEqual(ver, "10")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        have = run.out
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["debian", "debian-security"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} dists"
+        run = runs(cmd)
+        want = ['buster', 'buster-updates', 'buster-security']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        self.coverage()
+    def test_60112(self) -> None:
+        distro, ver = self.testver()
+        self.assertEqual(ver, "12")
+        cover = self.cover()
+        script = SCRIPT
+        cmd = F"{cover} {script} {ver} version"
+        run = runs(cmd)
+        have = run.out
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(ver, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["debian", "debian-security"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} dists"
+        run = runs(cmd)
+        want = ['bookworm', 'bookworm-updates', 'bookworm-security']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        self.coverage()
     def test_60130(self) -> None:
-        ver = self.testver()
+        distro, ver = self.testver()
         self.assertEqual(ver, "13.10")
         cover = self.cover()
         script = SCRIPT
@@ -333,7 +393,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertIn("is not a known os version", errs)
         self.coverage()
     def test_60144(self) -> None:
-        ver = self.testver()
+        distro, ver = self.testver()
         self.assertEqual(ver, "14.04")
         cover = self.cover()
         script = SCRIPT
@@ -346,7 +406,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_60164(self) -> None:
-        ver = self.testver()
+        distro, ver = self.testver()
         self.assertEqual(ver, "16.04")
         cover = self.cover()
         script = SCRIPT
@@ -359,7 +419,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_60170(self) -> None:
-        ver = self.testver()
+        distro, ver = self.testver()
         self.assertEqual(ver, "17.10")
         cover = self.cover()
         script = SCRIPT
@@ -372,7 +432,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_60184(self) -> None:
-        ver = self.testver()
+        distro, ver = self.testver()
         self.assertEqual(ver, "18.04")
         cover = self.cover()
         script = SCRIPT
@@ -385,7 +445,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_60190(self) -> None:
-        ver = self.testver()
+        distro, ver = self.testver()
         self.assertEqual(ver, "19.10")
         cover = self.cover()
         script = SCRIPT
@@ -398,7 +458,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_60204(self) -> None:
-        ver = self.testver()
+        distro, ver = self.testver()
         self.assertEqual(ver, "20.04")
         cover = self.cover()
         script = SCRIPT
@@ -411,7 +471,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_60210(self) -> None:
-        ver = self.testver()
+        distro, ver = self.testver()
         self.assertEqual(ver, "21.10")
         cover = self.cover()
         script = SCRIPT
@@ -424,7 +484,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_60224(self) -> None:
-        ver = self.testver()
+        distro, ver = self.testver()
         self.assertEqual(ver, "22.04")
         cover = self.cover()
         script = SCRIPT
@@ -437,7 +497,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_60230(self) -> None:
-        ver = self.testver()
+        distro, ver = self.testver()
         self.assertEqual(ver, "23.10")
         cover = self.cover()
         script = SCRIPT
@@ -450,7 +510,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_60244(self) -> None:
-        ver = self.testver()
+        distro, ver = self.testver()
         self.assertEqual(ver, "24.04")
         cover = self.cover()
         script = SCRIPT
@@ -463,7 +523,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertEqual("", errs)
         self.coverage()
     def test_60264(self) -> None:
-        ver = self.testver()
+        distro, ver = self.testver()
         self.assertEqual(ver, "26.04")
         cover = self.cover()
         script = SCRIPT

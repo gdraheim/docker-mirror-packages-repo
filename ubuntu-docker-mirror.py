@@ -748,6 +748,8 @@ def ubuntu_version(distro: str = NIX, ubuntu: str = NIX) -> str:
 def UBUNTU_set(ubuntu: str) -> str:
     global UBUNTU, DISTRO # pylint: disable=global-statement
     distro = ""
+    if ubuntu in ["10","11","12","13"]:
+        DISTRO = "debian"
     if ":" in ubuntu:
         distro, ubuntu = ubuntu.split(":", 1)
         DISTRO = distro
