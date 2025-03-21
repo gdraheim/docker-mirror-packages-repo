@@ -11,7 +11,7 @@ __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7112"
 
-from typing import Dict, List, Union, Tuple, Any, Set
+from typing import Dict, List, Union, Tuple, Any, Set, Optional
 import os
 import os.path as path
 import sys
@@ -141,21 +141,16 @@ DEBIANDATE["12.9"] = "202501"
 DEBIANDATE["12.10"] = "202503"
 DEBIANDATE["13.1"] = "202506" # TODO: in the future
 
-MAIN_REPOS = ["main"]
-UPDATES_REPOS = ["main", "restricted"]
-UNIVERSE_REPOS = ["main", "restricted", "universe"]
-MULTIVERSE_REPOS = ["main", "restricted", "universe", "multiverse"]
-AREAS = {"1": "", "2": "-updates", "3": "-backports", "4": "-security"}
-
+ONLYREPOS = []
+SKIPREPOS = ["universe", "multiverse", "contrib", "non-free"]
 UBUNTUREPOS = ["main", "restricted", "universe", "multiverse"]
-DEBIANREPOS = ["main", "contrib", "non-free"]
+DEBIANREPOS = ["main", "non-free", "contrib"]
 DISTRODIST: Dict[str, Tuple[str, str]] = {}
 DISTRODIST["buster-security"] = ("debian-security", "buster/updates")
 DISTRODIST["bookworm-security"] = ("debian-security", "bookworm-security")
 DISTRODIST["bullseye-security"] = ("debian-security", "bullseye-security")
 DISTRODIST["trixie-security"] = ("debian-security", "trixie-security")
-
-REPOS = UPDATES_REPOS
+AREAS = {"1": "", "2": "-updates", "3": "-backports", "4": "-security"}
 
 nolinux = ["linux-image*.deb", "linux-module*.deb", "linux-objects*.deb", "linux-source*.deb"]
 nolinux += ["linux-restricted*.deb", "linux-signed*.deb", "linux-buildinfo*.deb", ]
@@ -186,13 +181,13 @@ BASEVERSION["16.10"] = "16.04"
 def _iterable(x: Any) -> bool:
     return hasattr(x, "__iter__")
 
-def ubuntu_repos(distro: str = NIX, ubuntu: str = NIX) -> List[str]:
+def ubuntu_allrepos(distro: str = NIX, ubuntu: str = NIX) -> List[str]:
     distro = distro or DISTRO
     if distro in ["debian"]:
         return DEBIANREPOS
     else:
         return UBUNTUREPOS
-def ubuntu_dists(distro: str = NIX, ubuntu: str = NIX) -> List[str]:
+def ubuntu_distdirs(distro: str = NIX, ubuntu: str = NIX) -> List[str]:
     distro = distro or DISTRO
     ubuntu = ubuntu or UBUNTU
     if distro in ["debian"]:
@@ -204,7 +199,7 @@ def ubuntu_distros(distro: str = NIX, ubuntu: str = NIX) -> List[str]:
     distro = distro or DISTRO
     ubuntu = ubuntu or UBUNTU
     values: Set[str] = set()
-    for dist in ubuntu_dists(distro, ubuntu):
+    for dist in ubuntu_distdirs(distro, ubuntu):
         distrodir, distdir = distro, dist
         if dist in DISTRODIST:
             distrodir, distdir = DISTRODIST[dist]
@@ -226,41 +221,39 @@ def ubuntu_sync() -> None:
     ubuntu_dir()
     if DISTRO in ["ubuntu"]:
         # release files:
-        ubuntu_sync_base_1()
-        ubuntu_sync_base_2()
-        ubuntu_sync_base_3()
-        ubuntu_sync_base_4()
+        ubuntu_sync_base(DIST[UBUNTU])
+        ubuntu_sync_base(DIST[UBUNTU] + "-updates")
+        ubuntu_sync_base(DIST[UBUNTU] + "-backports")
+        ubuntu_sync_base(DIST[UBUNTU] + "-security")
         # main:
-        ubuntu_sync_main_1()
-        ubuntu_sync_restricted_1()
-        ubuntu_sync_universe_1()
-        ubuntu_sync_multiverse_1()
-        # updates:
-        ubuntu_sync_main_2()
-        ubuntu_sync_restricted_2()
-        ubuntu_sync_universe_2()
-        ubuntu_sync_multiverse_2()
-        # backports:
-        ubuntu_sync_main_3()
-        ubuntu_sync_restricted_3()
-        ubuntu_sync_universe_3()
-        ubuntu_sync_multiverse_3()
-        # security:
-        ubuntu_sync_main_4()
-        ubuntu_sync_restricted_4()
-        ubuntu_sync_universe_4()
-        ubuntu_sync_multiverse_4()
+        ubuntu_sync_dist_main(DIST[UBUNTU])
+        ubuntu_sync_dist_main(DIST[UBUNTU] + "-updates")
+        ubuntu_sync_dist_main(DIST[UBUNTU] + "-backports")
+        ubuntu_sync_dist_main(DIST[UBUNTU] + "-security")
+        restricted = "restricted"
+        ubuntu_sync_dist_main(DIST[UBUNTU], restricted)
+        ubuntu_sync_dist_main(DIST[UBUNTU] + "-updates", restricted)
+        ubuntu_sync_dist_main(DIST[UBUNTU] + "-backports", restricted)
+        ubuntu_sync_dist_main(DIST[UBUNTU] + "-security", restricted)
+        restricted = "universe"
+        ubuntu_sync_dist_main(DIST[UBUNTU], restricted)
+        ubuntu_sync_dist_main(DIST[UBUNTU] + "-updates", restricted)
+        ubuntu_sync_dist_main(DIST[UBUNTU] + "-backports", restricted)
+        ubuntu_sync_dist_main(DIST[UBUNTU] + "-security", restricted)
+        restricted = "muiltiverse"
+        ubuntu_sync_dist_main(DIST[UBUNTU], restricted)
+        ubuntu_sync_dist_main(DIST[UBUNTU] + "-updates", restricted)
+        ubuntu_sync_dist_main(DIST[UBUNTU] + "-backports", restricted)
+        ubuntu_sync_dist_main(DIST[UBUNTU] + "-security", restricted)
     elif DISTRO in ["debian"]:
         # release files:
-        debian_sync_base_1()
-        debian_sync_base_2()
+        ubuntu_sync_base(DEBIANDIST[UBUNTU])
+        ubuntu_sync_base(DEBIANDIST[UBUNTU] + "-updates")
+        ubuntu_sync_base(DEBIANDIST[UBUNTU] + "-security")
         # main:
-        debian_sync_main_1()
-        # main/updates:
-        debian_sync_main_2()
-        # security updates:
-        debian_sync_main_3()
-
+        ubuntu_sync_dist_main(DEBIANDIST[UBUNTU])
+        ubuntu_sync_dist_main(DEBIANDIST[UBUNTU] + "-updates")
+        ubuntu_sync_dist_main(DEBIANDIST[UBUNTU] + "-security")
     else:
         logg.error("unknown distro %s", DISTRO)
         raise UserWarning("unknown distro")
@@ -304,13 +297,6 @@ def ubuntu_dir(distro: str = NIX, ubuntu: str = NIX, variant: str = NIX) -> str:
         logg.warning("%s/. local dir", dirlink)
     return dirlink
 
-def debian_sync_base_1() -> None: ubuntu_sync_base(dist=DEBIANDIST[UBUNTU])
-def debian_sync_base_2() -> None: ubuntu_sync_base(dist=DEBIANDIST[UBUNTU] + "-updates")
-
-def ubuntu_sync_base_1() -> None: ubuntu_sync_base(dist=DIST[UBUNTU])
-def ubuntu_sync_base_2() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-updates")
-def ubuntu_sync_base_3() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-backports")
-def ubuntu_sync_base_4() -> None: ubuntu_sync_base(dist=DIST[UBUNTU] + "-security")
 def ubuntu_sync_base(dist: str) -> None:
     logg.info("dist = %s", dist)
     cache = ubuntu_cache()
@@ -331,35 +317,15 @@ def ubuntu_sync_base(dist: str) -> None:
     # excludes = " ".join(["--exclude '%s'" % parts for parts in nolinux])
     sh___(F"{rsync} -v {mirror}/dists/{dist} {rootdir}/dists/{dist} {options}")
 
-def when(levels: str, repos: List[str]) -> List[str]: return [item for item in levels.split(",") if item and item in repos]
-def ubuntu_sync_main_1() -> None: ubuntu_sync_main(dist=DIST[UBUNTU], main="main", when=when("updates,restricted,universe,multiverse", REPOS))
-def ubuntu_sync_restricted_1() -> None: ubuntu_sync_main(dist=DIST[UBUNTU], main="restricted", when=when("restricted,universe,multiverse", REPOS))
-def ubuntu_sync_universe_1() -> None: ubuntu_sync_main(dist=DIST[UBUNTU], main="universe", when=when("universe,multiverse", REPOS))
-def ubuntu_sync_multiverse_1() -> None: ubuntu_sync_main(dist=DIST[UBUNTU], main="multiverse", when=when("multiverse", REPOS))
-def ubuntu_sync_main_2() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-updates", main="main", when=when("updates,restricted,universe,multiverse", REPOS))
-def ubuntu_sync_restricted_2() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-updates", main="restricted", when=when("restricted,universe,multiverse", REPOS))
-def ubuntu_sync_universe_2() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-updates", main="universe", when=when("universe,multiverse", REPOS))
-def ubuntu_sync_multiverse_2() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-updates", main="multiverse", when=when("multiverse", REPOS))
-def ubuntu_sync_main_3() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-backports", main="main", when=when("updates,restricted,universe,multiverse", REPOS))
-def ubuntu_sync_restricted_3() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-backports", main="restricted", when=when("restricted,universe,multiverse", REPOS))
-def ubuntu_sync_universe_3() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-backports", main="universe", when=when("universe,multiverse", REPOS))
-def ubuntu_sync_multiverse_3() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-backports", main="multiverse", when=when("multiverse", REPOS))
-def ubuntu_sync_main_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-security", main="main", when=when("updates,restricted,universe,multiverse", REPOS))
-def ubuntu_sync_restricted_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-security", main="restricted", when=when("restricted,universe,multiverse", REPOS))
-def ubuntu_sync_universe_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-security", main="universe", when=when("universe,multiverse", REPOS))
-def ubuntu_sync_multiverse_4() -> None: ubuntu_sync_main(dist=DIST[UBUNTU] + "-security", main="multiverse", when=when("multiverse", REPOS))
-
-def debian_sync_main_1() -> None: ubuntu_sync_main(dist=DEBIANDIST[UBUNTU], main="main", when=when("main,contrib,non-free", DEBIANREPOS))
-def debian_sync_main_2() -> None: ubuntu_sync_main(dist=DEBIANDIST[UBUNTU] + "-updates", main="main", when=when("main,contrib,non-free", DEBIANREPOS))
-def debian_sync_main_3() -> None: ubuntu_sync_main(dist=DEBIANDIST[UBUNTU] + "-security", main="main", when=when("main,contrib,non-free", DEBIANREPOS))
-
-downloads = ["universe"]
-def ubuntu_check() -> None:
-    print(": %s" % when("update,universe", downloads))
-
-def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None: # pylint: disable=redefined-outer-name
-    distro = DISTRO
-    ubuntu = UBUNTU
+def ubuntu_sync_dist_main(dist: str, main: str = "main") -> None:
+    if ONLYREPOS and main not in ONLYREPOS:
+        logg.info("skip [%s] repo - not in ONLYREPOS %s", main, ONLYREPOS)
+    if SKIPREPOS and main in SKIPREPOS:
+        logg.info("skip [%s] repo - was in SKIPREPOS %s", main, SKIPREPOS)
+    return _sync_dist_main(NIX, NIX, dist, main)
+def _sync_dist_main(distro: str, ubuntu: str, dist: str, main: str) -> None: # pylint: disable=redefined-outer-name
+    distro = distro or DISTRO
+    ubuntu = ubuntu or UBUNTU
     distrodir, distdir = distro, dist
     if dist in DISTRODIST:
         distrodir, distdir = DISTRODIST[dist]
@@ -416,7 +382,7 @@ def ubuntu_sync_main(dist: str, main: str, when: List[str]) -> None: # pylint: d
         logg.info("syncing %s of %s filenames in %s", syncing, filenames, " & ".join(gzlist))
     pooldir = F"{rootdir}/pools/{distdir}/{main}/pool"
     if not path.isdir(pooldir): os.makedirs(pooldir)
-    if when:
+    if TRUE:
         # instead of {exlude} we have nolinux filtered in the Packages above
         options = "--size-only --copy-links "
         sh___(F"{rsync} -rv {mirror}/pool {pooldir} {options} --files-from={tmpfile}")
@@ -428,14 +394,32 @@ def ubuntu_http_cmd() -> List[str]:
     if "/" not in python:
         python = F"/usr/bin/{python}"
     return [python, "/srv/scripts/filelist.py", "--data", "/srv/repo"]
-def ubuntu_base() -> str:
-    return repo_image([])
-def ubuntu_repo() -> str:
-    return repo_image(REPOS)
-def repo_image(repos: List[str]) -> str:
+def ubuntu_base(distro: str = NIX, ubuntu: str = NIX) -> str:
+    return repo_image(distro, ubuntu, [])
+def ubuntu_repo(distro: str = NIX, ubuntu: str = NIX) -> str:
+    distro = distro or DISTRO
+    ubuntu = ubuntu or UBUNTU
+    repos = []
+    if distro in ["debian"]:
+        for repo in DEBIANREPOS:
+            if ONLYREPOS and repo not in ONLYREPOS:
+                continue
+            if repo not in SKIPREPOS:
+                repos += [ repo ]
+    else:
+        for repo in DEBIANREPOS:
+            if ONLYREPOS and repo not in ONLYREPOS:
+                continue
+            if repo not in SKIPREPOS:
+                 repos += [ repo ]
+    if not repos:
+        logg.warning("no %s repo layers selected with ONLYREPOS %s SKIPREPOS %s", distro, ONLYREPOS, SKIPREPOS)
+    return repo_image(distro, ubuntu, repos)
+def repo_image(distro: str = NIX, ubuntu: str = NIX, repos: Optional[List[str]] = None) -> str:
     docker = DOCKER
-    distro = DISTRO
-    ubuntu = UBUNTU
+    distro = distro or DISTRO
+    ubuntu = ubuntu or UBUNTU
+    repos = repos if repos is not None else ubuntu_allrepos(distro, ubuntu)
     # repodir = REPODIR
     baseimage = ubuntu_baseimage(distro, ubuntu)
     imagesrepo = IMAGESREPO
@@ -447,12 +431,7 @@ def repo_image(repos: List[str]) -> str:
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} run --name={cname} --detach {baseimage} sleep 9999")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
-    if distro in ["debian"]:
-        repos = DEBIANREPOS
-        dists = [DEBIANDIST[ubuntu], DEBIANDIST[ubuntu] + "-updates", DEBIANDIST[ubuntu] + "-security"]
-    else:
-        repos = UBUNTUREPOS
-        dists = [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]
+    dists = ubuntu_distdirs(distro, ubuntu)
     if TRUE:  # base layer needs all Release info files even when pool files are not copied
         for dist in dists:
             distrodir, distdir = distro, dist
@@ -490,12 +469,13 @@ def repo_image(repos: List[str]) -> str:
     CMD = str(ubuntu_http_cmd()).replace("'", '"')
     sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
     for main in repos:
+        if ONLYREPOS and main not in ONLYREPOS:
+            logg.info("'%s' not in ONLYREPOS %s", main, ONLYREPOS)
+        if SKIPREPOS and main in SKIPREPOS:
+            logg.info("'%s' in SKIPREPOS %s", main, ONLYREPOS)
         sh___(F"{docker} rm --force {cname}")
         sh___(F"{docker} run --name={cname} --detach {imagesrepo}/{distro}-repo/{base}:{version} sleep 9999")
-        if distro in ["debian"]:
-            dists = [DEBIANDIST[ubuntu], DEBIANDIST[ubuntu] + "-updates", DEBIANDIST[ubuntu] + "-security"]
-        else:
-            dists = [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]
+        dists = ubuntu_distdirs(distro, ubuntu)
         for dist in dists:
             distrodir, distdir = distro, dist
             if dist in DISTRODIST:
@@ -522,12 +502,8 @@ def ubuntu_disk() -> str:
     logg.info("srv = %s", srv)
     sh___(F"test ! -d {srv} || rm -rf {srv}")
     sh___(F"mkdir -p {srv}/repo/{distro}/pool")
-    if distro in ["debian"]:
-        repos = DEBIANREPOS
-        dists = [DEBIANDIST[ubuntu], DEBIANDIST[ubuntu] + "-updates", DEBIANDIST[ubuntu] + "-security"]
-    else:
-        repos = UBUNTUREPOS
-        dists = [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]
+    repos = ubuntu_allrepos(distro, ubuntu)
+    dists = ubuntu_distdirs(distro, ubuntu)
     if TRUE:  # base layer needs all Release info files even when pool files are not copied
         for dist in dists:
             distrodir, distdir = distro, dist
@@ -543,6 +519,10 @@ def ubuntu_disk() -> str:
                         os.makedirs(relsdir_srv)
                     sh___(F"cp {releasefile} {relsdir_srv}/")
     for main in repos:
+        if ONLYREPOS and main not in ONLYREPOS:
+            logg.info("'%s' not in ONLYREPOS %s", main, ONLYREPOS)
+        if SKIPREPOS and main in SKIPREPOS:
+            logg.info("'%s' in SKIPREPOS %s", main, ONLYREPOS)
         for dist in dists:
             distrodir, distdir = distro, dist
             if dist in DISTRODIST:
@@ -558,8 +538,6 @@ def ubuntu_disk() -> str:
             for source in NOARCHS:
                 if os.path.isdir(F"{maindir}/{source}"):
                     sh___(F"cp -r --link {maindir}/{source} {maindir_srv}/")
-            if main not in REPOS:
-                logg.warning("'%s' not in renabled REPOS %s", main, REPOS)
             pooldir = F"{rootdir}/pools/{distdir}/{main}/pool"
             updates = "" if "/" not in distrodir else "/"+distrodir.split("/", 1)[1]
             if path.isdir(pooldir):
@@ -835,7 +813,9 @@ if __name__ == "__main__":
     cmdline.add_option("-U", "--universe", action="store_true", default=False,
                        help="include universe packages [%default]")
     cmdline.add_option("-M", "--multiverse", action="store_true", default=False,
-                       help="include all packages [%default]")
+                       help="include all ubuntu packages [%default]")
+    cmdline.add_option("-C", "--contrib", action="store_true", default=False,
+                       help="include contrib and free packages [%default]")
     opt, cmdline_args = cmdline.parse_args()
     logging.basicConfig(level=logging.WARNING - opt.verbose * 10 + opt.quiet * 10)
     if opt.arch:
@@ -857,12 +837,14 @@ if __name__ == "__main__":
     DISTROPYTHON = opt.python
     UBUNTU_set(opt.ver)
     if opt.main:
-        REPOS = MAIN_REPOS
+        ONLYREPOS = ["main"]
     if opt.updates:
-        REPOS = UPDATES_REPOS  # this is the default
+        ONLYREPOS = ["main", "update"] # this is the effecitve default
     if opt.universe:
-        REPOS = UNIVERSE_REPOS  # includes restricted-repos
+        SKIPREPOS = [repo for repo in SKIPREPOS if repo not in ["universe"]]
     if opt.multiverse:
-        REPOS = MULTIVERSE_REPOS
+        SKIPREPOS = [repo for repo in SKIPREPOS if repo not in ["universe", "multiverse"]]
+    if opt.contrib:
+        SKIPREPOS = [repo for repo in SKIPREPOS if repo not in ["non-free", "contrib"]]
     #
     sys.exit(_main(cmdline_args or ["list"]))

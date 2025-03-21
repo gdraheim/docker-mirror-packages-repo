@@ -341,7 +341,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         logg.debug("out: %s", have)
         self.assertEqual(want, have)
         self.assertEqual("", errs)
-        cmd = F"{cover} {script} {ver} dists"
+        cmd = F"{cover} {script} {ver} distdirs"
         run = runs(cmd)
         want = ['buster', 'buster-updates', 'buster-security']
         have = run.out.splitlines()
@@ -370,7 +370,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         logg.debug("out: %s", have)
         self.assertEqual(want, have)
         self.assertEqual("", errs)
-        cmd = F"{cover} {script} {ver} dists"
+        cmd = F"{cover} {script} {ver} distdirs"
         run = runs(cmd)
         want = ['bookworm', 'bookworm-updates', 'bookworm-security']
         have = run.out.splitlines()
