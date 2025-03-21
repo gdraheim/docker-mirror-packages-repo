@@ -41,6 +41,7 @@ ONLYVERSION = ""
 COVERAGE = False
 KEEP = False
 DRY_RSYNC = 1
+ALLOWREMOTE = 0
 SLEEP = 66
 VV="-v"
 SKIPFULLIMAGE = True
@@ -695,6 +696,10 @@ class UbuntuMirrorTest(unittest.TestCase):
         #
         self.coverage(testname)
         self.rm_testdir(testname)
+    def test_63110(self) -> None:
+        self.check_sync(self.testname())
+    def test_63112(self) -> None:
+        self.check_sync(self.testname())
     def test_63224(self) -> None:
         self.check_sync(self.testname())
     def test_63244(self) -> None:
@@ -717,7 +722,37 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertEqual(0, ret)
         self.coverage(testname)
         self.rm_testdir(testname)
+    def test_64110(self) -> None:
+        self.check_rsync(self.testname())
+    def test_64112(self) -> None:
+        self.check_rsync(self.testname())
+    def test_64224(self) -> None:
+        self.check_rsync(self.testname())
+    def test_64244(self) -> None:
+        self.check_rsync(self.testname())
+    def check_rsync(self, testname: str) -> None:
+        """ this one will access the internet """
+        distro, ver = self.testver(testname)
+        if ONLYVERSION and ver != ONLYVERSION:
+            self.skipTest(F"not testing {ver} (--only {ONLYVERSION})")
+        if not ALLOWREMOTE:
+            self.skipTest("not checking --remote rsync servers")
+        tmp = self.testdir(testname)
+        war = "tmp"
+        cover = self.cover()
+        script = SCRIPT
+        data = F"{tmp}/data"
+        repo = F"{tmp}/repo"
+        os.makedirs(data)
+        cmd = F"{cover} {script} {ver} sync {VV} --datadir={data} --repodir={repo} -W {war}"
+        cmd += " --nopackages"
+        ret = calls(cmd)
+        self.assertEqual(0, ret)
+        self.coverage(testname)
+        self.rm_testdir(testname)
     def test_65010(self) -> None:
+        self.make_repo_test(self.testname())
+    def test_65012(self) -> None:
         self.make_repo_test(self.testname())
     def test_65184(self) -> None:
         self.make_repo_test(self.testname())
@@ -981,7 +1016,7 @@ if __name__ == "__main__":
     cmdline.add_option("-P", "--python", metavar="EXE", default=PYTHON, help="alternative to [%default] (=python3.11)")
     cmdline.add_option("-k", "--keep", action="count", default=0, help="keep testdir")
     cmdline.add_option("--dry-rsync", action="count", default=DRY_RSYNC, help="upstream rsync --dry-run [%default]")
-    cmdline.add_option("--real-rsync", action="count", default=0, help="upstream rsync for real [%default]")
+    cmdline.add_option("--remote", action="count", default=ALLOWREMOTE, help="upstream rsync for real [%default]")
     cmdline.add_option("--sleep", metavar="SEC", default=SLEEP)
     cmdline.add_option("-B", "--savebasedisk", action="count", default=0, help="rename */base image and test *.disk repo")
     cmdline.add_option("-S", "--skipfullimage", action="count", default=0, help="upstream rsync for real [%default]")
@@ -1004,7 +1039,8 @@ if __name__ == "__main__":
     SLEEP = int(opt.sleep)
     ONLYVERSION = opt.only
     COVERAGE = opt.coverage
-    DRY_RSYNC = opt.dry_rsync - opt.real_rsync
+    DRY_RSYNC = opt.dry_rsync - opt.remote
+    ALLOWREMOTE = opt.remote
     SAVEBASEDISK = opt.savebasedisk
     SKIPFULLIMAGE = opt.skipfullimage
     KEEPFULLIMAGE = opt.keepfullimage

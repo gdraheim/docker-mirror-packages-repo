@@ -302,33 +302,43 @@ def ubuntu_sync_base(dist: str) -> None:
     cache = ubuntu_cache()
     distro = DISTRO
     ubuntu = UBUNTU
-    rootdir = ubuntu_dir(distro, ubuntu, VARIANT)
-    distdir = F"{rootdir}/dists/{dist}"
-    if not path.isdir(distdir):
-        os.makedirs(distdir)
+    distrodir, distdir = distro, dist
+    if dist in DISTRODIST:
+        distrodir, distdir = DISTRODIST[dist]
+    logg.fatal("dist %s -> %s/dists/%s", dist, distrodir, distdir)
+    rootdir = ubuntu_dir(distrodir, ubuntu, VARIANT)
+    savedir = F"{rootdir}/dists/{distdir}"
+    if not path.isdir(savedir):
+        os.makedirs(savedir)
     tmpfile = F"{cache}/Release.{dist}.base.tmp"
     with open(tmpfile, "w") as f:
         print("Release", file=f)
+        print("Release.gpg", file=f)
         print("InRelease", file=f)
     rsync = RSYNC
     distro = DISTRO
-    mirror = MIRRORS[distro][0]
+    mirror = MIRRORS[distrodir][0]
     options = "--ignore-times --files-from=" + tmpfile
+    options +=" --copy-links"
     # excludes = " ".join(["--exclude '%s'" % parts for parts in nolinux])
-    sh___(F"{rsync} -v {mirror}/dists/{dist} {rootdir}/dists/{dist} {options}")
+    sh___(F"{rsync} -v {mirror}/dists/{distdir} {rootdir}/dists/{distdir} {options}")
 
 def ubuntu_sync_dist_main(dist: str, main: str = "main") -> None:
+    nopackages = False
     if ONLYREPOS and main not in ONLYREPOS:
-        logg.info("skip [%s] repo - not in ONLYREPOS %s", main, ONLYREPOS)
+        logg.info(" -- skip [%s] repo -- not in ONLYREPOS %s", main, ONLYREPOS)
+        nopackages = True
     if SKIPREPOS and main in SKIPREPOS:
-        logg.info("skip [%s] repo - was in SKIPREPOS %s", main, SKIPREPOS)
-    return _sync_dist_main(NIX, NIX, dist, main)
-def _sync_dist_main(distro: str, ubuntu: str, dist: str, main: str) -> None: # pylint: disable=redefined-outer-name
+        logg.info(" -- skip [%s] repo -- was in SKIPREPOS %s", main, SKIPREPOS)
+        nopackages = True
+    return _sync_dist_main(NIX, NIX, dist, main, nopackages=nopackages)
+def _sync_dist_main(distro: str, ubuntu: str, dist: str, main: str, nopackages: bool = False) -> None: # pylint: disable=redefined-outer-name
     distro = distro or DISTRO
     ubuntu = ubuntu or UBUNTU
     distrodir, distdir = distro, dist
     if dist in DISTRODIST:
         distrodir, distdir = DISTRODIST[dist]
+    logg.fatal("dist %s -> %s/dists/%s", dist, distrodir, distdir)
     rootdir = ubuntu_dir(distrodir, ubuntu, VARIANT)
     maindir = F"{rootdir}/dists/{distdir}/{main}"
     if not path.isdir(maindir):
@@ -381,9 +391,10 @@ def _sync_dist_main(distro: str, ubuntu: str, dist: str, main: str) -> None: # p
                     syncing += 1
         logg.info("syncing %s of %s filenames in %s", syncing, filenames, " & ".join(gzlist))
     pooldir = F"{rootdir}/pools/{distdir}/{main}/pool"
-    if not path.isdir(pooldir): os.makedirs(pooldir)
-    if TRUE:
-        # instead of {exlude} we have nolinux filtered in the Packages above
+    if not path.isdir(pooldir):
+        os.makedirs(pooldir)
+    # instead of {exlude} we have nolinux filtered in the Packages above
+    if not nopackages:
         options = "--size-only --copy-links "
         sh___(F"{rsync} -rv {mirror}/pool {pooldir} {options} --files-from={tmpfile}")
 
@@ -411,7 +422,7 @@ def ubuntu_repo(distro: str = NIX, ubuntu: str = NIX) -> str:
             if ONLYREPOS and repo not in ONLYREPOS:
                 continue
             if repo not in SKIPREPOS:
-                 repos += [ repo ]
+                repos += [ repo ]
     if not repos:
         logg.warning("no %s repo layers selected with ONLYREPOS %s SKIPREPOS %s", distro, ONLYREPOS, SKIPREPOS)
     return repo_image(distro, ubuntu, repos)
@@ -806,6 +817,8 @@ if __name__ == "__main__":
                        help="use other ubuntu version [%default]")
     cmdline.add_option("-a", "--arch", metavar="NAME", action="append", default=[],
                        help=F"use other arch list {ARCHS}")
+    cmdline.add_option("-n", "--nopackages", action="store_true", default=False,
+                       help="only check metadata [%default]")
     cmdline.add_option("-m", "--main", action="store_true", default=False,
                        help="only sync main packages [%default]")
     cmdline.add_option("-u", "--updates", action="store_true", default=False,
@@ -846,5 +859,7 @@ if __name__ == "__main__":
         SKIPREPOS = [repo for repo in SKIPREPOS if repo not in ["universe", "multiverse"]]
     if opt.contrib:
         SKIPREPOS = [repo for repo in SKIPREPOS if repo not in ["non-free", "contrib"]]
+    if opt.nopackages:
+        ONLYREPOS = ["--nopackages"]
     #
     sys.exit(_main(cmdline_args or ["list"]))
