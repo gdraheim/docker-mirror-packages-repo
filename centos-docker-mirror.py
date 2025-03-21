@@ -174,7 +174,7 @@ def majorminor(version: str) -> str:
         return version[:4]
     return version[:3]
 
-def centos_dists(distro: str = NIX, centos: str = NIX) -> List[str]:
+def centos_distdirs(distro: str = NIX, centos: str = NIX) -> List[str]:
     distro = distro or DISTRO
     centos = centos or CENTOS
     if distro in ["epel"]:

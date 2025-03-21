@@ -103,7 +103,7 @@ skipfiles = [
 def _iterable(x: Any) -> bool:
     return hasattr(x, "__iter__")
 
-def opensuse_dists(distro: str = NIX, leap = NIX) -> List[str]:  # pylint: disable=unused-argument
+def opensuse_distdirs(distro: str = NIX, leap = NIX) -> List[str]:  # pylint: disable=unused-argument
     return ["distribution", "update"]
 
 def opensuse_distros(distro: str = NIX, leap = NIX) -> List[str]:  # pylint: disable=unused-argument
