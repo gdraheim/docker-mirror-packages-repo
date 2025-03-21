@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# pylint: disable=possibly-unused-variable,unused-variable,line-too-long
+# pylint: disable=possibly-unused-variable,unused-variable,line-too-long,too-many-lines
 __copyright__ = "(C) 2025 Guido Draheim"
 __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
@@ -1054,7 +1054,7 @@ class OpensuseMirrorTest(unittest.TestCase):
     def make_disk_cleanup(self) -> None:
         cache = get_CACHE_HOME()
         if SAVEBASEDISK:
-            for distro in [DISTRO1]:
+            for distro in ["opensuse"]:
                 cachefiles = glob(os.path.join(cache, F"docker_mirror.{distro}.*.ini"))
                 for cachefile in cachefiles:
                     logg.info(" rm %s", cachefile)
