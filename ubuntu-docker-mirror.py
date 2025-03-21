@@ -305,7 +305,6 @@ def ubuntu_sync_base(dist: str) -> None:
     distrodir, distdir = distro, dist
     if dist in DISTRODIST:
         distrodir, distdir = DISTRODIST[dist]
-    logg.fatal("dist %s -> %s/dists/%s", dist, distrodir, distdir)
     rootdir = ubuntu_dir(distrodir, ubuntu, VARIANT)
     savedir = F"{rootdir}/dists/{distdir}"
     if not path.isdir(savedir):
@@ -338,7 +337,6 @@ def _sync_dist_main(distro: str, ubuntu: str, dist: str, main: str, nopackages: 
     distrodir, distdir = distro, dist
     if dist in DISTRODIST:
         distrodir, distdir = DISTRODIST[dist]
-    logg.fatal("dist %s -> %s/dists/%s", dist, distrodir, distdir)
     rootdir = ubuntu_dir(distrodir, ubuntu, VARIANT)
     maindir = F"{rootdir}/dists/{distdir}/{main}"
     if not path.isdir(maindir):
@@ -463,7 +461,6 @@ def repo_image(distro: str = NIX, ubuntu: str = NIX, repos: Optional[List[str]] 
             for main in repos:
                 for arch in ARCHS:
                     packdir = F"{relsdir}/{main}/binary-{arch}"
-                    logg.fatal("check %s", F"{packdir}/Packages.gz")
                     if os.path.isfile(F"{packdir}/Packages.gz"):
                         sh___(F"{docker} exec {cname} bash -c 'test -d {relsdir_srv}/{main} || mkdir -vp {relsdir_srv}/{main}'")
                         sh___(F"{docker} cp {packdir} {cname}:/{relsdir_srv}/{main}/")
@@ -498,8 +495,6 @@ def repo_image(distro: str = NIX, ubuntu: str = NIX, repos: Optional[List[str]] 
             if path.isdir(pooldir):
                 sh___(F"{docker} cp {pooldir}  {cname}:/srv/repo/{distrodir}/")
                 base = main
-            else:
-                logg.fatal("did not find pooldir = %s", pooldir)
         if base == main:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
     if base != BASELAYER:

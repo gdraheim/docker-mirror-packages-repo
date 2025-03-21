@@ -928,8 +928,8 @@ class UbuntuMirrorTest(unittest.TestCase):
         logg.info("install clean: %s", ret)
         self.assertEqual(0, ret)
         # https://manpages.debian.org/stretch/apt/apt.conf.5.de.html
-        debugs="-oDebug::Acquire:http=1 -oDebug::pkgAcquire=1"
-        cmd = F"{docker} exec {testcontainer} {pkgrepo} {debugs} update"
+        debugs="-oDebug::Acquire:http=1 -oDebug::pkgAcquire=1" # pylint: disable=unused-variable
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} update"
         ret = calls(cmd)
         logg.info("install refresh: %s", ret)
         self.assertEqual(0, ret)
