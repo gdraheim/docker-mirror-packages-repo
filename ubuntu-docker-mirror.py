@@ -482,8 +482,10 @@ def repo_image(distro: str = NIX, ubuntu: str = NIX, repos: Optional[List[str]] 
     for main in repos:
         if ONLYREPOS and main not in ONLYREPOS:
             logg.info("'%s' not in ONLYREPOS %s", main, ONLYREPOS)
+            continue
         if SKIPREPOS and main in SKIPREPOS:
             logg.info("'%s' in SKIPREPOS %s", main, ONLYREPOS)
+            continue
         sh___(F"{docker} rm --force {cname}")
         sh___(F"{docker} run --name={cname} --detach {imagesrepo}/{distro}-repo/{base}:{version} sleep 9999")
         dists = ubuntu_distdirs(distro, ubuntu)
@@ -491,10 +493,13 @@ def repo_image(distro: str = NIX, ubuntu: str = NIX, repos: Optional[List[str]] 
             distrodir, distdir = distro, dist
             if dist in DISTRODIST:
                 distrodir, distdir = DISTRODIST[dist]
+            rootdir = ubuntu_dir(distrodir, ubuntu, variant=F"{VARIANT}")
             pooldir = F"{rootdir}/pools/{distdir}/{main}/pool"
             if path.isdir(pooldir):
                 sh___(F"{docker} cp {pooldir}  {cname}:/srv/repo/{distrodir}/")
                 base = main
+            else:
+                logg.fatal("did not find pooldir = %s", pooldir)
         if base == main:
             sh___(F"{docker} commit -c 'CMD {CMD}' -c 'EXPOSE {PORT}' -m {base} {cname} {imagesrepo}/{distro}-repo/{base}:{version}")
     if base != BASELAYER:
@@ -532,8 +537,10 @@ def ubuntu_disk() -> str:
     for main in repos:
         if ONLYREPOS and main not in ONLYREPOS:
             logg.info("'%s' not in ONLYREPOS %s", main, ONLYREPOS)
+            continue
         if SKIPREPOS and main in SKIPREPOS:
             logg.info("'%s' in SKIPREPOS %s", main, ONLYREPOS)
+            continue
         for dist in dists:
             distrodir, distdir = distro, dist
             if dist in DISTRODIST:
