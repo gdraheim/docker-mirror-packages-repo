@@ -490,6 +490,9 @@ def _main(args: List[str]) -> int:
         if arg[0] in "123456789":
             LEAP_set(arg)
             continue
+        if ":" in arg and arg.split(":", 1)[1][0] in "123456789":
+            LEAP_set(arg)
+            continue
         funcname = "opensuse_" + arg.replace("-", "_")
         allnames = globals()
         if funcname in allnames:
@@ -502,6 +505,9 @@ def _main(args: List[str]) -> int:
                     print(" %i2" % funcresult)
                     if funcresult < 0:
                         return -funcresult
+                elif isinstance(funcresult, list):
+                    for item in funcresult:
+                        print("%s", item)
             else: # pragma: nocover
                 logg.error("%s is not callable", funcname)
                 return 1

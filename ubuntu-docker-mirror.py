@@ -418,10 +418,42 @@ def repo_image(repos: List[str]) -> str:
     cname = F"{distro}-repo-{version}"  # container name
     sx___(F"{docker} rm --force {cname}")
     sh___(F"{docker} run --name={cname} --detach {baseimage} sleep 9999")
-    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{distro}")
-    sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{distro}")
     sh___(F"{docker} cp {scripts} {cname}:/srv/scripts")
-    sh___(F"{docker} cp {rootdir}/dists {cname}:/srv/repo/{distro}")
+    if distro in ["debian"]:
+        repos = DEBIANREPOS
+        dists = [DEBIANDIST[ubuntu], DEBIANDIST[ubuntu] + "-updates", DEBIANDIST[ubuntu] + "-security"]
+    else:
+        repos = UBUNTUREPOS
+        dists = [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]
+    if TRUE:  # base layer needs all Release info files even when pool files are not copied
+        for dist in dists:
+            distrodir, distdir = distro, dist
+            if dist in DISTRODIST:
+                distrodir, distdir = DISTRODIST[dist]
+            rootdir = ubuntu_dir(distrodir, ubuntu, variant=F"{VARIANT}")
+            relsdir = F"{rootdir}/dists/{distdir}"
+            relsdir_srv = F"/srv/repo/{distrodir}/dists/{distdir}"
+            releasefiles = []
+            for relfile in ["Release", "Release.gpg", "InRelease"]:
+                releasefile = os.path.join(relsdir, relfile)
+                if os.path.isfile(releasefile):
+                    releasefiles += [ releasefile ]
+            if releasefiles:
+                sh___(F"{docker} exec {cname} bash -c 'test -d {relsdir_srv} || mkdir -vp {relsdir_srv}'")
+                for releasefile in releasefiles:
+                    sh___(F"{docker} cp {releasefile} {cname}:{relsdir_srv}/")
+            for main in repos:
+                for arch in ARCHS:
+                    packdir = F"{relsdir}/{main}/binary-{arch}"
+                    logg.fatal("check %s", F"{packdir}/Packages.gz")
+                    if os.path.isfile(F"{packdir}/Packages.gz"):
+                        sh___(F"{docker} exec {cname} bash -c 'test -d {relsdir_srv}/{main} || mkdir -vp {relsdir_srv}/{main}'")
+                        sh___(F"{docker} cp {packdir} {cname}:/{relsdir_srv}/{main}/")
+                for source in NOARCHS:
+                    packdir = F"{relsdir}/{source}"
+                    if os.path.isfile(F"{packdir}/Packages.gz"):
+                        sh___(F"{docker} exec {cname} bash -c 'test -d {relsdir_srv}/{main} || mkdir -vp {relsdir_srv}/{main}'")
+                        sh___(F"{docker} cp {packdir} {cname}:/{relsdir_srv}/{main}/")
     sh___(F"{docker} exec {cname} apt-get update")
     sh___(F"{docker} exec {cname} apt-get install -y {python}")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{distro}/pool")
@@ -727,6 +759,9 @@ def _main(args: List[str]) -> int:
                     print(" %i2" % funcresult)
                     if funcresult < 0:
                         return -funcresult
+                elif isinstance(funcresult, list):
+                    for item in funcresult:
+                        print("%s", item)
             else: # pragma: nocover
                 logg.error("%s is not callable", funcname)
                 return 1
