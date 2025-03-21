@@ -11,7 +11,7 @@ __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7112"
 
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Union, Tuple, Any, Set
 import os
 import os.path as path
 import sys
@@ -182,6 +182,34 @@ BASEVERSION["19.10"] = "18.04"
 BASEVERSION["19.04"] = "18.04"
 BASEVERSION["18.10"] = "18.04"
 BASEVERSION["16.10"] = "16.04"
+
+def _iterable(x: Any) -> bool:
+    return hasattr(x, "__iter__")
+
+def ubuntu_repos(distro: str = NIX, ubuntu: str = NIX) -> List[str]:
+    distro = distro or DISTRO
+    if distro in ["debian"]:
+        return DEBIANREPOS
+    else:
+        return UBUNTUREPOS
+def ubuntu_dists(distro: str = NIX, ubuntu: str = NIX) -> List[str]:
+    distro = distro or DISTRO
+    ubuntu = ubuntu or UBUNTU
+    if distro in ["debian"]:
+        return [DEBIANDIST[ubuntu], DEBIANDIST[ubuntu] + "-updates", DEBIANDIST[ubuntu] + "-security"]
+    else:
+        return [DIST[ubuntu], DIST[ubuntu] + "-updates", DIST[ubuntu] + "-backports", DIST[ubuntu] + "-security"]
+
+def ubuntu_distros(distro: str = NIX, ubuntu: str = NIX) -> List[str]:
+    distro = distro or DISTRO
+    ubuntu = ubuntu or UBUNTU
+    values: Set[str] = set()
+    for dist in ubuntu_dists(distro, ubuntu):
+        distrodir, distdir = distro, dist
+        if dist in DISTRODIST:
+            distrodir, distdir = DISTRODIST[dist]
+        values.add(distrodir)
+    return list(sorted(values))
 
 ######################################################################
 
@@ -759,9 +787,9 @@ def _main(args: List[str]) -> int:
                     print(" %i2" % funcresult)
                     if funcresult < 0:
                         return -funcresult
-                elif isinstance(funcresult, list):
+                elif _iterable(funcresult):
                     for item in funcresult:
-                        print("%s", item)
+                        print(str(item))
             else: # pragma: nocover
                 logg.error("%s is not callable", funcname)
                 return 1

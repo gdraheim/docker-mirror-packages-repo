@@ -30,6 +30,10 @@ debiansync.10: ; ./ubuntu-docker-mirror.py debian:10 sync -v
 debianrepo.10: ; ./ubuntu-docker-mirror.py debian:10 repo -v 
 debiandisk.10: ; ./ubuntu-docker-mirror.py debian:10 disk -v 
 debiandropdisk.10: ; ./ubuntu-docker-mirror.py debian:10 dropdisk -v 
+debiansync.12: ; ./ubuntu-docker-mirror.py debian:12 sync -v 
+debianrepo.12: ; ./ubuntu-docker-mirror.py debian:12 repo -v 
+debiandisk.12: ; ./ubuntu-docker-mirror.py debian:12 disk -v 
+debiandropdisk.12: ; ./ubuntu-docker-mirror.py debian:12 dropdisk -v 
 
 
 

@@ -12,7 +12,7 @@ __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7112"
 
-from typing import Optional, Dict, List, Union
+from typing import Optional, Dict, List, Union, Any
 from collections import OrderedDict
 import os
 import os.path as path
@@ -99,6 +99,17 @@ skipdirs = [
 skipfiles = [
     "*.src.rpm", "*.29041k"
 ]
+
+def _iterable(x: Any) -> bool:
+    return hasattr(x, "__iter__")
+
+def opensuse_dists(distro: str = NIX, leap = NIX) -> List[str]:  # pylint: disable=unused-argument
+    return ["distribution", "update"]
+
+def opensuse_distros(distro: str = NIX, leap = NIX) -> List[str]:  # pylint: disable=unused-argument
+    return ["opensuse"]
+
+######################################################
 
 def opensuse_sync(*, variant:str = NIX) -> None:
     opensuse_dir(variant=variant)
@@ -505,9 +516,9 @@ def _main(args: List[str]) -> int:
                     print(" %i2" % funcresult)
                     if funcresult < 0:
                         return -funcresult
-                elif isinstance(funcresult, list):
+                elif _iterable(funcresult):
                     for item in funcresult:
-                        print("%s", item)
+                        print(str(item))
             else: # pragma: nocover
                 logg.error("%s is not callable", funcname)
                 return 1

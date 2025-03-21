@@ -13,7 +13,7 @@ __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7112"
 
-from typing import Optional, Dict, List, Tuple, Union
+from typing import Optional, Dict, List, Tuple, Union, Any, Set
 from collections import OrderedDict
 import os
 import os.path as path
@@ -158,6 +158,9 @@ BASEVERSIONS["8.5.2111"] = "8.4.2105"  # image:centos/base
 
 #############################################################################
 
+def _iterable(x: Any) -> bool:
+    return hasattr(x, "__iter__")
+
 def major(version: str) -> str:
     version = version or CENTOS
     if len(version) == 1 or version[1] in ".-":
@@ -170,6 +173,45 @@ def majorminor(version: str) -> str:
     if len(version) == 4 or version[4] in ".-":
         return version[:4]
     return version[:3]
+
+def centos_dists(distro: str = NIX, centos: str = NIX) -> List[str]:
+    distro = distro or DISTRO
+    centos = centos or CENTOS
+    if distro in ["epel"]:
+        if centos.startswith("9"):
+            return []
+        elif centos.startswith("8"):
+            return ["Everything", "Modular"]
+        else:
+            return ["Everything"]
+    else:
+        values: Set[str] = set()
+        if centos.startswith("6"):
+            for layer in SUBDIRS6:
+                for subdir in SUBDIRS6[layer]:
+                    values.add(subdir)
+        elif centos.startswith("7"):
+            for layer in SUBDIRS7:
+                for subdir in SUBDIRS7[layer]:
+                    values.add(subdir)
+        elif centos.startswith("8"):
+            for layer in SUBDIRS8:
+                for subdir in SUBDIRS8[layer]:
+                    values.add(subdir)
+        else:
+            for layer in SUBDIRS9:
+                for subdir in SUBDIRS9[layer]:
+                    values.add(subdir)
+        return list(sorted(values))
+
+def centos_distros(distro: str = NIX, centos: str = NIX) -> List[str]:
+    distro = distro or DISTRO
+    ubuntu = centos or CENTOS
+    epel = EPEL
+    return [distro, epel]
+
+#############################################################################
+
 
 def centos_release(distro: str = NIX, centos: str = NIX) -> str:
     """ this is a short version for the repo image"""
@@ -1099,9 +1141,9 @@ def _main(args: List[str]) -> int:
                     print(" %i2" % funcresult)
                     if funcresult < 0:
                         return -funcresult
-                elif isinstance(funcresult, list):
+                elif _iterable(funcresult):
                     for item in funcresult:
-                        print("%s", item)
+                        print(str(item))
             else: # pragma: nocover
                 logg.error("%s is not callable", funcname)
                 return 1

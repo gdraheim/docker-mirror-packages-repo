@@ -688,7 +688,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         pkglist = PKGLIST
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
-        cmd = F"{cover} {script} {ver} baseimage {VV}"
+        cmd = F"{cover} {script} {distro}:{ver} baseimage {VV}"
         run = runs(cmd)
         baseimage = run.stdout.strip()
         logg.debug("baseimage %s", baseimage)
@@ -777,7 +777,8 @@ class UbuntuMirrorTest(unittest.TestCase):
         cover = self.cover()
         script = SCRIPT
         mirror = MIRROR
-        pkgrepo = F"{PKGREPO} -o APT::Get::AllowUnauthenticated=true -o Acquire::AllowInsecureRepositories=true"
+        # pkgrepo = F"{PKGREPO} -o APT::Get::AllowUnauthenticated=true -o Acquire::AllowInsecureRepositories=true"
+        pkgrepo = F"{PKGREPO} -o APT::Get::AllowUnauthenticated=true"
         pkglist = PKGLIST
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
