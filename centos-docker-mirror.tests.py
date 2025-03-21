@@ -295,7 +295,7 @@ class CentosMirrorTest(unittest.TestCase):
             calls(cmd)
         return images
     #
-    def test_70100(self) -> None:
+    def test_70010(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} --help"
@@ -303,7 +303,7 @@ class CentosMirrorTest(unittest.TestCase):
         logg.debug("out: %s", out)
         self.assertIn("imagesrepo=PREFIX", out)
         self.coverage()
-    def test_70101(self) -> None:
+    def test_70011(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} commands"
@@ -315,7 +315,7 @@ class CentosMirrorTest(unittest.TestCase):
         self.assertIn("|datadir|", out)
         self.assertIn("|version", out)
         self.coverage()
-    def test_70108(self) -> None:
+    def test_70018(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} badcommand"
@@ -323,14 +323,14 @@ class CentosMirrorTest(unittest.TestCase):
         logg.debug("out: %s", run.out)
         self.assertEqual(1, run.ret)
         self.coverage()
-    def test_70110(self) -> None:
+    def test_70020(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} datadir"
         out = sh(cmd)
         logg.debug("out: %s", out)
         self.coverage()
-    def test_70111(self) -> None:
+    def test_70021(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} scripts"
@@ -346,8 +346,8 @@ class CentosMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
         run = runs(cmd)
-        have = run.stdout.strip()
-        errs = run.stderr.strip()
+        have = run.out
+        errs = run.err
         logg.debug("out: %s", have)
         self.assertEqual(version, have)
         self.assertIn("is not a known os version", errs)
@@ -360,10 +360,26 @@ class CentosMirrorTest(unittest.TestCase):
         script = SCRIPT
         cmd = F"{cover} {script} {ver} version"
         run = runs(cmd)
-        have = run.stdout.strip()
-        errs = run.stderr.strip()
-        logg.debug("out: %s", run.stdout)
+        have = run.out
+        errs = run.err
+        logg.debug("out: %s", have)
         self.assertEqual(version, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["centos", "epel"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distdirs"
+        run = runs(cmd)
+        want = ['centosplus', 'extras', 'os', 'sclo', 'updates']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
         self.assertEqual("", errs)
         self.coverage()
     def test_70177(self) -> None:
@@ -379,6 +395,22 @@ class CentosMirrorTest(unittest.TestCase):
         logg.debug("out: %s", have)
         self.assertEqual(version, have)
         self.assertIn("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["centos", "epel"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distdirs"
+        run = runs(cmd)
+        want = ['centosplus', 'extras', 'os', 'sclo', 'updates']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_70183(self) -> None:
         _distro, ver = self.testver()
@@ -393,6 +425,22 @@ class CentosMirrorTest(unittest.TestCase):
         logg.debug("out: %s", have)
         self.assertEqual(version, have)
         self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["centos", "epel"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distdirs"
+        run = runs(cmd)
+        want = ['AppStream', 'BaseOS', 'PowerTools', 'centosplus', 'extras']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_70191(self) -> None:
         _distro, ver = self.testver()
@@ -406,6 +454,22 @@ class CentosMirrorTest(unittest.TestCase):
         errs = run.stderr.strip()
         logg.debug("out: %s", have)
         self.assertEqual(version, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["almalinux", "epel"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distdirs"
+        run = runs(cmd)
+        want = ['AppStream', 'BaseOS', 'CRB', 'extras', 'plus']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
         self.assertEqual("", errs)
         self.coverage()
     def test_70196(self) -> None:

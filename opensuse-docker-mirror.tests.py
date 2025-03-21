@@ -267,7 +267,7 @@ class OpensuseMirrorTest(unittest.TestCase):
             calls(cmd)
         return images
     #
-    def test_50100(self) -> None:
+    def test_50010(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} --help"
@@ -275,7 +275,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.debug("out: %s", out)
         self.assertIn("imagesrepo=PREFIX", out)
         self.coverage()
-    def test_50101(self) -> None:
+    def test_50011(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} commands"
@@ -287,7 +287,7 @@ class OpensuseMirrorTest(unittest.TestCase):
         self.assertIn("|datadir|", out)
         self.assertIn("|version", out)
         self.coverage()
-    def test_50108(self) -> None:
+    def test_50018(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} badcommand"
@@ -295,14 +295,14 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.debug("out: %s", run.out)
         self.assertEqual(1, run.ret)
         self.coverage()
-    def test_50110(self) -> None:
+    def test_50020(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} datadir"
         out = sh(cmd)
         logg.debug("out: %s", out)
         self.coverage()
-    def test_50111(self) -> None:
+    def test_50021(self) -> None:
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} scripts"
@@ -321,6 +321,22 @@ class OpensuseMirrorTest(unittest.TestCase):
         errs = run.stderr.strip()
         logg.debug("out: %s", run.stdout)
         self.assertEqual(ver, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["opensuse"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distdirs"
+        run = runs(cmd)
+        want = ['distribution', 'update']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
         self.assertEqual("", errs)
         self.coverage()
     def test_50140(self) -> None:
@@ -348,6 +364,22 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.debug("out: %s", have)
         self.assertEqual(ver, have)
         self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["opensuse"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distdirs"
+        run = runs(cmd)
+        want = ['distribution', 'update']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50143(self) -> None:
         _distro, ver = self.testver()
@@ -360,6 +392,22 @@ class OpensuseMirrorTest(unittest.TestCase):
         errs = run.stderr.strip()
         logg.debug("out: %s", have)
         self.assertEqual(ver, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["opensuse"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distdirs"
+        run = runs(cmd)
+        want = ['distribution', 'update']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
         self.assertEqual("", errs)
         self.coverage()
     def test_50151(self) -> None:
@@ -374,6 +422,22 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.debug("out: %s", have)
         self.assertEqual(ver, have)
         self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["opensuse"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distdirs"
+        run = runs(cmd)
+        want = ['distribution', 'update']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50152(self) -> None:
         _distro, ver = self.testver()
@@ -386,6 +450,22 @@ class OpensuseMirrorTest(unittest.TestCase):
         errs = run.stderr.strip()
         logg.debug("out: %s", have)
         self.assertEqual(ver, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["opensuse"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distdirs"
+        run = runs(cmd)
+        want = ['distribution', 'update']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
         self.assertEqual("", errs)
         self.coverage()
     def test_50153(self) -> None:
@@ -400,6 +480,22 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.debug("out: %s", have)
         self.assertEqual(ver, have)
         self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["opensuse"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distdirs"
+        run = runs(cmd)
+        want = ['distribution', 'update']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50154(self) -> None:
         _distro, ver = self.testver()
@@ -412,6 +508,22 @@ class OpensuseMirrorTest(unittest.TestCase):
         errs = run.stderr.strip()
         logg.debug("out: %s", have)
         self.assertEqual(ver, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["opensuse"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distdirs"
+        run = runs(cmd)
+        want = ['distribution', 'update']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
         self.assertEqual("", errs)
         self.coverage()
     def test_50155(self) -> None:
@@ -426,6 +538,22 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.debug("out: %s", have)
         self.assertEqual(ver, have)
         self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["opensuse"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distdirs"
+        run = runs(cmd)
+        want = ['distribution', 'update']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
         self.coverage()
     def test_50156(self) -> None:
         _distro, ver = self.testver()
@@ -438,6 +566,22 @@ class OpensuseMirrorTest(unittest.TestCase):
         errs = run.stderr.strip()
         logg.debug("out: %s", have)
         self.assertEqual(ver, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["opensuse"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distdirs"
+        run = runs(cmd)
+        want = ['distribution', 'update']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
         self.assertEqual("", errs)
         self.coverage()
     def test_50159(self) -> None:
@@ -452,6 +596,22 @@ class OpensuseMirrorTest(unittest.TestCase):
         logg.debug("out: %s", have)
         self.assertEqual(ver, have)
         self.assertIn("is not a known os version", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["opensuse"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        # self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distdirs"
+        run = runs(cmd)
+        want = ['distribution', 'update']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        # self.assertEqual("", errs)
         self.coverage()
     def test_50160(self) -> None:
         _distro, ver = self.testver()
@@ -464,6 +624,22 @@ class OpensuseMirrorTest(unittest.TestCase):
         errs = run.stderr.strip()
         logg.debug("out: %s", have)
         self.assertEqual(ver, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distros"
+        run = runs(cmd)
+        want = ["opensuse"]
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
+        self.assertEqual("", errs)
+        cmd = F"{cover} {script} {ver} distdirs"
+        run = runs(cmd)
+        want = ['distribution', 'update']
+        have = run.out.splitlines()
+        errs = run.err
+        logg.debug("out: %s", have)
+        self.assertEqual(want, have)
         self.assertEqual("", errs)
         self.coverage()
     def test_50193(self) -> None:
