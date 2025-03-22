@@ -349,23 +349,26 @@ def _sync_dist_main(distro: str, ubuntu: str, dist: str, main: str, nopackages: 
         sh___(F"{rsync} -rv {mirror}/dists/{distdir}/{main}/binary-{arch} {maindir} {options} --copy-links")
     for source in NOARCHS:
         sh___(F"{rsync} -rv {mirror}/dists/{distdir}/{main}/{source}      {maindir} {options} --copy-links")
-    if distro in ["debian"]:
-        gzlist: List[str] = []
-        for arch in ARCHS:
-            packages_gz = F"{maindir}/binary-{arch}/Packages.gz"
-            packages_diff = F"{maindir}/binary-{arch}/Packages.diff"
-            if os.path.isfile(packages_gz):
-                gzlist.append(packages_gz)
-            elif os.path.isdir(packages_diff):
-                for gzname in os.listdir(packages_diff):
-                    if gzname.endswith(".gz"):
-                        gzlist.append(os.path.join(packages_diff, gzname))
-    else:
-        gzlist = [F"{maindir}/binary-{arch}/Packages.gz" for arch in ARCHS ]
+    gzlist: List[str] = []
+    for arch in ARCHS:
+        packages_gz = F"{maindir}/binary-{arch}/Packages.gz"
+        packages_xz = F"{maindir}/binary-{arch}/Packages.xz"
+        if os.path.isfile(packages_gz):
+            gzlist.append(packages_gz)
+        elif os.path.isfile(packages_xz):
+            gzlist.append(packages_xz) # buster-updates only has *.xz
+        else:
+            logg.warning("Packages.gz missing: %s & %s", packages_gz, packages_xz)
     cache = ubuntu_cache()
     tmpfile = F"{cache}/Packages.{dist}.{main}.tmp"
     if outdated(tmpfile, *gzlist):
-        packages = "".join([output(F"zcat {gz}") for gz in gzlist])
+        packages = ""
+        for gz in gzlist:
+            if gz.endswith(".xz"):
+                packages += output(F"xzcat {gz}")
+            else:
+                packages += output(F"zcat {gz}")
+            packages += "\n"
         if "--dry-run" in rsync:
             packages = DUMMYPACKAGES # should be removed from sync list below
         filenames, syncing = 0, 0
