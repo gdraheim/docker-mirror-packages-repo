@@ -123,18 +123,25 @@ untag:
 # ..............................................
 
 LOCAL=--local
+TESTING=-vv
 
 K=
-test_1%: ; ./docker_mirror.tests.py $@ -vv $V $K 
-test_2%: ; ./docker_mirror.tests.py $@ -vv $V $K 
-test_3%: ; ./docker_mirror.tests.py $@ -vv $V $K 
-test_5%: ; ./opensuse-docker-mirror.tests.py $@ -vv $V $K 
-test_6%: ; ./ubuntu-docker-mirror.tests.py $@ -vv $V $K 
-test_7%: ; ./centos-docker-mirror.tests.py $@ -vv $V $K 
-test_9%: ; ./docker_image.tests.py $@ -vv $V $K $(LOCAL)
-m_%: ; ./docker_mirror.tests.py $@ -vv $V $K 
-o_%: ; ./opensuse-docker-mirror.tests.py $@ -vv $V $K 
-images: ; ./docker_image.tests.py -vv $V $K $(LOCAL)
+test_1%: ; ./docker_mirror.tests.py $@ $(TESTING) $V $K 
+test_2%: ; ./docker_mirror.tests.py $@ $(TESTING) $V $K 
+test_3%: ; ./docker_mirror.tests.py $@ $(TESTING) $V $K 
+test_5%: ; ./opensuse-docker-mirror.tests.py $@ $(TESTING) $V $K 
+test_6%: ; ./ubuntu-docker-mirror.tests.py $@ $(TESTING) $V $K 
+test_7%: ; ./centos-docker-mirror.tests.py $@ $(TESTING) $V $K 
+test_9%: ; ./docker_image.tests.py $@ $(TESTING) $V $K $(LOCAL)
+m_%: ; ./docker_mirror.tests.py $@ $(TESTING) $V $K 
+o_%: ; ./opensuse-docker-mirror.tests.py $@ $(TESTING) $V $K 
+images: ; ./docker_image.tests.py $(TESTING) $V $K $(LOCAL)
+
+RETESTING=$(TESTING) --skipfullimage --sleep=300
+st_5%: ; ./opensuse-docker-mirror.tests.py te$@ $(RETESTING) $V $K
+st_6%: ; ./ubuntu-docker-mirror.tests.py te$@ $(RETESTING) $V $K
+st_7%: ; ./centos-docker-mirror.tests.py te$@ $(RETESTING) $V $K
+
 
 dry precheck: ; ./docker_mirror.tests.py -vv $V $K --dryrun
 check: mm oo cc uu
