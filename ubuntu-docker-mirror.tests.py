@@ -260,18 +260,22 @@ class UbuntuMirrorTest(unittest.TestCase):
         return images
     def testcontainer(self, testname: str = NIX) -> str:
         name = testname or self.caller_testname()
-        return F"mirror-test-{name}"
+        imagestestrepo = IMAGESTESTREPO
+        testcontainer = imagestestrepo.split("/")[-1] if "/" in imagestestrepo else imagestestrepo
+        return testcontainer + "-" + name
     def rm_container(self, testname: str = NIX) -> List[str]: # pylint: disable=unused-argument
         docker = DOCKER
-        pat = "mirror-test-"
-        images = self.containerlist(pat) + self.repocontainer()
+        images = IMAGESTESTREPO
+        imagestestrepo = IMAGESTESTREPO
+        testcontainer = imagestestrepo.split("/")[-1] if "/" in imagestestrepo else imagestestrepo
+        images = self.containerlist(testcontainer + "-") + self.repocontainer()
         cmd = F"{docker} stop"
         if images:
             for image in images:
                 cmd += F" {image}"
             calls(cmd)
         time.sleep(1)
-        images = self.containerlist(pat) + self.repocontainer()
+        images = self.containerlist(testcontainer + "-") + self.repocontainer()
         cmd = F"{docker} rm -f"
         if images:
             for image in images:
@@ -382,10 +386,10 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.coverage()
     def test_60130(self) -> None:
         distro, ver = self.testver()
-        self.assertEqual(ver, "13.10")
+        self.assertEqual(ver, "13.0")
         cover = self.cover()
         script = SCRIPT
-        cmd = F"{cover} {script} {ver} version"
+        cmd = F"{cover} {script} {ver} version" # now debian
         run = runs(cmd)
         have = run.stdout.strip()
         errs = run.stderr.strip()
@@ -564,7 +568,7 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.coverage()
     def test_60824(self) -> None:
         ver2 = "24"
-        ver = "24.04"
+        ver = "24.10"
         cover = self.cover()
         script = SCRIPT
         cmd = F"{cover} {script} {ver2} version"
@@ -626,6 +630,10 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.assertNotEqual(repo, have) # repodir not a fallback
         self.coverage()
         self.rm_testdir()
+    def test_61010(self) -> None:
+        self.check_dir(self.testname())
+    def test_61012(self) -> None:
+        self.check_dir(self.testname())
     def test_61164(self) -> None:
         self.check_dir(self.testname())
     def test_61184(self) -> None:
@@ -762,6 +770,10 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.make_repo_test(self.testname())
     def test_65244(self) -> None:
         self.make_repo_test(self.testname())
+    def test_66010(self) -> None:
+        self.make_repo_test(self.testname(), "--contrib")
+    def test_66012(self) -> None:
+        self.make_repo_test(self.testname(), "--contrib")
     def test_66184(self) -> None:
         self.make_repo_test(self.testname(), "--universe")
     def test_66204(self) -> None:
@@ -812,10 +824,12 @@ class UbuntuMirrorTest(unittest.TestCase):
         ret = calls(cmd)
         logg.info("install clean: %s", ret)
         self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} {pkgrepo} update"
+        # https://manpages.debian.org/stretch/apt/apt.conf.5.de.html
+        debugs="-oDebug::Acquire:http=1 -oDebug::pkgAcquire=1" # pylint: disable=unused-variable
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} update {debugs}"
         ret = calls(cmd)
         logg.info("install refresh: %s", ret)
-        cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y python3-lxml"
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} install {debugs} -y python3-lxml"
         ret = calls(cmd)
         logg.info("install package: %s", ret)
         self.assertEqual(0, ret)
@@ -847,6 +861,8 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.make_disk_cleanup()
     def test_67010(self) -> None:
         self.make_disk_test(self.testname())
+    def test_67012(self) -> None:
+        self.make_disk_test(self.testname())
     def test_67184(self) -> None:
         self.make_disk_test(self.testname())
     def test_67204(self) -> None:
@@ -855,6 +871,10 @@ class UbuntuMirrorTest(unittest.TestCase):
         self.make_disk_test(self.testname())
     def test_67244(self) -> None:
         self.make_disk_test(self.testname())
+    def test_68010(self) -> None:
+        self.make_disk_test(self.testname(), "--contrib")
+    def test_68012(self) -> None:
+        self.make_disk_test(self.testname(), "--contrib")
     def test_68184(self) -> None:
         self.make_disk_test(self.testname(), "--universe")
     def test_68204(self) -> None:
