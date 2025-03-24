@@ -240,11 +240,12 @@ def ubuntu_sync() -> None:
         ubuntu_sync_dist_main(DIST[UBUNTU] + "-updates", restricted)
         ubuntu_sync_dist_main(DIST[UBUNTU] + "-backports", restricted)
         ubuntu_sync_dist_main(DIST[UBUNTU] + "-security", restricted)
-        restricted = "muiltiverse"
-        ubuntu_sync_dist_main(DIST[UBUNTU], restricted)
-        ubuntu_sync_dist_main(DIST[UBUNTU] + "-updates", restricted)
-        ubuntu_sync_dist_main(DIST[UBUNTU] + "-backports", restricted)
-        ubuntu_sync_dist_main(DIST[UBUNTU] + "-security", restricted)
+        if "multiverse" not in SKIPREPOS or "multiverse" in ONLYREPOS:
+            restricted = "muiltiverse"
+            ubuntu_sync_dist_main(DIST[UBUNTU], restricted)
+            ubuntu_sync_dist_main(DIST[UBUNTU] + "-updates", restricted)
+            ubuntu_sync_dist_main(DIST[UBUNTU] + "-backports", restricted)
+            ubuntu_sync_dist_main(DIST[UBUNTU] + "-security", restricted)
     elif DISTRO in ["debian"]:
         # release files:
         ubuntu_sync_base(DEBIANDIST[UBUNTU])
@@ -411,27 +412,24 @@ def ubuntu_base(distro: str = NIX, ubuntu: str = NIX) -> str:
 def ubuntu_repo(distro: str = NIX, ubuntu: str = NIX) -> str:
     distro = distro or DISTRO
     ubuntu = ubuntu or UBUNTU
+    allrepos = ubuntu_allrepos(distro, ubuntu)
     repos = []
-    if distro in ["debian"]:
-        for repo in DEBIANREPOS:
-            if ONLYREPOS and repo not in ONLYREPOS:
-                continue
-            if repo not in SKIPREPOS:
-                repos += [ repo ]
-    else:
-        for repo in DEBIANREPOS:
-            if ONLYREPOS and repo not in ONLYREPOS:
-                continue
-            if repo not in SKIPREPOS:
-                repos += [ repo ]
+    for repo in allrepos:
+        if ONLYREPOS and repo not in ONLYREPOS:
+            continue
+        if repo not in SKIPREPOS:
+            repos += [ repo ]
     if not repos:
         logg.warning("no %s repo layers selected with ONLYREPOS %s SKIPREPOS %s", distro, ONLYREPOS, SKIPREPOS)
-    return repo_image(distro, ubuntu, repos)
-def repo_image(distro: str = NIX, ubuntu: str = NIX, repos: Optional[List[str]] = None) -> str:
+    else:
+        logg.info("image repo layers = %s", repos)
+    return repo_image(distro, ubuntu, repos, allrepos)
+def repo_image(distro: str = NIX, ubuntu: str = NIX, repos: Optional[List[str]] = None, allrepos: Optional[List[str]] = None) -> str:
     docker = DOCKER
     distro = distro or DISTRO
     ubuntu = ubuntu or UBUNTU
-    repos = repos if repos is not None else ubuntu_allrepos(distro, ubuntu)
+    allrepos = allrepos if allrepos is not None else ubuntu_allrepos(distro, ubuntu)
+    repos = repos if repos is not None else allrepos
     # repodir = REPODIR
     baseimage = ubuntu_baseimage(distro, ubuntu)
     imagesrepo = IMAGESREPO
@@ -461,15 +459,25 @@ def repo_image(distro: str = NIX, ubuntu: str = NIX, repos: Optional[List[str]] 
                 sh___(F"{docker} exec {cname} bash -c 'test -d {relsdir_srv} || mkdir -vp {relsdir_srv}'")
                 for releasefile in releasefiles:
                     sh___(F"{docker} cp {releasefile} {cname}:{relsdir_srv}/")
-            for main in repos:
+            for main in allrepos:
                 for arch in ARCHS:
                     packdir = F"{relsdir}/{main}/binary-{arch}"
-                    if os.path.isfile(F"{packdir}/Packages.gz"):
+                    packagesfiles = []
+                    for packages_gz in ["Packages.gz", "Packages.xz"]:
+                        packagesfile = os.path.join(packdir, packages_gz)
+                        if os.path.isfile(packagesfile):
+                            packagesfiles += [ packagesfile ]
+                    if packagesfiles:
                         sh___(F"{docker} exec {cname} bash -c 'test -d {relsdir_srv}/{main} || mkdir -vp {relsdir_srv}/{main}'")
                         sh___(F"{docker} cp {packdir} {cname}:/{relsdir_srv}/{main}/")
                 for source in NOARCHS:
                     packdir = F"{relsdir}/{source}"
-                    if os.path.isfile(F"{packdir}/Packages.gz"):
+                    packagesfiles = []
+                    for packages_gz in ["Packages.gz", "Packages.xz"]:
+                        packagesfile = os.path.join(packdir, packages_gz)
+                        if os.path.isfile(packagesfile):
+                            packagesfiles += [ packagesfile ]
+                    if packagesfiles:
                         sh___(F"{docker} exec {cname} bash -c 'test -d {relsdir_srv}/{main} || mkdir -vp {relsdir_srv}/{main}'")
                         sh___(F"{docker} cp {packdir} {cname}:/{relsdir_srv}/{main}/")
     sh___(F"{docker} exec {cname} apt-get update")
