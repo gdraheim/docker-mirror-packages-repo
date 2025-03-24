@@ -882,7 +882,7 @@ class DockerMirrorPackagesRepo:
             notfound = [mirror for mirror, addr in mirrors.items() if addr is None]
             if notfound:
                 logg.error("   no docker mirror image for %s", (" ".join(notfound)))
-                sys.exit(1)
+                sys.exit(os.EX_OSFILE)
         self.wait_mirrors(mirrors)
         if ADDHOSTS:
             return " ".join(self.add_hosts(image, mirrors))
@@ -1054,4 +1054,4 @@ if __name__ == "__main__":
         print(repo_scripts())
     else:
         print("unknown command", opt.command)
-        sys.exit(1)
+        sys.exit(os.EX_UNAVAILABLE)
