@@ -20,7 +20,7 @@ import socket
 import time
 import configparser
 
-if sys.version[0] == '2': # pragma: nocover
+if sys.version_info < (3,0): # pragma: nocover
     range = xrange # pylint: disable=redefined-builtin, used-before-assignment, undefined-variable
     stringtypes = basestring # pylint: disable=undefined-variable
 else:
@@ -689,7 +689,7 @@ class DockerMirrorPackagesRepo:
         for sec in config.sections():
             if sec.startswith(rep+":"):
                 cname = sec.replace(":","-")
-                mirror = DockerMirror(cname, config[sec]["image"], hosts, config[sec]["mount"])
+                mirror = DockerMirror(cname, config[sec]["image"], list(hosts), config[sec]["mount"])
                 logg.info("found epel disk %s", mirror)
                 found[sec] = mirror
         return found
@@ -876,6 +876,9 @@ class DockerMirrorPackagesRepo:
     def starts(self, image=None):
         if not NODETECT:
             image = self.detect(image)
+        if not image:
+            logg.error("no image provided")
+            sys.exit(os.EX_USAGE)
         logg.debug("starts image = %s", image)
         mirrors = self.start_containers(image)
         if LOCAL:
@@ -891,6 +894,9 @@ class DockerMirrorPackagesRepo:
     def stops(self, image=None):
         if not NODETECT:
             image = self.detect(image)
+        if not image:
+            logg.error("no image provided")
+            sys.exit(os.EX_USAGE)
         mirrors = self.stop_containers(image)
         if ADDHOSTS:
             names = sorted(mirrors.keys())
