@@ -60,6 +60,10 @@ Tested repos are
 | mirror-packages/ubuntu-repo/universe:16.04	| 186GB
 | mirror-packages/ubuntu-repo/restricted:16.04	| 45.4GB
 | mirror-packages/ubuntu-repo/main:16.04	| 44.4GB
+| mirror-packages/almalinux-repo/plus:9.5	| 71.3GB
+| mirror-packages/almalinux-repo/main:9.5	| 35.7GB
+| mirror-packages/almalinux-repo/plus:9.4	| 46.5GB
+| mirror-packages/almalinux-repo/main:9.4	| 23.5GB
 | mirror-packages/almalinux-repo/plus:9.4	| 46.4GB
 | mirror-packages/almalinux-repo/main:9.4	| 23.4GB
 | mirror-packages/almalinux-repo/plus:9.3	| 59.6GB

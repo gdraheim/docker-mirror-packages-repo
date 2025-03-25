@@ -40,7 +40,7 @@ centosbash:
 almapull.9.1: ; $(MAKE) centospull CENTOS=$(ALMALINUX) DISTRO=almalinux
 
 almasync.9.5: ; $(MAKE) centossync CENTOS=9.5 DISTRO=almalinux
-almarepo.9.5: ; $(MAKE) centosrepo CENTOS=9.4 DISTRO=almalinux
+almarepo.9.5: ; $(MAKE) centosrepo CENTOS=9.5 DISTRO=almalinux
 almasync.9.4: ; $(MAKE) centossync CENTOS=9.4 DISTRO=almalinux
 almarepo.9.4: ; $(MAKE) centosrepo CENTOS=9.4 DISTRO=almalinux
 almasync.9.3: ; $(MAKE) centossync CENTOS=9.3 DISTRO=almalinux
