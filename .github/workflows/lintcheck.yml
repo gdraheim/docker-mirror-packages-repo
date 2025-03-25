@@ -2,9 +2,9 @@ name: pylint check
 
 on:
   push:
-    branches: [ develop, main ]
+    branches: [ master ]
   pull_request:
-    branches: [ develop, main ]
+    branches: [ master ]
   workflow_dispatch:
 
 jobs:
