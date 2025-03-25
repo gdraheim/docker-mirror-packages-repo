@@ -33,13 +33,13 @@ BASEDEF=os.environ.get("DOCKER_IMAGE_BASE", os.environ.get("DOCKER_IMAGE_FROM", 
 DOCKERDEF = os.environ.get("DOCKER_EXE", os.environ.get("DOCKER_BIN", "docker"))
 PYTHONDEF = os.environ.get("DOCKER_PYTHON", os.environ.get("DOCKER_PYTHON3", "python3"))
 MIRRORDEF=os.environ.get("DOCKER_MIRROR_PY", os.environ.get("DOCKER_MIRROR", _mirror))
-INTO = [] if not INTODEF else [INTODEF]
+INTO = INTODEF
 BASE = BASEDEF
 PYTHON = PYTHONDEF
 MIRROR = MIRRORDEF
 DOCKER = DOCKERDEF
 DOCKERFILE = FILEDEF
-ADDHOST=[]
+ADDHOST: List[str] = []
 ADDEPEL=0
 UPDATES=0
 UNIVERSE=0
@@ -93,19 +93,19 @@ def q_str(part: Union[str, int, None]) -> str:
         return str(part)
     return "'%s'" % part  # pylint: disable=consider-using-f-string
 
-def package_tool(distro: str = NIX):
+def package_tool(distro: str = NIX) -> str:
     if "centos" in distro or "almalinux" in distro or "rhel" in distro:
         return "yum --setopt=repo_gpgcheck=false --setopt=sslverify=false"
     if "opensuse" in distro:
         return "zypper --no-gpg-checks --no-refresh"
     return "apt-get -o Acquire::AllowInsecureRepositories=true"
-def package_refresh(distro: str = NIX):
+def package_refresh(distro: str = NIX) -> str:
     if "centos" in distro or "almalinux" in distro or "rhel" in distro:
         return "yum --setopt=repo_gpgcheck=false --setopt=sslverify=false check-update"
     if "opensuse" in distro:
         return "zypper --no-gpg-checks refresh"
     return "apt-get -o Acquire::AllowInsecureRepositories=true update"
-def package_search(distro: str = NIX):
+def package_search(distro: str = NIX) -> str:
     if "centos" in distro or "almalinux" in distro or "rhel" in distro:
         return "yum --setopt=repo_gpgcheck=false --setopt=sslverify=false search"
     if "opensuse" in distro:
@@ -398,7 +398,7 @@ if __name__ == "__main__":
     cmdline.add_option("-l", "--local", "--localmirrors", action="count", default=0, help="fail if local mirror not found [%default]")
     cmdline.add_option("-C", "--chdir", metavar="PATH", default="", help="change directory before building [%default]")
     cmdline.add_option("-b", "--base", "--from", metavar="N", default=BASE, help="FROM %default (or CENTOS)")
-    cmdline.add_option("-t", "--into", "--tag", metavar="N", action="append", default=INTO, help="INTO %default tags")
+    cmdline.add_option("-t", "--into", "--tag", metavar="N", default=INTO, help="INTO %default tag")
     cmdline.add_option("-f", "--file", metavar="M", default=DOCKERFILE, help="set [%default] name for BUILD")
     opt, cmdline_args = cmdline.parse_args()
     logging.basicConfig(level = logging.WARNING - opt.verbose * 10 + opt.quiet * 10)

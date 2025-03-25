@@ -141,7 +141,7 @@ DEBIANDATE["12.9"] = "202501"
 DEBIANDATE["12.10"] = "202503"
 DEBIANDATE["13.1"] = "202506" # TODO: in the future
 
-ONLYREPOS = []
+ONLYREPOS: List[str] = []
 SKIPREPOS = ["universe", "multiverse", "contrib", "non-free"]
 UBUNTUREPOS = ["main", "restricted", "universe", "multiverse"]
 DEBIANREPOS = ["main", "non-free", "contrib"]
@@ -173,7 +173,7 @@ BASEVERSION["19.04"] = "18.04"
 BASEVERSION["18.10"] = "18.04"
 BASEVERSION["16.10"] = "16.04"
 
-def _iterable(x: Any) -> bool:
+def _iterable(x: Any) -> bool: # type: ignore[misc]
     return hasattr(x, "__iter__")
 
 def ubuntu_allrepos(distro: str = NIX, ubuntu: str = NIX) -> List[str]:
@@ -622,7 +622,7 @@ def ubuntu_mainrepo(distro: str = NIX, ubuntu: str = NIX, imagesrepo: str = NIX)
     base = BASELAYER
     return F"{imagesrepo}/{distro}-repo/{base}:{version}"
 
-def ubuntu_local(distro: str = NIX, centos: str = NIX) -> int:
+def ubuntu_local(distro: str = NIX, centos: str = NIX) -> str:
     """ show ini section for diskpath and --universe """
     mainsection = ubuntu_baseimage(distro, centos)
     mainbaseimage = ubuntu_baserepo(distro, centos)
@@ -751,6 +751,7 @@ def ubuntu_version(distro: str = NIX, ubuntu: str = NIX) -> str:
                 if dist == ubuntu:
                     logg.info("UBUNTU %s -> %s", dist, version)
                     return version
+            return NIX  # unreachable
         elif ubuntu not in DIST:
             logg.warning("UBUNTU=%s is not a known os version", ubuntu)
             return ubuntu

@@ -158,7 +158,7 @@ BASEVERSIONS["8.5.2111"] = "8.4.2105"  # image:centos/base
 
 #############################################################################
 
-def _iterable(x: Any) -> bool:
+def _iterable(x: Any) -> bool: # type: ignore[misc]
     return hasattr(x, "__iter__")
 
 def major(version: str) -> str:
@@ -895,7 +895,7 @@ def centos_mainrepo(distro: str = NIX, centos: str = NIX, imagesrepo: str = NIX)
     base = BASELAYER
     return F"{imagesrepo}/{distro}-repo/{base}:{version}"
 
-def centos_local(distro: str = NIX, centos: str = NIX) -> int:
+def centos_local(distro: str = NIX, centos: str = NIX) -> str:
     """ show ini section for diskpath and --epel """
     mainsection = centos_baseimage(distro, centos)
     mainbaseimage = centos_baserepo(distro, centos)

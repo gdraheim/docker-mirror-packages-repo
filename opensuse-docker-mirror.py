@@ -100,13 +100,13 @@ skipfiles = [
     "*.src.rpm", "*.29041k"
 ]
 
-def _iterable(x: Any) -> bool:
+def _iterable(x: Any) -> bool: # type: ignore[misc]
     return hasattr(x, "__iter__")
 
-def opensuse_distdirs(distro: str = NIX, leap = NIX) -> List[str]:  # pylint: disable=unused-argument
+def opensuse_distdirs(distro: str = NIX, leap: str = NIX) -> List[str]:  # pylint: disable=unused-argument
     return ["distribution", "update"]
 
-def opensuse_distros(distro: str = NIX, leap = NIX) -> List[str]:  # pylint: disable=unused-argument
+def opensuse_distros(distro: str = NIX, leap: str = NIX) -> List[str]:  # pylint: disable=unused-argument
     return ["opensuse"]
 
 ######################################################
@@ -310,7 +310,7 @@ def opensuse_mainrepo(distro: str = NIX, leap: str = NIX, imagesrepo: str = NIX)
     base = BASELAYER
     return F"{imagesrepo}/{distro}-repo/{base}:{version}"
 
-def opensuse_local(distro: str = NIX, centos: str = NIX) -> int:
+def opensuse_local(distro: str = NIX, centos: str = NIX) -> str:
     """ show ini section for diskpath and --epel """
     mainsection = opensuse_baseimage(distro, centos)
     mainbaseimage = opensuse_baserepo(distro, centos)

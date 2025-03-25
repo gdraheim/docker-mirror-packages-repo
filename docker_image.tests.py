@@ -152,7 +152,7 @@ def grep(pattern: str, textlines: Union[str, List[str], TextIO]) -> List[str]:
 def greps(textlines: Union[str, List[str], TextIO], *pattern: str) -> List[str]:
     return list(each_grep(pattern, textlines))
 
-class DockerLocalImageTest(unittest.TestCase):
+class DockerImageTest(unittest.TestCase):
     def caller_testname(self) -> str:
         name = get_caller_caller_name()
         x1 = name.find("_")
@@ -165,7 +165,7 @@ class DockerLocalImageTest(unittest.TestCase):
         if suffix:
             return name + "_" + suffix
         return name
-    def testver(self, testname: str = NIX) -> None:
+    def testver(self, testname: str = NIX) -> str:
         testname = testname or self.caller_testname()
         ver3 = testname[-3:]
         if ver3.startswith("0"):
