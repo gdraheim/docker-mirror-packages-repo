@@ -1,5 +1,7 @@
 #! /usr/bin/python3
-# pylint: disable=possibly-unused-variable,unused-variable,line-too-long
+# pylint: disable=possibly-unused-variable,unused-variable,line-too-long,too-many-lines
+# pylint: disable=too-many-branches,too-many-locals,too-many-public-methods,too-few-public-methods,too-many-return-statements
+# pylint: disable=no-else-return,consider-using-with,consider-using-max-builtin,consider-using-get,consider-using-generator
 from __future__ import print_function
 
 __copyright__ = "(C) 2025 Guido Draheim"
@@ -641,12 +643,12 @@ class DockerMirrorPackagesRepo:
         diskrepos = self.get_epel_docker_mirror_disks(rep, "mirrors.fedoraproject.org")
         epelrepos = epelimages + list(diskrepos.keys())
         logg.debug("[%s] select %s from images %s", rep, released, epelrepos)
-        for image in epelrepos:
-            tagline = re.sub(".*:", "", image)
+        for epelrepo in epelrepos:
+            tagline = re.sub(".*:", "", epelrepo)
             tagname = re.sub(" .*", "", tagline)
             created = tagname.split(".")[-1]
             accepts = tagname.startswith(major(version))
-            logg.debug(": %s (%s) (%s) %s:%s", image, created, released, major(version), accepts and "x" or "ignore")
+            logg.debug(": %s (%s) (%s) %s:%s", epelrepo, created, released, major(version), accepts and "x" or "ignore")
             if created >= released and accepts:
                 if not later or later > tagname:
                     later = tagname
