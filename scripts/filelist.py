@@ -7,16 +7,16 @@ __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7121"
 
-import optparse
+import optparse # pylint: disable=deprecated-module
 import os
 
 try:
     from http.server import SimpleHTTPRequestHandler
-except:  # py2
+except ImportError:  # py2
     from SimpleHTTPServer import SimpleHTTPRequestHandler  # type: ignore
 try:
     from socketserver import TCPServer
-except:  # py2
+except ImportError:  # py2
     from SocketServer import TCPServer  # type: ignore
 
 PORT = 80

@@ -1,4 +1,6 @@
 #! /usr/bin/python3
+# pylint: disable=line-too-long,too-many-locals,too-many-statements
+# pylint: disable=consider-using-max-builtin,consider-using-with
 
 from __future__ import print_function
 
@@ -7,7 +9,7 @@ __contact__ = "https://github.com/gdraheim/docker-mirror-packages-repo"
 __license__ = "CC0 Creative Commons Zero (Public Domain)"
 __version__ = "1.7.7121"
 
-import optparse
+import optparse # pylint: disable=deprecated-module
 import os
 import os.path
 import re
@@ -16,15 +18,15 @@ import hashlib
 
 try:
     from http.server import SimpleHTTPRequestHandler
-except:  # py2
+except ImportError:  # py2
     from SimpleHTTPServer import SimpleHTTPRequestHandler  # type: ignore
 try:
     from socketserver import TCPServer
-except:  # py2
+except ImportError:  # py2
     from SocketServer import TCPServer  # type: ignore
 try:
     from urllib.parse import urlparse
-except:  # py2
+except ImportError:  # py2
     from urlparse import urlparse  # type: ignore
 
 
@@ -81,6 +83,7 @@ if opt.data and opt.data != ".":
 class MyHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/metalink?"):
+            # pylint: disable=possibly-unused-variable
             metalink = True  # epel/fedora format as long as we know
             values = {}
             for param in self.path[self.path.find("?") + 1:].split("&"):
@@ -118,7 +121,7 @@ class MyHandler(SimpleHTTPRequestHandler):
                     self.send_header("X-Filepath", repomd_xml)
                     self.end_headers()
                     self.wfile.write(data)
-                    return
+                    return None
                 fix_mtime_repomd_xml(repomd_xml)
                 generator = "http://github/gdraheim/docker-mirror-packages-repo"
                 ns = "http://www.metalinker.org/"
@@ -159,7 +162,7 @@ class MyHandler(SimpleHTTPRequestHandler):
                 self.send_header("Content-Length", str(len(data)))
                 self.end_headers()
                 self.wfile.write(data)
-            return
+            return None
         print("CHECK", self.path)
         return SimpleHTTPRequestHandler.do_GET(self)
 
@@ -189,6 +192,6 @@ else:
     cmd = "cat /tmp/{hostname}.key /tmp/{hostname}.crt > /tmp/{hostname}.pem".format(**locals())
     subprocess.call(cmd, shell=True)
     httpd = TCPServer(("", port), MyHandler)
-    httpd.socket = ssl.wrap_socket(httpd.socket, certfile='/tmp/%s.pem' % hostname, server_side=True)
+    httpd.socket = ssl.wrap_socket(httpd.socket, certfile='/tmp/%s.pem' % hostname, server_side=True)  # pylint: disable=deprecated-method
     print("serving at port", port, "for", SSL)
     httpd.serve_forever()
