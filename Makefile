@@ -230,7 +230,10 @@ P11 = docker_mirror.tests.py
 P12 = dockerdir.tests.py
 
 %.type:
-	test -f $(@:.type=i) || $(MYPY) $(MYPY_STRICT) $(MYPY_OPTIONS) $(@:.type=)
+	test -f $(@:.type=i) || test "$@" != "$(subst -,_,$@)" || $(MYPY) $(MYPY_STRICT) $(MYPY_OPTIONS) $(@:.type=)
+	test -f $(@:.type=i) || test "$@" = "$(subst -,_,$@)" || mkdir tmp.scripts || true
+	test -f $(@:.type=i) || test "$@" = "$(subst -,_,$@)" || cp $(@:.type=) tmp.scripts/$(subst -,_,$(notdir $(@:.type=)))
+	test -f $(@:.type=i) || test "$@" = "$(subst -,_,$@)" || $(MYPY) $(MYPY_STRICT) $(MYPY_OPTIONS) tmp.scripts/$(subst -,_,$(notdir $(@:.type=)))
 	test ! -f $(@:.type=i) || $(PYTHON3) $(PY_RETYPE)/retype.py $(@:.type=) -t tmp.scripts -p $(dir $@)
 	test ! -f $(@:.type=i) || $(PYTHON3) $(PY_RETYPE)/retype.py $(@:.type=) -t tmp.scripts -p $(dir $@)
 	test ! -f $(@:.type=i) || $(MYPY) $(MYPY_STRICT) $(MYPY_OPTIONS) tmp.scripts/$(notdir $(@:.type=))
