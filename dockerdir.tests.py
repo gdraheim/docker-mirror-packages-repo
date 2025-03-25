@@ -1,10 +1,11 @@
 #! /usr/bin/python3
+# pylint: disable=consider-using-with,unused-variable,possibly-unused-variable
 """
    You can just call tests by their number, or a common prefix thereof.
    (so that "./testsuite.py -v test_107" will run the tests from test_1070 to test_1079).
 """
 
-from typing import Union, Optional, List, cast
+from typing import Union, Optional, List
 import unittest
 import sys
 import os
@@ -36,7 +37,7 @@ def decodes(text: Union[str, bytes]) -> str:
             encoded = "utf-8"
         try:
             return text.decode(encoded)
-        except:
+        except UnicodeDecodeError:
             return text.decode("latin-1")
     return text
 def sh____(cmd: Union[str, List[str]], shell: bool = True) -> int:
@@ -116,9 +117,9 @@ class DockerDirScriptsTest(unittest.TestCase):
         drop_file(filename)
 
 if __name__ == "__main__":
-    from optparse import OptionParser
+    from optparse import OptionParser # pylint: disable=deprecated-module
     _o = OptionParser("%prog [options] test*",
-                      epilog=__doc__.strip().split("\n")[0])
+                      epilog=__doc__.strip().split("\n", 1)[0])
     _o.add_option("--failfast", action="store_true", default=False,
                   help="Stop the test run on the first error or failure. [%default]")
     _o.add_option("-v", "--verbose", action="count", default=0,

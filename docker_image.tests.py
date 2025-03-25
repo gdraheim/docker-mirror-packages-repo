@@ -1,5 +1,6 @@
 #! /usr/bin/python3
 # pylint: disable=possibly-unused-variable,unused-variable,line-too-long
+# pylint: disable=too-many-positional-arguments,too-many-arguments
 """ checking easy build with the local docker mirror packages repos """
 
 from typing import Union, Optional, List, Mapping, Iterable, Iterator, TextIO
@@ -93,7 +94,7 @@ def X(args: Union[str, List[str]], stdin: Optional[int]=None, inputs: Optional[b
     shell = isinstance(args, str) if shell is None else shell
     stdout = subprocess.PIPE if stdout is None else stdout
     stderr = subprocess.PIPE if stderr is None else stderr
-    proc = subprocess.Popen(args, stdin=stdin, stdout=stdout, stderr=stderr, shell=shell, cwd=cwd, env=env)
+    proc = subprocess.Popen(args, stdin=stdin, stdout=stdout, stderr=stderr, shell=shell, cwd=cwd, env=env) # pylint: disable=consider-using-with
     try:
         outs, errs = proc.communicate(input=inputs, timeout=timeout)
     except subprocess.TimeoutExpired:

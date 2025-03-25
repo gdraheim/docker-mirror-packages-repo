@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
-# pylint: disable=line-too-long,bare-except,dangerous-default-value
+# pylint: disable=line-too-long,too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
+# pylint: disable=dangerous-default-value,no-else-return,consider-using-with
 """ build images using the local docker_mirror.py repo packages. """
 from typing import List, Union, Optional, Mapping
 from datetime import datetime as Time
@@ -61,7 +62,7 @@ def decodes(text: Union[str, bytes, None]) -> str:
             encoded = "utf-8"
         try:
             return text.decode(encoded)
-        except:
+        except UnicodeDecodeError:
             return text.decode("latin-1")
     return text
 def sh____(cmd: Union[str, List[str]], shell: bool = True) -> int:
