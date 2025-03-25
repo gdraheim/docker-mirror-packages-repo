@@ -209,6 +209,11 @@ mypy:
 	zypper install -y python3-click python3-pathspec
 	$(MAKE) py-retype
 
+PYLINT = pylint
+PYLINT_OPTIONS =
+pylint:
+	zypper install -y python3-pylint
+
 # mypy 1.0.0 has minimum --python-version 3.7
 # mypy 1.9.0 has minimum --python-version 3.8
 MYPY = mypy
@@ -244,6 +249,8 @@ P19 = docker_image.tests.py
 %.pep8:
 	$(AUTOPEP8) $(AUTOPEP8_OPTIONS) $(@:.pep8=) $(AUTOPEP8_INPLACE)
 	$(GIT) --no-pager diff $(@:.pep8=)
+%.lint:
+	$(PYLINT) $(PYLINT_OPTIONS) $(@:.lint=)
 
 py1: ; $(MAKE) $(PY1).pep8
 py2: ; $(MAKE) $(PY2).pep8
@@ -269,6 +276,8 @@ t19: ; $(MAKE) $(P19).type
 
 type: ;	 $(MAKE) $(PY1).type $(PY2).type $(PY3).type $(PY4).type $(PY5).type $(PY6).type $(PY7).type $(PY8).type $(PY9).type \
                  $(P11).type $(P12).type $(P19).type
+lint: ;	 $(MAKE) $(PY1).lint             $(PY3).lint $(PY4).lint $(PY5).lint $(PY6).lint $(PY7).lint $(PY8).lint $(PY9).lint \
+                 $(P11).lint $(P12).lint $(P19).lint
 style: ; $(MAKE) $(PY1).pep8 $(PY2).pep8 $(PY3).pep8 $(PY4).pep8 $(PY5).pep8 $(PY6).pep8 $(PY7).pep8 $(PY8).pep8 $(PY9).pep8 \
                  $(P11).pep8 $(P12).pep8 $(P19).pep8
 
