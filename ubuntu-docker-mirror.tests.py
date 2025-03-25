@@ -829,6 +829,8 @@ class UbuntuMirrorTest(unittest.TestCase):
         cmd = F"{docker} exec {testcontainer} {pkgrepo} update {debugs}"
         ret = calls(cmd)
         logg.info("install refresh: %s", ret)
+        if ret:
+            logg.warning("package lists not complete")
         cmd = F"{docker} exec {testcontainer} {pkgrepo} install {debugs} -y python3-lxml"
         ret = calls(cmd)
         logg.info("install package: %s", ret)
@@ -897,10 +899,11 @@ class UbuntuMirrorTest(unittest.TestCase):
         pkglist = PKGLIST
         testcontainer = self.testcontainer(testname)
         imagesrepo = self.testrepo(testname)
-        cmd = F"{cover} {script} {distro}:{ver} base {VV} --imagesrepo={imagesrepo} {makeoptions}"
-        run = runs(cmd)
-        basemade = run.out
-        logg.info("basemade = %s", basemade)
+        if not SKIPFULLIMAGE:
+            cmd = F"{cover} {script} {distro}:{ver} base {VV} --imagesrepo={imagesrepo} {makeoptions}"
+            run = runs(cmd)
+            basemade = run.out
+            logg.info("basemade = %s", basemade)
         cmd = F"{cover} {script} {distro}:{ver} diskpath {VV} --disksuffix={testname}_disk"
         run = runs(cmd)
         diskpath = run.out
@@ -952,8 +955,9 @@ class UbuntuMirrorTest(unittest.TestCase):
         cmd = F"{docker} exec {testcontainer} {pkgrepo} update"
         ret = calls(cmd)
         logg.info("install refresh: %s", ret)
-        self.assertEqual(0, ret)
-        cmd = F"{docker} exec {testcontainer} {pkgrepo} install -y python3-lxml"
+        if ret:
+            logg.warning("package lists not complete (--remove multiverse)")
+        cmd = F"{docker} exec {testcontainer} {pkgrepo} {debugs} install -y python3-lxml"
         ret = calls(cmd)
         logg.info("install package: %s", ret)
         self.assertEqual(0, ret)

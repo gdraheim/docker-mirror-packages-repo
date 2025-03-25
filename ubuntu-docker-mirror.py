@@ -161,11 +161,6 @@ nolinux += ["linux-gcp*.deb", "linux-gke*.deb", "linux-azure*.deb", "linux-oem*.
 nolinux += ["linux-hwe*.deb", "linux-aws*.deb", "linux-intel*.deb", "linux-ibm*.deb", ]
 nodrivers = ["nvidia-*.deb", "libnvidia*.deb"]
 
-DUMMYPACKAGES = """
-Filename: pool/dummy/linux-image.deb
-Filename: pool/dummy/nvidia-driver.deb
-"""
-
 BASEVERSION: Dict[str, str] = {}  # image:ubuntu/base
 BASEVERSION["23.04"] = "22.04"
 BASEVERSION["22.10"] = "22.04"  # previous LTS
@@ -255,6 +250,14 @@ def ubuntu_sync() -> None:
         ubuntu_sync_dist_main(DEBIANDIST[UBUNTU])
         ubuntu_sync_dist_main(DEBIANDIST[UBUNTU] + "-updates")
         ubuntu_sync_dist_main(DEBIANDIST[UBUNTU] + "-security")
+        contrib = "non-free"
+        ubuntu_sync_dist_main(DEBIANDIST[UBUNTU], contrib)
+        ubuntu_sync_dist_main(DEBIANDIST[UBUNTU] + "-updates", contrib)
+        ubuntu_sync_dist_main(DEBIANDIST[UBUNTU] + "-security", contrib)
+        contrib = "contrib"
+        ubuntu_sync_dist_main(DEBIANDIST[UBUNTU], contrib)
+        ubuntu_sync_dist_main(DEBIANDIST[UBUNTU] + "-updates", contrib)
+        ubuntu_sync_dist_main(DEBIANDIST[UBUNTU] + "-security", contrib)
     else:
         logg.error("unknown distro %s", DISTRO)
         raise UserWarning("unknown distro")
@@ -299,7 +302,7 @@ def ubuntu_dir(distro: str = NIX, ubuntu: str = NIX, variant: str = NIX) -> str:
     return dirlink
 
 def ubuntu_sync_base(dist: str) -> None:
-    logg.info("dist = %s", dist)
+    logg.debug("[%s] sync release files", dist)
     cache = ubuntu_cache()
     distro = DISTRO
     ubuntu = UBUNTU
@@ -331,6 +334,8 @@ def ubuntu_sync_dist_main(dist: str, main: str = "main") -> None:
     if SKIPREPOS and main in SKIPREPOS:
         logg.info(" -- skip [%s] repo -- was in SKIPREPOS %s", main, SKIPREPOS)
         nopackages = True
+    if not nopackages:
+        logg.info(" -- sync [%s] repo -- with packages", main)
     return _sync_dist_main(NIX, NIX, dist, main, nopackages=nopackages)
 def _sync_dist_main(distro: str, ubuntu: str, dist: str, main: str, nopackages: bool = False) -> None: # pylint: disable=redefined-outer-name
     distro = distro or DISTRO
@@ -371,10 +376,11 @@ def _sync_dist_main(distro: str, ubuntu: str, dist: str, main: str, nopackages: 
                 packages += output(F"zcat {gz}")
             packages += "\n"
         if "--dry-run" in rsync:
-            packages = DUMMYPACKAGES # should be removed from sync list below
+            packages = "Filename: pool/dummy/linux-image.deb\n"
+            # should be removed from sync list below
         filenames, syncing = 0, 0
         with open(tmpfile, "w") as f:
-            for line in packages.split("\n"):
+            for line in packages.splitlines():
                 if not line.startswith("Filename:"):
                     continue
                 filename = re.sub("Filename: *pool/", "", line)
@@ -392,6 +398,8 @@ def _sync_dist_main(distro: str, ubuntu: str, dist: str, main: str, nopackages: 
                     print(filename, file=f)
                     syncing += 1
         logg.info("syncing %s of %s filenames in %s", syncing, filenames, " & ".join(gzlist))
+    else:
+        nopackages = True
     pooldir = F"{rootdir}/pools/{distdir}/{main}/pool"
     if not path.isdir(pooldir):
         os.makedirs(pooldir)
@@ -459,27 +467,34 @@ def repo_image(distro: str = NIX, ubuntu: str = NIX, repos: Optional[List[str]] 
                 sh___(F"{docker} exec {cname} bash -c 'test -d {relsdir_srv} || mkdir -vp {relsdir_srv}'")
                 for releasefile in releasefiles:
                     sh___(F"{docker} cp {releasefile} {cname}:{relsdir_srv}/")
-            for main in allrepos:
-                for arch in ARCHS:
-                    packdir = F"{relsdir}/{main}/binary-{arch}"
-                    packagesfiles = []
-                    for packages_gz in ["Packages.gz", "Packages.xz"]:
-                        packagesfile = os.path.join(packdir, packages_gz)
-                        if os.path.isfile(packagesfile):
-                            packagesfiles += [ packagesfile ]
-                    if packagesfiles:
-                        sh___(F"{docker} exec {cname} bash -c 'test -d {relsdir_srv}/{main} || mkdir -vp {relsdir_srv}/{main}'")
-                        sh___(F"{docker} cp {packdir} {cname}:/{relsdir_srv}/{main}/")
-                for source in NOARCHS:
-                    packdir = F"{relsdir}/{source}"
-                    packagesfiles = []
-                    for packages_gz in ["Packages.gz", "Packages.xz"]:
-                        packagesfile = os.path.join(packdir, packages_gz)
-                        if os.path.isfile(packagesfile):
-                            packagesfiles += [ packagesfile ]
-                    if packagesfiles:
-                        sh___(F"{docker} exec {cname} bash -c 'test -d {relsdir_srv}/{main} || mkdir -vp {relsdir_srv}/{main}'")
-                        sh___(F"{docker} cp {packdir} {cname}:/{relsdir_srv}/{main}/")
+    for main in allrepos:
+        for dist in dists:
+            distrodir, distdir = distro, dist
+            if dist in DISTRODIST:
+                distrodir, distdir = DISTRODIST[dist]
+            rootdir = ubuntu_dir(distrodir, ubuntu, variant=F"{VARIANT}")
+            maindir = F"{rootdir}/dists/{distdir}/{main}"
+            maindir_srv = F"/srv/repo/{distrodir}/dists/{distdir}/{main}"
+            for arch in ARCHS:
+                packdir = F"{maindir}/binary-{arch}"
+                packagesfiles = []
+                for packages_gz in ["Packages.gz", "Packages.xz"]:
+                    packagesfile = os.path.join(packdir, packages_gz)
+                    if os.path.isfile(packagesfile):
+                        packagesfiles += [ packagesfile ]
+                if packagesfiles:
+                    sh___(F"{docker} exec {cname} bash -c 'test -d {maindir_srv} || mkdir -vp {maindir_srv}'")
+                    sh___(F"{docker} cp {packdir} {cname}:/{maindir_srv}/")
+            for source in NOARCHS:
+                packdir = F"{maindir}/{source}"
+                packagesfiles = []
+                for packages_gz in ["Packages.gz", "Packages.xz"]:
+                    packagesfile = os.path.join(packdir, packages_gz)
+                    if os.path.isfile(packagesfile):
+                        packagesfiles += [ packagesfile ]
+                if packagesfiles:
+                    sh___(F"{docker} exec {cname} bash -c 'test -d {maindir_srv} || mkdir -vp {maindir_srv}'")
+                    sh___(F"{docker} cp {packdir} {cname}:/{maindir_srv}/")
     sh___(F"{docker} exec {cname} apt-get update")
     sh___(F"{docker} exec {cname} apt-get install -y {python}")
     sh___(F"{docker} exec {cname} mkdir -p /srv/repo/{distro}/pool")
@@ -515,16 +530,17 @@ def repo_image(distro: str = NIX, ubuntu: str = NIX, repos: Optional[List[str]] 
         sx___(F"{docker} rmi {imagesrepo}/{distro}-repo/base:{version}")  # untag base image
     return F"\n[{baseimage}]\nimage = {imagesrepo}/{distro}-repo/{base}:{version}\n"
 
-def ubuntu_disk() -> str:
-    distro = DISTRO
-    ubuntu = UBUNTU
+def ubuntu_disk(distro: str = NIX, ubuntu: str = NIX, repos: Optional[List[str]] = None, allrepos: Optional[List[str]] = None) -> str:
+    distro = distro or  DISTRO
+    ubuntu = ubuntu or UBUNTU
     version = F"{ubuntu}.{VARIANT}" if VARIANT else ubuntu
     diskdir = ubuntu_dir(distro, ubuntu, variant=F"{VARIANT}{DISKSUFFIX}")
     srv = F"{diskdir}/srv"
     logg.info("srv = %s", srv)
     sh___(F"test ! -d {srv} || rm -rf {srv}")
     sh___(F"mkdir -p {srv}/repo/{distro}/pool")
-    repos = ubuntu_allrepos(distro, ubuntu)
+    allrepos = allrepos if allrepos is not None else ubuntu_allrepos(distro, ubuntu)
+    repos = repos if repos is not None else allrepos
     dists = ubuntu_distdirs(distro, ubuntu)
     if TRUE:  # base layer needs all Release info files even when pool files are not copied
         for dist in dists:
@@ -540,13 +556,7 @@ def ubuntu_disk() -> str:
                     if not os.path.isdir(relsdir_srv):
                         os.makedirs(relsdir_srv)
                     sh___(F"cp {releasefile} {relsdir_srv}/")
-    for main in repos:
-        if ONLYREPOS and main not in ONLYREPOS:
-            logg.info("'%s' not in ONLYREPOS %s", main, ONLYREPOS)
-            continue
-        if SKIPREPOS and main in SKIPREPOS:
-            logg.info("'%s' in SKIPREPOS %s", main, ONLYREPOS)
-            continue
+    for main in allrepos:
         for dist in dists:
             distrodir, distdir = distro, dist
             if dist in DISTRODIST:
@@ -562,12 +572,26 @@ def ubuntu_disk() -> str:
             for source in NOARCHS:
                 if os.path.isdir(F"{maindir}/{source}"):
                     sh___(F"cp -r --link {maindir}/{source} {maindir_srv}/")
+    for main in repos:
+        if ONLYREPOS and main not in ONLYREPOS:
+            logg.info("'%s' not in ONLYREPOS %s", main, ONLYREPOS)
+            continue
+        if SKIPREPOS and main in SKIPREPOS:
+            logg.info("'%s' in SKIPREPOS %s", main, ONLYREPOS)
+            continue
+        for dist in dists:
+            distrodir, distdir = distro, dist
+            if dist in DISTRODIST:
+                distrodir, distdir = DISTRODIST[dist]
+            rootdir = ubuntu_dir(distrodir, ubuntu, variant=F"{VARIANT}")
             pooldir = F"{rootdir}/pools/{distdir}/{main}/pool"
             updates = "" if "/" not in distrodir else "/"+distrodir.split("/", 1)[1]
             if path.isdir(pooldir):
                 if not os.path.isdir(F"{srv}/repo/{distrodir}"):
                     os.makedirs(F"{srv}/repo/{distrodir}")
                 sh___(F"cp -r --link --no-clobber {pooldir}  {srv}/repo/{distrodir}/")
+            else:
+                logg.info("dir not found: %s", pooldir)
     host_srv = os.path.realpath(srv)
     return F"\nmount = {host_srv}/repo\n"
 

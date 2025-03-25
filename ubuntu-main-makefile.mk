@@ -11,11 +11,11 @@ ubuntu:
 	$(MAKE) ubuntutest
 	$(MAKE) ubuntutags
 
-ubuntusync: ; ./ubuntu-docker-mirror.py $(UBUNTU) sync -v $(UBUNTU_REPOS)
-ubuntubase: ; ./ubuntu-docker-mirror.py $(UBUNTU) base -v $(UBUNTU_REPOS)
-ubunturepo: ; ./ubuntu-docker-mirror.py $(UBUNTU) repo -v $(UBUNTU_REPOS)
-ubuntutest: ; ./ubuntu-docker-mirror.py $(UBUNTU) test -v $(UBUNTU_REPOS)
-ubuntutags: ; ./ubuntu-docker-mirror.py $(UBUNTU) tags -v $(UBUNTU_REPOS)
+ubuntusync: ; ./ubuntu-docker-mirror.py $(UBUNTU) sync -v $(UBUNTU_REPOS) $K
+ubuntubase: ; ./ubuntu-docker-mirror.py $(UBUNTU) base -v $(UBUNTU_REPOS) $K
+ubunturepo: ; ./ubuntu-docker-mirror.py $(UBUNTU) repo -v $(UBUNTU_REPOS) $K
+ubuntutest: ; ./ubuntu-docker-mirror.py $(UBUNTU) test -v $(UBUNTU_REPOS) $K
+ubuntutags: ; ./ubuntu-docker-mirror.py $(UBUNTU) tags -v $(UBUNTU_REPOS) $K
 
 ubuntubash:
 	- docker rm -f ubuntu-bash-$(UBUNTU)
@@ -26,14 +26,14 @@ ubuntubash:
                                                              --add-host security.ubuntu.com:$$IP ubuntu:$(UBUNTU) sleep 9999
 	docker exec -it ubuntu-bash-$(UBUNTU) bash
 
-debiansync.10: ; ./ubuntu-docker-mirror.py debian:10 sync -v 
-debianrepo.10: ; ./ubuntu-docker-mirror.py debian:10 repo -v 
-debiandisk.10: ; ./ubuntu-docker-mirror.py debian:10 disk -v 
-debiandropdisk.10: ; ./ubuntu-docker-mirror.py debian:10 dropdisk -v 
-debiansync.12: ; ./ubuntu-docker-mirror.py debian:12 sync -v 
-debianrepo.12: ; ./ubuntu-docker-mirror.py debian:12 repo -v 
-debiandisk.12: ; ./ubuntu-docker-mirror.py debian:12 disk -v 
-debiandropdisk.12: ; ./ubuntu-docker-mirror.py debian:12 dropdisk -v 
+debiansync.10: ; ./ubuntu-docker-mirror.py debian:10 sync -v $K
+debianrepo.10: ; ./ubuntu-docker-mirror.py debian:10 repo -v $K
+debiandisk.10: ; ./ubuntu-docker-mirror.py debian:10 disk -v $K
+debiandropdisk.10: ; ./ubuntu-docker-mirror.py debian:10 dropdisk -v  $K
+debiansync.12: ; ./ubuntu-docker-mirror.py debian:12 sync -v $K
+debianrepo.12: ; ./ubuntu-docker-mirror.py debian:12 repo -v $K
+debiandisk.12: ; ./ubuntu-docker-mirror.py debian:12 disk -v $K
+debiandropdisk.12: ; ./ubuntu-docker-mirror.py debian:12 dropdisk -v $K
 
 
 
