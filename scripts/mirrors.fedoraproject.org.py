@@ -192,6 +192,10 @@ else:
     cmd = "cat /tmp/{hostname}.key /tmp/{hostname}.crt > /tmp/{hostname}.pem".format(**locals())
     subprocess.call(cmd, shell=True)
     httpd = TCPServer(("", port), MyHandler)
-    httpd.socket = ssl.wrap_socket(httpd.socket, certfile='/tmp/%s.pem' % hostname, server_side=True)  # pylint: disable=deprecated-method
+    # httpd.socket = ssl.wrap_socket(httpd.socket, certfile='/tmp/%s.pem' % hostname, server_side=True)  # pylint: disable=deprecated-method
+    # SSLContext was introduced in 2.7.9 # ssl.wrap_socket was removed in Python 3.12
+    context = ssl.SSLContext()
+    context.load_cert_chain(certfile = '/tmp/%s.pem' % hostname)
+    httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
     print("serving at port", port, "for", SSL)
     httpd.serve_forever()
