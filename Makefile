@@ -226,17 +226,19 @@ PY5 = ubuntu-docker-mirror.py
 PY6 = scripts/filelist.py
 PY7 = scripts/mirrorlist.py
 PY8 = scripts/mirrors.fedoraproject.org.py
+PY9 = docker_image.py
 P11 = docker_mirror.tests.py
 P12 = dockerdir.tests.py
+P19 = docker_image.tests.py
 
 %.type:
-	test -f $(@:.type=i) || test "$@" != "$(subst -,_,$@)" || $(MYPY) $(MYPY_STRICT) $(MYPY_OPTIONS) $(@:.type=)
-	test -f $(@:.type=i) || test "$@" = "$(subst -,_,$@)" || mkdir tmp.scripts || true
-	test -f $(@:.type=i) || test "$@" = "$(subst -,_,$@)" || cp $(@:.type=) tmp.scripts/$(subst -,_,$(notdir $(@:.type=)))
-	test -f $(@:.type=i) || test "$@" = "$(subst -,_,$@)" || $(MYPY) $(MYPY_STRICT) $(MYPY_OPTIONS) tmp.scripts/$(subst -,_,$(notdir $(@:.type=)))
+	test -f $(@:.type=i) || mkdir tmp.scripts || true
+	test -f $(@:.type=i) || cp $(@:.type=) tmp.scripts/$(subst -,_,$(notdir $(@:.type=)))
+	test -f $(@:.type=i) || $(MYPY) $(MYPY_STRICT) $(MYPY_OPTIONS) tmp.scripts/$(subst -,_,$(notdir $(@:.type=)))
 	test ! -f $(@:.type=i) || $(PYTHON3) $(PY_RETYPE)/retype.py $(@:.type=) -t tmp.scripts -p $(dir $@)
 	test ! -f $(@:.type=i) || $(PYTHON3) $(PY_RETYPE)/retype.py $(@:.type=) -t tmp.scripts -p $(dir $@)
 	test ! -f $(@:.type=i) || $(MYPY) $(MYPY_STRICT) $(MYPY_OPTIONS) tmp.scripts/$(notdir $(@:.type=))
+
 %.pep1:
 	$(AUTOPEP8) $(AUTOPEP8_OPTIONS) $(@:.pep1=) $(AUTOPEP8_ASDIFF)
 %.pep8:
@@ -259,13 +261,16 @@ ty5: ; $(MAKE) $(PY5).type
 ty6: ; $(MAKE) $(PY6).type
 ty7: ; $(MAKE) $(PY7).type
 ty8: ; $(MAKE) $(PY8).type
+ty9: ; $(MAKE) $(PY9).type
 t11: ; $(MAKE) $(P11).type
 t12: ; $(MAKE) $(P12).type
+t19: ; $(MAKE) $(P19).type
 
-type: ;	 $(MAKE) $(PY1).type $(PY2).type $(PY3).type $(PY4).type $(PY5).type $(PY6).type $(PY7).type $(PY8).type \
-                 $(P11).type $(P12).type
-style: ; $(MAKE) $(PY1).pep8 $(PY2).pep8 $(PY3).pep8 $(PY4).pep8 $(PY5).pep8 $(PY6).pep8 $(PY7).pep8 $(PY8).pep8 \
-                 $(P11).pep8 $(P12).pep8
+
+type: ;	 $(MAKE) $(PY1).type $(PY2).type $(PY3).type $(PY4).type $(PY5).type $(PY6).type $(PY7).type $(PY8).type $(PY9).type \
+                 $(P11).type $(P12).type $(P19).type
+style: ; $(MAKE) $(PY1).pep8 $(PY2).pep8 $(PY3).pep8 $(PY4).pep8 $(PY5).pep8 $(PY6).pep8 $(PY7).pep8 $(PY8).pep8 $(PY9).pep8 \
+                 $(P11).pep8 $(P12).pep8 $(P19).pep8
 
 # .................................
 clean:
