@@ -375,9 +375,6 @@ def _sync_dist_main(distro: str, ubuntu: str, dist: str, main: str, nopackages: 
             else:
                 packages += output(F"zcat {gz}")
             packages += "\n"
-        if "--dry-run" in rsync:
-            packages = "Filename: pool/dummy/linux-image.deb\n"
-            # should be removed from sync list below
         filenames, syncing = 0, 0
         with open(tmpfile, "w") as f:
             for line in packages.splitlines():
@@ -398,12 +395,13 @@ def _sync_dist_main(distro: str, ubuntu: str, dist: str, main: str, nopackages: 
                     print(filename, file=f)
                     syncing += 1
         logg.info("syncing %s of %s filenames in %s", syncing, filenames, " & ".join(gzlist))
+        if not syncing:
+            nopackages = True
     else:
         nopackages = True
     pooldir = F"{rootdir}/pools/{distdir}/{main}/pool"
     if not path.isdir(pooldir):
         os.makedirs(pooldir)
-    # instead of {exlude} we have nolinux filtered in the Packages above
     if not nopackages:
         options = "--size-only --copy-links "
         sh___(F"{rsync} -rv {mirror}/pool {pooldir} {options} --files-from={tmpfile}")
