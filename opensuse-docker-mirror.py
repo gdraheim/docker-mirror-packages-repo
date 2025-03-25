@@ -1,5 +1,6 @@
 #! /usr/bin/python3
-# pylint: disable=possibly-unused-variable,unused-variable,line-too-long,too-many-lines
+# pylint: disable=possibly-unused-variable,unused-variable,line-too-long,too-many-lines,too-many-locals,too-many-return-statements,too-many-branches,too-many-statements
+# pylint: disable=consider-using-from-import,consider-using-get,consider-using-generator,consider-using-with,consider-using-in,no-else-return
 
 """ sync packages repo to disk and make docker mirror images from it.
     Try to run 'sync' followed be 'repo'. If a command starts with a

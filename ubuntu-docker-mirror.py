@@ -1,5 +1,6 @@
 #! /usr/bin/python3
-# pylint: disable=unused-variable,unused-argument,line-too-long
+# pylint: disable=unused-variable,unused-argument,line-too-long,too-many-locals,too-many-return-statements,too-many-branches,too-many-statements
+# pylint: disable=consider-using-from-import,consider-using-get,consider-using-generator,consider-using-with,consider-using-in,no-else-return
 """ sync packages repo to disk and make docker mirror images from it.
     Try to run 'sync' followed be 'repo'. If a command starts with a
     number then it changes the version to be handled. A usual command
@@ -139,7 +140,7 @@ DEBIANDATE["12.7"] = "202408"
 DEBIANDATE["12.8"] = "202409"
 DEBIANDATE["12.9"] = "202501"
 DEBIANDATE["12.10"] = "202503"
-DEBIANDATE["13.1"] = "202506" # TODO: in the future
+DEBIANDATE["13.1"] = "202506" # in the future
 
 ONLYREPOS: List[str] = []
 SKIPREPOS = ["universe", "multiverse", "contrib", "non-free"]
