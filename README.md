@@ -42,6 +42,10 @@ Tested repos are
 | --------------------------------------------- | ----
 | mirror-packages/epel-repo:9.x.2406	| 44.9GB
 | mirror-packages/epel-repo:7.x.2012	| 49GB
+| mirror-packages/debian-repo/contrib:12	| 132GB
+| mirror-packages/debian-repo/main:12	| 127GB
+| mirror-packages/debian-repo/contrib:10	| 104GB
+| mirror-packages/debian-repo/main:10	| 99.9GB
 | mirror-packages/ubuntu-repo/universe:24.04	| 134GB
 | mirror-packages/ubuntu-repo/restricted:24.04	| 30.6GB
 | mirror-packages/ubuntu-repo/main:24.04	| 27GB
