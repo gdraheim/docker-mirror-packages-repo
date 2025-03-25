@@ -1,4 +1,4 @@
-[![Style Check](https://github.com/gdraheim/docker-mirror-packages-repo/actions/workflows/stylecheck.yml/badge.svg?event=push)](https://github.com/gdraheim/docker-mirror-packages-repo/actions/workflows/stylecheck.yml)
+[![Lint Check](https://github.com/gdraheim/docker-mirror-packages-repo/actions/workflows/lintcheck.yml/badge.svg?event=push)](https://github.com/gdraheim/docker-mirror-packages-repo/actions/workflows/lintcheck.yml)
 [![Type Check](https://github.com/gdraheim/docker-mirror-packages-repo/actions/workflows/typecheck.yml/badge.svg?event=push)](https://github.com/gdraheim/docker-mirror-packages-repo/actions/workflows/typecheck.yml)
 [![PyPI version](https://badge.fury.io/py/docker-mirror-packages-repo.svg)](https://pypi.org/project/docker-mirror-packages-repo/)
 
