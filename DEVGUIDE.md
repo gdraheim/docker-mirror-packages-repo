@@ -67,7 +67,7 @@ For ubuntu you can check the latest Github workflows under
 ### static code checking
 
 * `make type`
-* `make style`
+* `make lint` 
 
 ### testing targets
 
