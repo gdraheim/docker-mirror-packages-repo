@@ -420,7 +420,7 @@ def ubuntu_repo(distro: str = NIX, ubuntu: str = NIX) -> str:
     distro = distro or DISTRO
     ubuntu = ubuntu or UBUNTU
     allrepos = ubuntu_allrepos(distro, ubuntu)
-    repos = []
+    repos: List[str] = []
     for repo in allrepos:
         if ONLYREPOS and repo not in ONLYREPOS:
             continue
@@ -457,7 +457,7 @@ def repo_image(distro: str = NIX, ubuntu: str = NIX, repos: Optional[List[str]] 
             rootdir = ubuntu_dir(distrodir, ubuntu, variant=F"{VARIANT}")
             relsdir = F"{rootdir}/dists/{distdir}"
             relsdir_srv = F"/srv/repo/{distrodir}/dists/{distdir}"
-            releasefiles = []
+            releasefiles: List[str] = []
             for relfile in ["Release", "Release.gpg", "InRelease"]:
                 releasefile = os.path.join(relsdir, relfile)
                 if os.path.isfile(releasefile):
@@ -476,7 +476,7 @@ def repo_image(distro: str = NIX, ubuntu: str = NIX, repos: Optional[List[str]] 
             maindir_srv = F"/srv/repo/{distrodir}/dists/{distdir}/{main}"
             for arch in ARCHS:
                 packdir = F"{maindir}/binary-{arch}"
-                packagesfiles = []
+                packagesfiles: List[str] = []
                 for packages_gz in ["Packages.gz", "Packages.xz"]:
                     packagesfile = os.path.join(packdir, packages_gz)
                     if os.path.isfile(packagesfile):
